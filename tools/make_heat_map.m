@@ -1,7 +1,7 @@
-function make_heat_map(A,B,T,Nx,Nu,R,M,loc,Tmax,myTitle,openLoop)
+function make_heat_map(A, B, T, Nx, Nu, R, M, loc, Tmax, myTitle, openLoop)
 % makes heat maps for x and u according to the specified system
 %   A,B      : system matrices
-%   T        : ????
+%   T        : finite impulse response horizon
 %   Nx,Nu    : dimensions of x and u
 %   R,M      : system responses of noise-to-state and noise-to-input
 %   loc      : where the disturbance hits
