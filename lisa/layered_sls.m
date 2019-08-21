@@ -41,21 +41,19 @@ C = [speye(Nx); sparse(Nu,Nx)];
 D = [sparse(Nx,Nu); speye(Nu)];
 
 d       = 3;  % d-hop locality constraint
-comms   = 1; % communication speed
-ta      = 0;  % actuation delay
-TFIR    = 20; % finite impulse response horizon
-TAfter  = 20; % amount of time to simulate after FIR horizon
-TSim    = TFIR + TAfter;
+comms   = 3;  % communication speed
+ta      = 1;  % actuation delay
+TFIR    = 10; % finite impulse response horizon
+TMax    = 20; % amount of time to simulate
+TSim    = TFIR + TMax;
 
-[R, M]  = sf_sls_d_localized(A, B, C, D, TFIR, d, comms, ta, 'Hinf');
+[R, M]  = sf_sls_d_localized(A, B, C, D, TFIR, d, comms, ta, 'H2');
 
-loc = 1; % where disturbance hits
+loc = 4; % where disturbance hits
 
 % useful for visualizing time; not for visualizing locality
-make_heat_map(A,B,TFIR,Nx,Nu,R,M,loc,TSim,'Localized')
+% make_heat_map(A,B,TFIR,Nx,Nu,R,M,loc,TSim,'Localized')
 
-%%
-% simulate
 % TODO: code overlap
 % this code is copied from make_heat_map with some modifications
 % it simulates the system for TSim time

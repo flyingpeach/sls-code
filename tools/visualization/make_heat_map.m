@@ -1,4 +1,4 @@
-function make_heat_map(A, B, T, Nx, Nu, R, M, loc, Tmax, myTitle, openLoop)
+function make_heat_map(A, B, T, Nx, Nu, R, M, loc, Tsim, myTitle, openLoop)
 % makes heat maps for x and u according to the specified system
 %   A,B      : system matrices
 %   T        : finite impulse response horizon
@@ -16,20 +16,20 @@ if nargin == 10
     openLoop = 0;
 end
 
-w_d    = zeros(Nx,Tmax);
+w_d    = zeros(Nx,Tsim);
 Tstart = T+1;
 B1     = eye(Nx);
 
 w_d(loc,Tstart) = 10;
 
-x     = zeros(Nx,Tmax);
-u     = zeros(Nu,Tmax);
-x_ref = zeros(Nx,Tmax);
-w_est = zeros(Nx,Tmax);
+x     = zeros(Nx,Tsim);
+u     = zeros(Nu,Tsim);
+x_ref = zeros(Nx,Tsim);
+w_est = zeros(Nx,Tsim);
 
 MATx = []; MATu = [];
 
-for i=Tstart:1:Tmax-1
+for i=Tstart:1:Tsim-1
 
     w_est(:,i-1) = x(:,i) - x_ref(:,i);
     
