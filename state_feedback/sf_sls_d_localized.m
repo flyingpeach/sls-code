@@ -38,7 +38,7 @@ switch obj
     case 'H2'
         objective = compute_H2(R,M,C,D,T);
     case 'Hinf'
-        % todo
+        objective = compute_Hinf(R,M,C,D,T);
     case 'L1'
         % todo
     case 'L1T'

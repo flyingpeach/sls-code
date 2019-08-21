@@ -47,10 +47,14 @@ TFIR    = 20; % finite impulse response horizon
 TAfter  = 20; % amount of time to simulate after FIR horizon
 TSim    = TFIR + TAfter;
 
-[R, M]  = sf_sls_d_localized(A, B, C, D, TFIR, d, comms, ta, 'H2');
+[R, M]  = sf_sls_d_localized(A, B, C, D, TFIR, d, comms, ta, 'Hinf');
 
 loc = 1; % where disturbance hits
 
+% useful for visualizing time; not for visualizing locality
+make_heat_map(A,B,TFIR,Nx,Nu,R,M,loc,TSim,'Localized')
+
+%%
 % simulate
 % TODO: code overlap
 % this code is copied from make_heat_map with some modifications
