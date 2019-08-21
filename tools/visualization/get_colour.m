@@ -4,13 +4,15 @@ function [colour] = get_colour(val, cmap)
 %   cmap   : colormap
 %   colour : colour as RGB coordinate
 
-cmapval = linspace(0, 1, length(cmap));
+cmapDim = size(cmap);
+
+cmapval = linspace(0, 1, cmapDim(1));
 
 if isinf(val)
     if sign(val) == -1
         idx = 1; % set to lowest
     else
-        idx = length(cmap); % set to highest
+        idx = cmapDim(1); % set to highest
     end
 else
     [junk, idx] = min(abs(cmapval - val));

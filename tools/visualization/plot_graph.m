@@ -6,8 +6,11 @@ function plot_graph(adjMtx, nodeCoords, colour)
 
 gplot(adjMtx, nodeCoords, '-ok');
 
+nodeDim = size(nodeCoords);
+numNodes = nodeDim(1);
+
 hold on
-for node=1:length(nodeCoords)
+for node=1:numNodes;
     plot_vertex(node, nodeCoords, colour)
 end
 hold off

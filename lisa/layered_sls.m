@@ -112,7 +112,7 @@ plot_graph(adjMtx, nodeCoords, cmap(1,:));
 colorbar;
 title('normalized log(u)')
 
-for time=1:length(MATx)
+for time=1:TMax-1
     pause(0.5);
     if time > 1
         delete(timeText)
@@ -120,8 +120,12 @@ for time=1:length(MATx)
     normedx = (MATx(:,time) - minx) ./ maxmagx;
     normedu = (MATu(:,time) - minu) ./ maxmagu;
 
-    timeText = text(2, -0.3, strcat('t=', num2str(time)));
-    
+    if (time == TFIR)
+        timeText = text(2, -0.3, strcat('t=', num2str(time)), 'Color', 'r');
+    else
+        timeText = text(2, -0.3, strcat('t=', num2str(time)));
+    end
+        
     for node=1:Nx
         subplot(2,1,1)
         plot_vertex(node, nodeCoords, get_colour(normedx(node), cmap));
