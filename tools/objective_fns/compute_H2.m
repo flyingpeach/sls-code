@@ -1,5 +1,6 @@
 function objective = compute_H2(R,M,C,D,T);
 % return ||[C,D][R;M]||_H2^2
+% see p.14, 27 of long tutorial for explanation of C, D
 
 objective = 0;
 for t = 1:T
