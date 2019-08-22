@@ -1,7 +1,5 @@
 function [Rsupport,Msupport,count] = make_d_localized_constraints(A,B,T,d,comms,ta);
 
-Comm_speed =comms; 
-
 Comms_Adj = abs(A)>0;
 LocalityR = Comms_Adj^(d-1)>0;
 % LocalityR
