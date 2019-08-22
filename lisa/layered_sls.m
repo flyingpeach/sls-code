@@ -22,9 +22,10 @@ if ~issymmetric(adjMtx)
     fprintf('[error] adjacency matrix is not symmetric!\n')
 end
 
+figure(1)
 plot_graph(adjMtx, nodeCoords, 'w');
 
-%% control
+%% control / simulation
 Nx = length(adjMtx); % number of nodes (and therefore states)
 Nu = Nx; % for now fully actuated
 
@@ -50,9 +51,6 @@ TSim    = TFIR + TMax;
 [R, M]  = sf_sls_d_localized(A, B, C, D, TFIR, d, comms, ta, 'H2');
 
 loc = 4; % where disturbance hits
-
-% useful for visualizing time; not for visualizing locality
-% make_heat_map(A,B,TFIR,Nx,Nu,R,M,loc,TSim,'Localized')
 
 % TODO: code overlap
 % this code is copied from make_heat_map with some modifications
@@ -85,40 +83,42 @@ for i=Tstart:1:TSim-1
         x_ref(:,i+1) = x_ref(:,i+1) + R{jj}*w_est(:,i+1-jj);
     end
 
-    MATx = [MATx,log10(abs(x(:,i)))];
-    MATu = [MATu,log10(abs(B*u(:,i)))];   
+    MATx = [MATx, x(:,i)];
+    MATu = [MATu, B*u(:,i)];   
 end
 
-% visualize disturbance propagation
+%% visualization 1: heat map
+% useful for visualizing time; not for visualizing locality
+figure(2)
+make_heat_map(A,B,TFIR,Nx,Nu,R,M,loc,TSim,'Localized')
+
+%% visualization 2: graph-based animation
+
+figure(3)
+
 colormap jet; 
 cmap    = colormap; 
 
-finMATx = MATx(isinf(MATx) == 0); % vector with non-infinite values of x
-finMATu = MATu(isinf(MATu) == 0); 
-
-minx = min(finMATx); % min value
-minu = min(finMATu);
-
-maxmagx = max(abs(finMATx)); % max magnitude
-maxmagu = max(abs(finMATu)); % max magnitude
+maxmagx = max(abs(vec(MATx))); % max magnitude
+maxmagu = max(abs(vec(MATu))); % max magnitude
 
 subplot(2,1,1);
 plot_graph(adjMtx, nodeCoords, cmap(1,:));
-title('normalized log(x)')
+title('normalized x')
 colorbar;
 
 subplot(2,1,2);
 plot_graph(adjMtx, nodeCoords, cmap(1,:));
 colorbar;
-title('normalized log(u)')
+title('normalized u')
 
 for time=1:TMax-1
     pause(0.5);
     if time > 1
         delete(timeText)
     end
-    normedx = (MATx(:,time) - minx) ./ maxmagx;
-    normedu = (MATu(:,time) - minu) ./ maxmagu;
+    normedx = abs(MATx(:,time)) ./ maxmagx;
+    normedu = abs(MATu(:,time)) ./ maxmagu;
 
     if (time == TFIR)
         timeText = text(2, -0.3, strcat('t=', num2str(time)), 'Color', 'r');
@@ -133,3 +133,24 @@ for time=1:TMax-1
         plot_vertex(node, nodeCoords, get_colour(normedu(node), cmap));
     end
 end
+
+%% visualization 3: time-plots per node
+
+maxy = max(max(vec(MATx)), max(vec(MATu))) + 2;
+miny = min(min(vec(MATx)), min(vec(MATu))) - 2;
+
+figure(4)
+for node=1:Nx
+    subplot(Nx, 1, node);
+    hold on
+    stairs([1:TMax-1], MATx(node,:));
+    stairs([1:TMax-1], MATu(node,:));
+    set(gca,'XTickLabel',[])
+    ylabel(num2str(node));
+    ylim([miny maxy]);
+end
+
+legend('x','u');
+xlabel('time step');
+set(gca,'XTickLabelMode','auto');
+
