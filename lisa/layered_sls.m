@@ -4,7 +4,6 @@ clc;
 % which things we want to plot
 plot_animation = false;
 plot_time_traj = true;
-plot_heat_map  = false;
 
 % graph architecture %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 nodeCoords = [0 1;
@@ -52,7 +51,6 @@ comms   = 3;  % communication speed
 ta      = 1;  % actuation delay
 TFIR    = 17; % finite impulse response horizon
 TMax    = 25; % amount of time to simulate
-TSim    = TFIR + TMax;
 
 % desired trajectory %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 xDes = zeros(Nx, TFIR-2);
@@ -90,39 +88,30 @@ xDes     = [zeros(Nx, 1) xDes zeros(Nx, timediff-1)];
 %[R, M]  = sf_sls_d_localized(A, B, C, D, TFIR, d, comms, ta, obj, xDesired);
 
 % TODO: code overlap with make_heat_map
-% simulate system
-loc = 6;
+% simulate system as per equation (2.8)
 
-w_d    = zeros(Nx,TSim);
-Tstart = TFIR+1;
-B1     = eye(Nx);
+w       = zeros(Nx, TMax); % true disturbance
+w(6, 1) = 10;
 
-w_d(loc, Tstart) = 10;
+B1  = eye(Nx); % see eqn (3.1);  transfer fn from noise to state
 
-x     = zeros(Nx,TSim);
-u     = zeros(Nu,TSim);
-x_ref = zeros(Nx,TSim);
-w_est = zeros(Nx,TSim);
+x     = zeros(Nx,TMax); u     = zeros(Nu,TMax);
+x_hat = zeros(Nx,TMax); w_hat = zeros(Nx,TMax);
 
-MATx = []; MATu = [];
-
-for i=Tstart:1:TSim-1
-
-    w_est(:,i-1) = x(:,i) - x_ref(:,i);
-    
-    for jj=1:1:TFIR
-        u(:,i) = u(:,i) + M{jj}*w_est(:,i-jj);
-    end
-    
-    x(:,i+1) = A*x(:,i) + B1*w_d(:,i)+ B*u(:,i);
-    
-    for jj=2:1:TFIR
-        x_ref(:,i+1) = x_ref(:,i+1) + R{jj}*w_est(:,i+1-jj);
+for t=1:1:TMax-1
+    for tau=1:1:min(t-1, TFIR)
+       u(:,t) = u(:,t) + M{tau}*w_hat(:,t-tau);
     end
 
-    MATx = [MATx, x(:,i)];
-    MATu = [MATu, B*u(:,i)];   
+    for tau=1:1:min(t-1, TFIR-1)
+       x_hat(:,t+1) = x_hat(:,t+1) + R{tau+1}*w_hat(:,t-tau);       
+    end    
+
+    x(:,t+1) = A*x(:,t) + B1*w(:,t)+ B*u(:,t);
+    w_hat(:,t) = x(:,t+1) - x_hat(:,t+1);
 end
+
+u = B*u; % want to look at actuation at each node, not the u themselves
 
 % visualization: graph-based animation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if plot_animation
@@ -130,8 +119,8 @@ if plot_animation
     colormap jet; 
     cmap    = colormap; 
 
-    maxmagx = max(abs(vec(MATx))); % max magnitude
-    maxmagu = max(abs(vec(MATu))); % max magnitude
+    maxmagx = max(abs(vec(x))); % max magnitude
+    maxmagu = max(abs(vec(u))); % max magnitude
 
     subplot(2,1,1);
     plot_graph(adjMtx, nodeCoords, cmap(1,:));
@@ -148,8 +137,8 @@ if plot_animation
         if time > 1
             delete(timeText)
         end
-        normedx = abs(MATx(:,time)) ./ maxmagx;
-        normedu = abs(MATu(:,time)) ./ maxmagu;
+        normedx = abs(x(:,time)) ./ maxmagx;
+        normedu = abs(u(:,time)) ./ maxmagu;
 
         if (time == TFIR)
             timeText = text(2, -0.3, strcat('t=', num2str(time)), 'Color', 'r');
@@ -170,26 +159,26 @@ end
  if plot_time_traj
     figure(2)
     % TODO: hack: need to shift xDesired
-    xDes = [zeros(Nx, 1) xDes(:, 1:timexd + timediff - 1)];
+    xDes = [zeros(Nx, 1) xDes(:, 1:timexd + timediff)];
     
-    maxy = max([max(vec(MATx)) max(vec(MATu)) max(vec(xDes))]) + 2;
-    miny = min([min(vec(MATx)) min(vec(MATu)) max(vec(xDes))]) - 2;
+    maxy = max([max(vec(x)) max(vec(u)) max(vec(xDes))]) + 2;
+    miny = min([min(vec(x)) min(vec(u)) max(vec(xDes))]) - 2;
 
-    err = abs(xDes - MATx) / max(vec(xDes));
+    err = abs(xDes - x) / max(vec(xDes));
     maxe = max(vec(err)); mine = min(vec(err));
     
     for node=1:Nx
         subplot(Nx, 2, node * 2 - 1);
         hold on
-        stairs([1:TMax-1], MATx(node,:));
-        stairs([1:TMax-1], xDes(node,:));
-        stairs([1:TMax-1], MATu(node,:));
+        stairs(1:TMax, x(node,:));
+        stairs(1:TMax, xDes(node,:));
+        stairs(1:TMax, u(node,:));
         set(gca,'XTickLabel',[]);
         ylabel(num2str(node));
         ylim([miny maxy]);
         
         subplot(Nx, 2, node * 2);
-        stairs([1:TMax-1], err(node,:));
+        stairs(1:TMax, err(node,:));
         set(gca,'XTickLabel',[]);
         ylabel(num2str(node));
         ylim([mine maxe]);
@@ -206,9 +195,3 @@ end
     set(gca,'XTickLabelMode','auto');
 
  end
-
-% visualization: heat map %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% useful for visualizing time; not for visualizing locality
-if plot_heat_map
-    make_heat_map(A,B,TFIR,Nx,Nu,R,M,loc,TSim,'Localized')
-end
