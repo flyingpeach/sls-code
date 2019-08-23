@@ -28,23 +28,24 @@ if ~issymmetric(adjMtx)
 end
 
 % dynamics %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-Nx = length(adjMtx); % number of nodes (and therefore states)
-Nu = Nx; % for now fully actuated
-
 % xi[t+1] = aii*xi[t] + sum(aij*xj[t]) + bii*ui[t] + di
 % where xj are neighbours of xi
 aii = 1;      % self effect
 bii = 1;      % control effect
-aij = 2 / Nx; % neighbour effect
+aij = 2 / size(adjMtx, 1); % neighbour effect
 
-A = aii * eye(Nx) + aij * adjMtx;
-B = bii * eye(Nx);
+% create a system
+sys     = LTISystem;
+sys.Nx  = size(adjMtx, 1); % one state per node
+sys.Nu  = sys.Nx;          % fully actuated
+sys.A   = aii * eye(sys.Nx) + aij * adjMtx;
+sys.B1  = eye(sys.Nx);
+sys.B2  = bii * eye(sys.Nx);
+sys.C1  = [speye(sys.Nx); sparse(sys.Nu, sys.Nx)];
+sys.D12 = [sparse(sys.Nx, sys.Nu); speye(sys.Nu)];
 
 % sls setup %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 obj = 'traj_track';
-
-C = [speye(Nx); sparse(Nu,Nx)];
-D = [sparse(Nx,Nu); speye(Nu)];
 
 d       = 3;  % d-hop locality constraint
 comms   = 3;  % communication speed
@@ -53,7 +54,7 @@ TFIR    = 17; % finite impulse response horizon
 TMax    = 25; % amount of time to simulate
 
 % desired trajectory %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-xDes = zeros(Nx, TFIR-2);
+xDes = zeros(sys.Nx, TFIR-2);
 
 xDes(6:7, 1)  = 20; % pedal
 xDes(6:7, 5)  = 20;
@@ -79,20 +80,17 @@ xDes(2, 15) = 20;
 % pad first column with zeros
 % also pad with zeros if xDes not specified for all time
 timediff = TMax - size(xDes, 2) - 1;
-xDes     = [zeros(Nx, 1) xDes zeros(Nx, timediff-1)];
+xDes     = [zeros(sys.Nx, 1) xDes zeros(sys.Nx, timediff-1)];
 
 % sls and simulate system %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-[R, M] = sf_sls_basic(A, B, C, D, TFIR, obj, xDes);
-%[R, M]  = sf_sls_d_localized(A, B, C, D, TFIR, d, comms, ta, obj, xDesired);
+[R, M] = sf_sls_basic(sys, TFIR, obj, xDes);
 
 % disturbance
-w       = zeros(Nx, TMax);
+w       = zeros(sys.Nx, TMax);
 w(6, 1) = 10;
-B1      = eye(Nx); % see eqn (3.1);  transfer fn from w to x
+[x, u]  = simulate_system(sys, R, M, w, TFIR, TMax);
 
-[x, u] = simulate_system(A, B, B1, R, M, w, TFIR, TMax);
-
-u = B*u; % want to look at actuation at each node, not the u themselves
+u = sys.B2*u; % want to look at actuation at each node, not the u themselves
 
 % visualization: graph-based animation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 if plot_animation
@@ -127,7 +125,7 @@ if plot_animation
             timeText = text(2, -0.3, strcat('t=', num2str(time)));
         end
 
-        for node=1:Nx
+        for node=1:sys.Nx
             subplot(2,1,1)
             plot_vertex(node, nodeCoords, get_colour(normedx(node), cmap));
             subplot(2,1,2)
@@ -140,7 +138,7 @@ end
  if plot_time_traj
     figure(2)
     % TODO: hack: need to shift xDesired
-    xDes = [zeros(Nx, 1) xDes];
+    xDes = [zeros(sys.Nx, 1) xDes];
     
     maxy = max([max(vec(x)) max(vec(u)) max(vec(xDes))]) + 2;
     miny = min([min(vec(x)) min(vec(u)) max(vec(xDes))]) - 2;
@@ -149,8 +147,8 @@ end
     maxe = max(vec(err)) * 1.1; 
     mine = min(vec(err));
     
-    for node=1:Nx
-        subplot(Nx, 2, node * 2 - 1);
+    for node=1:sys.Nx
+        subplot(sys.Nx, 2, node * 2 - 1);
         hold on
         stairs(1:TMax, x(node,:));
         stairs(1:TMax, xDes(node,:));
@@ -159,19 +157,19 @@ end
         ylabel(num2str(node));
         ylim([miny maxy]);
         
-        subplot(Nx, 2, node * 2);
+        subplot(sys.Nx, 2, node * 2);
         stairs(1:TMax, err(node,:));
         set(gca,'XTickLabel',[]);
         ylabel(num2str(node));
         ylim([mine maxe]);
     end
 
-    subplot(Nx, 2, Nx * 2 - 1)
+    subplot(sys.Nx, 2, sys.Nx * 2 - 1)
     legend('x', 'xDes', 'u');
     xlabel('time step');
     set(gca,'XTickLabelMode','auto');
 
-    subplot(Nx, 2, Nx * 2)
+    subplot(sys.Nx, 2, sys.Nx * 2)
     legend('normed err');
     xlabel('time step');
     set(gca,'XTickLabelMode','auto');
