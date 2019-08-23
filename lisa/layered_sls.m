@@ -165,7 +165,8 @@ end
     miny = min([min(vec(x)) min(vec(u)) max(vec(xDes))]) - 2;
 
     err = abs(xDes - x) / max(vec(xDes));
-    maxe = max(vec(err)); mine = min(vec(err));
+    maxe = max(vec(err)) * 1.1; 
+    mine = min(vec(err));
     
     for node=1:Nx
         subplot(Nx, 2, node * 2 - 1);
