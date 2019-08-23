@@ -78,9 +78,7 @@ xDes(2, 15) = 20;
 
 % pad first column with zeros
 % also pad with zeros if xDes not specified for all time
-sizexd   = size(xDes);
-timexd   = sizexd(2);
-timediff = TMax - timexd - 1;
+timediff = TMax - size(xDes, 2) - 1;
 xDes     = [zeros(Nx, 1) xDes zeros(Nx, timediff-1)];
 
 % sls and simulate system %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -159,7 +157,7 @@ end
  if plot_time_traj
     figure(2)
     % TODO: hack: need to shift xDesired
-    xDes = [zeros(Nx, 1) xDes(:, 1:timexd + timediff)];
+    xDes = [zeros(Nx, 1) xDes];
     
     maxy = max([max(vec(x)) max(vec(u)) max(vec(xDes))]) + 2;
     miny = min([min(vec(x)) min(vec(u)) max(vec(xDes))]) - 2;
