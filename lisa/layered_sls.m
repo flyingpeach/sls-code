@@ -85,29 +85,12 @@ xDes     = [zeros(Nx, 1) xDes zeros(Nx, timediff-1)];
 [R, M] = sf_sls_basic(A, B, C, D, TFIR, obj, xDes);
 %[R, M]  = sf_sls_d_localized(A, B, C, D, TFIR, d, comms, ta, obj, xDesired);
 
-% TODO: code overlap with make_heat_map
-% simulate system as per equation (2.8)
-
-w       = zeros(Nx, TMax); % true disturbance
+% disturbance
+w       = zeros(Nx, TMax);
 w(6, 1) = 10;
+B1      = eye(Nx); % see eqn (3.1);  transfer fn from w to x
 
-B1  = eye(Nx); % see eqn (3.1);  transfer fn from noise to state
-
-x     = zeros(Nx,TMax); u     = zeros(Nu,TMax);
-x_hat = zeros(Nx,TMax); w_hat = zeros(Nx,TMax);
-
-for t=1:1:TMax-1
-    for tau=1:1:min(t-1, TFIR)
-       u(:,t) = u(:,t) + M{tau}*w_hat(:,t-tau);
-    end
-
-    for tau=1:1:min(t-1, TFIR-1)
-       x_hat(:,t+1) = x_hat(:,t+1) + R{tau+1}*w_hat(:,t-tau);       
-    end    
-
-    x(:,t+1) = A*x(:,t) + B1*w(:,t)+ B*u(:,t);
-    w_hat(:,t) = x(:,t+1) - x_hat(:,t+1);
-end
+[x, u] = simulate_system(A, B, B1, R, M, w, TFIR, TMax);
 
 u = B*u; % want to look at actuation at each node, not the u themselves
 

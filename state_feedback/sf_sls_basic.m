@@ -3,7 +3,7 @@ function [R, M, clnorm] = sf_sls_basic(A, B, C, D, TFIR, obj, xDesired)
 % Returns 
 %    R, M       : system response as defined in Thm 1 of https://arxiv.org/pdf/1610.04815.pdf
 %    clnorm     : final (optimal value) of objective
-
+% Inputs
 %    A, B, C, D : system matrices with respect to regulated output 
 %                 see (4.20) of https://arxiv.org/pdf/1904.01634.pdf
 %    TFIR       : finite impulse response time
