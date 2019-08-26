@@ -15,5 +15,5 @@ switch params.obj_
         objective = compute_Hinf(sys, params, R, M);
     otherwise
         objective = 0;
-        fprintf('[warning] objective = constant, only finding feasible solution')
+        warning('Objective = constant, only finding feasible solution')
 end

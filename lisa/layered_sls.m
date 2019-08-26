@@ -25,7 +25,7 @@ adjMtx = [0 1 0 0 1 0 0;
           
 % sanity check on graph architecture
 if ~issymmetric(adjMtx)
-    fprintf('[error] adjacency matrix is not symmetric!\n')
+    error('Adjacency matrix is not symmetric!')
 end
 
 % dynamics %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
