@@ -3,7 +3,8 @@ clc;
 
 % which things we want to plot
 plot_animation = false;
-plot_time_traj = true;
+plot_timetraj = false;
+plot_heatmap   = true;
 
 % graph architecture %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 nodeCoords = [0 1;
@@ -74,7 +75,7 @@ slsparams.actDelay_ = 1;
 slsparams.cSpeed_   = 3;
 slsparams.d_        = 3;
 slsparams.tFIR_     = 17;
-slsparams.obj_      = Objective.TrajTrack;
+slsparams.obj_      = Objective.H2;
 
 slsparams.setDesiredTraj(xDes);
 
@@ -85,7 +86,7 @@ slsparams.setDesiredTraj(xDes);
 TMax    = 25; 
 % disturbance
 w       = zeros(sys.Nx, TMax);
-w(6, 1) = 10;
+w(3, 1) = 10;
 
 [x, u]  = simulate_system(sys, slsparams, TMax, R, M, w);
 
@@ -134,7 +135,7 @@ if plot_animation
 end
 
 % visualization: time trajectory plots %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- if plot_time_traj
+ if plot_timetraj
     figure(2)
     % TODO: hack: need to shift xDesired twice since we already shifted it
     %             once in SLSParams
@@ -176,3 +177,9 @@ end
     set(gca,'XTickLabelMode','auto');
 
  end
+ 
+% visualization: heat map %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+if plot_heatmap
+    plot_heat_map(x, u, '')
+end
+ 

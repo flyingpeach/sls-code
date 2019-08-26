@@ -1,10 +1,9 @@
-function objective = compute_Hinf(R, M, C, D, TFIR)
-% return ||[C,D][R;M]||_2->2
-% see eqns (3.1), (4.20) of long tutorial
+function objective = compute_Hinf(sys, params, R, M)
+% return max singular value of [C1,D12][R;M]
 
 mtx = [];
-for t = 1:TFIR
-    mtx = blkdiag(mtx, [C,D]*[R{t};M{t}]);
+for t = 1:params.tFIR_
+    mtx = blkdiag(mtx, [sys.C1, sys.D12]*[R{t};M{t}]);
 end
 
 objective = sigma_max(mtx);
