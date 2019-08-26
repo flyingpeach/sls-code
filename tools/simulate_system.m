@@ -20,9 +20,7 @@ x_hat = zeros(sys.Nx, TMax);
 w_hat = zeros(sys.Nx, TMax);
 
 for t=1:1:TMax-1
-    if (openLoop == 1) % open loop simulation
-        u(:,t) = zeros(sys.Nu, 1);
-    else % closed loop simulation
+    if (openLoop ~= 1) % closed loop simulation
         for tau=1:1:min(t-1, params.tFIR_)
            u(:,t) = u(:,t) + M{tau}*w_hat(:,t-tau);
         end
