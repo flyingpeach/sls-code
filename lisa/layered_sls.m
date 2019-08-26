@@ -44,17 +44,8 @@ sys.B2  = bii * eye(sys.Nx);
 sys.C1  = [speye(sys.Nx); sparse(sys.Nu, sys.Nx)];
 sys.D12 = [sparse(sys.Nx, sys.Nu); speye(sys.Nu)];
 
-% sls setup %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-obj = 'traj_track';
-
-d       = 3;  % d-hop locality constraint
-comms   = 3;  % communication speed
-ta      = 1;  % actuation delay
-TFIR    = 17; % finite impulse response horizon
-TMax    = 25; % amount of time to simulate
-
 % desired trajectory %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-xDes = zeros(sys.Nx, TFIR-2);
+xDes = zeros(sys.Nx, 15);
 
 xDes(6:7, 1)  = 20; % pedal
 xDes(6:7, 5)  = 20;
@@ -77,18 +68,26 @@ xDes(3, 13) = 20;
 xDes(2, 14) = 20;
 xDes(2, 15) = 20;
 
-% pad first column with zeros
-% also pad with zeros if xDes not specified for all time
-timediff = TMax - size(xDes, 2) - 1;
-xDes     = [zeros(sys.Nx, 1) xDes zeros(sys.Nx, timediff-1)];
+% sls setup %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%     
+slsparams           = SLSParams;
+slsparams.actDelay_ = 1;
+slsparams.cSpeed_   = 3;
+slsparams.d_        = 3;
+slsparams.tFIR_     = 17;
+slsparams.obj_      = Objective.TrajTrack;
+
+slsparams.setDesiredTraj(xDes);
 
 % sls and simulate system %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-[R, M] = sf_sls_basic(sys, TFIR, obj, xDes);
+[R, M] = sf_sls_basic(sys, slsparams);
 
+% amount of time to simulate
+TMax    = 25; 
 % disturbance
 w       = zeros(sys.Nx, TMax);
 w(6, 1) = 10;
-[x, u]  = simulate_system(sys, R, M, w, TFIR, TMax);
+
+[x, u]  = simulate_system(sys, slsparams, TMax, R, M, w);
 
 u = sys.B2*u; % want to look at actuation at each node, not the u themselves
 
@@ -137,8 +136,10 @@ end
 % visualization: time trajectory plots %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
  if plot_time_traj
     figure(2)
-    % TODO: hack: need to shift xDesired
-    xDes = [zeros(sys.Nx, 1) xDes];
+    % TODO: hack: need to shift xDesired twice since we already shifted it
+    %             once in SLSParams
+    timediff = TMax - size(xDes, 2);
+    xDes     = [zeros(sys.Nx, 2) xDes zeros(sys.Nx, timediff-2)];
     
     maxy = max([max(vec(x)) max(vec(u)) max(vec(xDes))]) + 2;
     miny = min([min(vec(x)) min(vec(u)) max(vec(xDes))]) - 2;
