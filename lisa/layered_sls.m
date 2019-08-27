@@ -2,9 +2,9 @@ clear;
 clc;
 
 % which things we want to plot
-plot_animation = false;
-plot_timetraj = false;
-plot_heatmap   = true;
+plotAnimation = true;
+plotTimeTraj  = true;
+plotHeatMap   = true;
 
 % graph architecture %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 nodeCoords = [0 1;
@@ -70,17 +70,17 @@ xDes(2, 14) = 20;
 xDes(2, 15) = 20;
 
 % sls setup %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%     
-slsparams           = SLSParams;
-slsparams.actDelay_ = 1;
-slsparams.cSpeed_   = 3;
-slsparams.d_        = 3;
-slsparams.tFIR_     = 17;
-slsparams.obj_      = Objective.H2;
+params           = SLSParams;
+params.actDelay_ = 1;
+params.cSpeed_   = 3;
+params.d_        = 3;
+params.tFIR_     = 17;
+params.obj_      = Objective.TrajTrack;
 
-slsparams.setDesiredTraj(xDes);
+params.setDesiredTraj(xDes);
 
 % sls and simulate system %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-[R, M] = sf_sls_basic(sys, slsparams);
+[R, M] = sf_sls_basic(sys, params);
 
 % amount of time to simulate
 TMax    = 25; 
@@ -88,98 +88,24 @@ TMax    = 25;
 w       = zeros(sys.Nx, TMax);
 w(3, 1) = 10;
 
-[x, u]  = simulate_system(sys, slsparams, TMax, R, M, w);
+[x, u]  = simulate_system(sys, params, TMax, R, M, w);
 
-u = sys.B2*u; % want to look at actuation at each node, not the u themselves
+% visualizations %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+Bu = sys.B2*u; % want to look at actuation at each node
 
-% visualization: graph-based animation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if plot_animation
-    figure(1)
-    colormap jet; 
-    cmap    = colormap; 
-
-    maxmagx = max(abs(vec(x))); % max magnitude
-    maxmagu = max(abs(vec(u))); % max magnitude
-
-    subplot(2,1,1);
-    plot_graph(adjMtx, nodeCoords, cmap(1,:));
-    title('normalized x')
-    colorbar;
-
-    subplot(2,1,2);
-    plot_graph(adjMtx, nodeCoords, cmap(1,:));
-    colorbar;
-    title('normalized u')
-
-    for time=1:TMax-1
-        pause(0.2);
-        if time > 1
-            delete(timeText)
-        end
-        normedx = abs(x(:,time)) ./ maxmagx;
-        normedu = abs(u(:,time)) ./ maxmagu;
-
-        if (time == TFIR)
-            timeText = text(2, -0.3, strcat('t=', num2str(time)), 'Color', 'r');
-        else
-            timeText = text(2, -0.3, strcat('t=', num2str(time)));
-        end
-
-        for node=1:sys.Nx
-            subplot(2,1,1)
-            plot_vertex(node, nodeCoords, get_colour(normedx(node), cmap));
-            subplot(2,1,2)
-            plot_vertex(node, nodeCoords, get_colour(normedu(node), cmap));
-        end
-    end
+if plotAnimation
+    plot_graph_animation(adjMtx, nodeCoords, params, x, Bu);
 end
 
-% visualization: time trajectory plots %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
- if plot_timetraj
-    figure(2)
-    % TODO: hack: need to shift xDesired twice since we already shifted it
-    %             once in SLSParams
-    timediff = TMax - size(xDes, 2);
-    xDes     = [zeros(sys.Nx, 2) xDes zeros(sys.Nx, timediff-2)];
-    
-    maxy = max([max(vec(x)) max(vec(u)) max(vec(xDes))]) + 2;
-    miny = min([min(vec(x)) min(vec(u)) max(vec(xDes))]) - 2;
-
-    err = abs(xDes - x) / max(vec(xDes));
-    maxe = max(vec(err)) * 1.1; 
-    mine = min(vec(err));
-    
-    for node=1:sys.Nx
-        subplot(sys.Nx, 2, node * 2 - 1);
-        hold on
-        stairs(1:TMax, x(node,:));
-        stairs(1:TMax, xDes(node,:));
-        stairs(1:TMax, u(node,:));
-        set(gca,'XTickLabel',[]);
-        ylabel(num2str(node));
-        ylim([miny maxy]);
-        
-        subplot(sys.Nx, 2, node * 2);
-        stairs(1:TMax, err(node,:));
-        set(gca,'XTickLabel',[]);
-        ylabel(num2str(node));
-        ylim([mine maxe]);
-    end
-
-    subplot(sys.Nx, 2, sys.Nx * 2 - 1)
-    legend('x', 'xDes', 'u');
-    xlabel('time step');
-    set(gca,'XTickLabelMode','auto');
-
-    subplot(sys.Nx, 2, sys.Nx * 2)
-    legend('normed err');
-    xlabel('time step');
-    set(gca,'XTickLabelMode','auto');
-
- end
+if plotTimeTraj
+   % TODO: hack: need to shift xDesired twice since we already shifted it
+   %             once in SLSParams
+   timediff = TMax - size(xDes, 2);
+   xDes     = [zeros(sys.Nx, 2) xDes zeros(sys.Nx, timediff-2)];
+   plot_time_traj(x, Bu, xDes);
+end
  
-% visualization: heat map %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if plot_heatmap
-    plot_heat_map(x, u, '')
+if plotHeatMap
+    plot_heat_map(x, Bu, '');
 end
  
