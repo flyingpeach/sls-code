@@ -1,4 +1,4 @@
-classdef LTISystem
+classdef LTISystem<handle
     % contains all matrices of an LTI system as per (3.1)
     properties
       % matrices

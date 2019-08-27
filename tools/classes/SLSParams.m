@@ -9,6 +9,9 @@ classdef SLSParams<handle
       d_;        % d-hop locality constraint
       tFIR_;     % finite impulse response horizon
       
+      lambda_;   % coeff for robust stability (used in approx-d sls only)
+      
+      mode_;     % an SLSMode (i.e. Basic, DLocalized)
       obj_;      % an Objective (i.e. H2, HInf)
       xDes_;     % desired trajectory (only if obj is TrajTrack)
                  % do not directly set; use method setDesiredTraj

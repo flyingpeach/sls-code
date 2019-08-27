@@ -1,19 +1,14 @@
-function [Rsupport,Msupport,count] = make_d_localized_constraints(A,B,T,d,comms,ta);
+function [Rsupport, Msupport, count] = make_d_localized_constraints(sys, params)
+% Inputs
+%    sys    : an LTISystem
+%    params : SLSParams containing parameters
 
-Comms_Adj = abs(A)>0;
-LocalityR = Comms_Adj^(d-1)>0;
-% LocalityR
-
-% for q = 1:N
-%     LocalityR(min(2*N,(q-1)*2+1:q*2+2*(d-1)),min(2*N,(q-1)*2+1:q*2)) = [[1,0;1,1];ones(2*(d-1),2)];
-% end
-if isempty(B)
-    B = zeros(size(A,1),1);
-end
+commsAdj  = abs(sys.A) > 0;
+localityR = commsAdj^(params.d_-1) > 0;
 
 count = 0;
-for t = 1:T
-    Rsupport{t} = min(Comms_Adj^(floor(max(0,comms*(t-ta)))),LocalityR)>0;
-    Msupport{t} = (abs(B)'*Rsupport{t})>0;
-    count = count + sum(sum(Rsupport{t}))+sum(sum(Msupport{t}));
+for t = 1:params.tFIR_
+    Rsupport{t} = min(commsAdj^(floor(max(0, params.cSpeed_*(t-params.actDelay_)))),localityR) > 0;
+    Msupport{t} = (abs(sys.B2)'*Rsupport{t}) > 0;
+    count       = count + sum(sum(Rsupport{t})) + sum(sum(Msupport{t}));
 end
