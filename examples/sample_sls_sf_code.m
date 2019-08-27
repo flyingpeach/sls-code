@@ -1,64 +1,51 @@
-function sample_sls_sf_code();
+clear; close all; clc; 
 
-%number of states
-Nx = 10;
-%FIR horizon
-T = 20;
-Tmax = 25;
-Tsim = T + Tmax;
+% specify system matrices
+sys    = LTISystem;
+sys.Nx = 10;
 
-% Generate state space parameters
-[A,B] = generate_dbl_stoch_chain(Nx,.2,1,1);
+alpha = 0.2; rho = 1; actDens = 1;
+generate_dbl_stoch_chain(sys, rho, actDens, alpha); % generate sys.A, sys.B2
 
-%number actuators
-Nu = size(B,2);
+sys.B1  = eye(sys.Nx); % used in simulation
+sys.C1  = [speye(sys.Nx); sparse(sys.Nu, sys.Nx)]; % used in H2/HInf ctrl
+sys.D12 = [sparse(sys.Nx, sys.Nu); speye(sys.Nu)];
 
-% Specify objective function parameters
-C = [speye(Nx); sparse(Nu,Nx)];
-D = [sparse(Nx,Nu); speye(Nu)];
+% sls parameters
+params       = SLSParams;
+params.tFIR_ = 20;
+params.obj_  = Objective.H2; % objective function
 
-%% Solve for optimal system response (R,M) with H2 (squared) objective
-% Basic means no constraints on (R,M) so this gives a centralized
-% controller
-[R,M]  = sf_sls_basic(A,B,C,D,T,'H2');
+% simulation parameters
+TMax                  = 25;                  % amount of time to simulate
+w                     = zeros(sys.Nx, TMax); % disturbance
+w(floor(sys.Nx/2), 1) = 10;
 
-% Make a heatmap
-%loc is where the disturbane hits
-loc = floor(Nx/2);
+%% (1) basic sls with no constraints (centralized controller)
+params.mode_      = SLSMode.Basic; % d-localized
 
-make_heat_map(A,B,T,Nx,Nu,R,M,loc,Tsim,'Centralized')
-% 
-%% Solve for optimal system response (R,M) with H2 (squared) objective
-% d-localized means d-hop locality constraints on (R,M)
-% comm-speed needs to be sufficiently large.  ta is actuation delay
-d = 3;
-comms = 2;
-ta = 1;
+[R1, M1, clnorm1] = state_fdbk_sls(sys, params);
 
-[R1,M1]  = sf_sls_d_localized(A,B,C,D,T,d,comms,ta,'H2');
+[x1, u1] = simulate_system(sys, params, TMax, R1, M1, w);
+plot_heat_map(x1, sys.B2*u1, 'Centralized');
 
-% Make a heatmap
-%loc is where the disturbane hits
-loc = floor(Nx/2);
-% Tmax is how long we run things for
+%% (2) d-localized sls
+params.mode_      = SLSMode.DLocalized;
+params.actDelay_  = 1;
+params.cSpeed_    = 2; % communication speed must be sufficiently large
+params.d_         = 3;
 
-make_heat_map(A,B,T,Nx,Nu,R1,M1,loc,Tsim,'Localized')
+[R2, M2, clnorm2] = state_fdbk_sls(sys, params);
 
-%% Solve for optimal system response (R,M) with H2 (squared) objective
-% and approx d-localized means d-hop locality constraints on (R,M)
-% robust_stab < 1 => we can guarantee 
-d = 3;
-comms = 1;
-ta = 1;
-lambda = 10^3;
+[x2, u2] = simulate_system(sys, params, TMax, R2, M2, w);
+plot_heat_map(x2, sys.B2*u2, 'Localized');
 
-[R2,M2,obj,robust_stab]  = sf_sls_approx_d_localized(A,B,C,D,T,d,comms,ta,lambda,'H2');
+%% (3) approximate d-localized sls
+params.mode_      = SLSMode.ApproxDLocalized;
+params.cSpeed_    = 1;
+params.lambda_    = 10^3;
 
-% Make a heatmap
-%loc is where the disturbane hits
-loc = floor(Nx/2);
-% Tmax is how long we run things for
+[R3, M3, clnorm3, robust_stab] = state_fdbk_sls(sys, params);
 
-make_heat_map(A,B,T,Nx,Nu,R2,M2,loc,Tsim,'Approximately Localized')
-
-
+[x3, u3] = simulate_system(sys, params, TMax, R3, M3, w);
+plot_heat_map(x3, sys.B2*u3, 'Approximately Localized');
