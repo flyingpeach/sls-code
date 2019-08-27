@@ -1,10 +1,9 @@
-clear;
-clc;
+clear; close all; clc; 
 
 % which things we want to plot
-plotAnimation = true;
+plotAnimation = false;
 plotTimeTraj  = true;
-plotHeatMap   = true;
+plotHeatMap   = false;
 
 % graph architecture %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 nodeCoords = [0 1;
@@ -76,18 +75,17 @@ params.cSpeed_   = 3;
 params.d_        = 3;
 params.tFIR_     = 17;
 params.obj_      = Objective.TrajTrack;
+params.mode_     = SLSMode.Basic;
 
 params.setDesiredTraj(xDes);
 
 % sls and simulate system %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-[R, M] = sf_sls_basic(sys, params);
-
-% amount of time to simulate
-TMax    = 25; 
-% disturbance
-w       = zeros(sys.Nx, TMax);
+% simulation params
+TMax    = 25;                  % amount of time to simulate
+w       = zeros(sys.Nx, TMax); % disturbance
 w(3, 1) = 10;
 
+[R, M]  = state_fdbk_sls(sys, params);
 [x, u]  = simulate_system(sys, params, TMax, R, M, w);
 
 % visualizations %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
