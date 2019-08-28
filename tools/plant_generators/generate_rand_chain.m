@@ -14,8 +14,8 @@ end
 sys.Nu = ceil(sys.Nx * actDens);
 
 A                = speye(sys.Nx);
-A(1:end-1,2:end) = A(1:end-1,2:end)+ diag(randn(sys.Nx-1));
-A(2:end,1:end-1) = A(2:end,1:end-1)+ diag(randn(sys.Nx-1));
+A(1:end-1,2:end) = A(1:end-1,2:end)+ diag(randn(sys.Nx-1, 1));
+A(2:end,1:end-1) = A(2:end,1:end-1)+ diag(randn(sys.Nx-1, 1));
 
 B = sparse(sys.Nx, sys.Nu);
 for i=1:1:sys.Nu
