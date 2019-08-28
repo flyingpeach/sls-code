@@ -112,3 +112,33 @@ end
 slsOuts.R_           = R;
 slsOuts.M_           = M;
 slsOuts.robust_stab_ = robust_stab;
+end
+
+
+% local functions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+function [Rsupport, Msupport, count] = make_d_localized_constraints(sys, params)
+commsAdj  = abs(sys.A) > 0;
+localityR = commsAdj^(params.d_-1) > 0;
+
+count = 0;
+for t = 1:params.tFIR_
+    Rsupport{t} = min(commsAdj^(floor(max(0, params.cSpeed_*(t-params.actDelay_)))),localityR) > 0;
+    Msupport{t} = (abs(sys.B2)'*Rsupport{t}) > 0;
+    count       = count + sum(sum(Rsupport{t})) + sum(sum(Msupport{t}));
+end
+end
+
+
+function objective = get_objective(sys, params, R, M)
+switch params.obj_
+    case Objective.TrajTrack
+        objective = traj_track(sys, params, R, M);
+    case Objective.H2
+        objective = compute_H2(sys, params, R, M);
+    case Objective.HInf
+        objective = compute_Hinf(sys, params, R, M);
+    otherwise
+        objective = 0;
+        warning('Objective = constant, only finding feasible solution')
+end
+end

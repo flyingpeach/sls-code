@@ -47,8 +47,10 @@ for time=1:TMax-1
         plot_vertex(node, nodeCoords, get_colour(normedu(node), cmap));
     end
 end
+end
 
-% local function
+
+% local functions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function [colour] = get_colour(val, cmap)
 % Maps value to a colour in the colour map
 %   val    : normalized value (or inf)
@@ -70,3 +72,4 @@ else
 end
 
 colour = cmap(idx,:);
+end
