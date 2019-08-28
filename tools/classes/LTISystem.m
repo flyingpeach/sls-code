@@ -1,4 +1,5 @@
-classdef LTISystem<handle
+classdef LTISystem < matlab.mixin.Copyable
+    % inherits handle class with deep copy functionality
     % contains all matrices of an LTI system as per (3.1)
     properties
       % matrices

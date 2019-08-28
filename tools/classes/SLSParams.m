@@ -1,4 +1,5 @@
-classdef SLSParams<handle
+classdef SLSParams < matlab.mixin.Copyable
+    % inherits handle class with deep copy functionality
     % contains parameters for SLS 
     % note that depending on the solver called, not all params may be used
     
