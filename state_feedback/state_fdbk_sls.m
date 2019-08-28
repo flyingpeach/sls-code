@@ -63,6 +63,7 @@ objective = get_objective(sys, params, R, M);
 
 % achievability  / approx achievability constraints
 R{1} == eye(sys.Nx);
+R{params.tFIR_} == zeros(sys.Nx, sys.Nx);
 
 if params.mode_ == SLSMode.ApproxDLocalized
     for t=1:params.tFIR_-1
@@ -70,12 +71,10 @@ if params.mode_ == SLSMode.ApproxDLocalized
     end
     robust_stab = norm(Delta, inf); % < 1 means we can guarantee stab
     minimize(objective + params.robCoeff_ * robust_stab);
-
 else
     for t=1:params.tFIR_-1
         R{t+1} == sys.A*R{t} + sys.B2*M{t};
     end
-    R{params.tFIR_} == zeros(sys.Nx, sys.Nx);
     minimize(objective);
 end
 
