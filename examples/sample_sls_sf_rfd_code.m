@@ -13,9 +13,9 @@ sys.C1  = [speye(sys.Nx); sparse(sys.Nu, sys.Nx)]; % used in H2/HInf ctrl
 sys.D12 = [sparse(sys.Nx, sys.Nu); speye(sys.Nu)];
 
 % sls parameters
-params       = SLSParams;
-params.tFIR_ = 15;
-params.obj_  = Objective.H2; % objective function
+slsParams       = SLSParams;
+slsParams.tFIR_ = 15;
+slsParams.obj_  = Objective.H2; % objective function
 
 % simulation parameters
 TMax                  = 25;                  % amount of time to simulate
@@ -25,70 +25,82 @@ w(floor(sys.Nx/2), 1) = 10;
 %% (1) basic sls (centralized controller) with rfd
 num_acts = []; clnorms = [];
 
-params.mode_ = SLSMode.Basic;
-sysAfterRFD  = copy(sys); % contains actuation matrices designed by rfd
+slsParams.mode_ = SLSMode.Basic;
+sysAfterRFD     = copy(sys); % contains actuation matrices designed by rfd
    
 for power = -2:1:3
-    params.rfdCoeff_ = 10^power;
-    [R1, M1, acts]   = state_fdbk_sls_rfd(sys, params);   
-    sysAfterRFD.B2   = sys.B2(:, acts);
-    sysAfterRFD.D12  = sys.D12(:, acts);
-    sysAfterRFD.Nu   = size(acts, 1);
-    [R1, M1, clnorm] = state_fdbk_sls(sysAfterRFD, params); % find clnorm 
-    num_acts         = [num_acts; length(acts)];
-    clnorms          = [clnorms; clnorm];
+    slsParams.rfdCoeff_ = 10^power;
+    slsParams.rfd_      = true;
+    slsOutsRFD1         = state_fdbk_sls(sys, slsParams);
+    
+    % check performance with rfd-designed system
+    sysAfterRFD.B2   = sys.B2(:, slsOutsRFD1.acts_);
+    sysAfterRFD.D12  = sys.D12(:, slsOutsRFD1.acts_);
+    sysAfterRFD.Nu   = size(slsOutsRFD1.acts_, 1);
+    slsParams.rfd_   = false;
+    slsOutsAfterRFD1 = state_fdbk_sls(sysAfterRFD, slsParams);
+
+    num_acts         = [num_acts; length(slsOutsRFD1.acts_)];
+    clnorms          = [clnorms; slsOutsAfterRFD1.clnorm_];
 end
 
 figure
 plot(num_acts,clnorms,'*-');
-xlabel('Number of actuators')
-ylabel('Close loop norm')
-title('Centralized RFD tradeoff curve')
+xlabel('Number of actuators'); ylabel('Close loop norm');
+title('Centralized RFD tradeoff curve');
 
 %% (2) d-localized sls with rfd
 num_acts = []; clnorms = [];
 
-params.mode_      = SLSMode.DLocalized;
-params.actDelay_  = 1;
-params.cSpeed_    = 2;
-params.d_         = 3;
+slsParams.mode_      = SLSMode.DLocalized;
+slsParams.actDelay_  = 1;
+slsParams.cSpeed_    = 2;
+slsParams.d_         = 3;
 
 for power = -2:1:3
-    params.rfdCoeff_ = 10^power;
-    [R2, M2, acts]   = state_fdbk_sls_rfd(sys, params);   
-    sysAfterRFD.B2   = sys.B2(:, acts);
-    sysAfterRFD.D12  = sys.D12(:, acts);
-    sysAfterRFD.Nu   = size(acts, 1);
-    [R2, M2, clnorm] = state_fdbk_sls(sysAfterRFD, params); % find clnorm 
-    num_acts         = [num_acts; length(acts)];
-    clnorms          = [clnorms; clnorm];
+    slsParams.rfdCoeff_ = 10^power;
+    slsParams.rfd_      = true;
+    slsOutsRFD2         = state_fdbk_sls(sys, slsParams);
+
+     % check performance with rfd-designed system
+    sysAfterRFD.B2   = sys.B2(:, slsOutsRFD2.acts_);
+    sysAfterRFD.D12  = sys.D12(:, slsOutsRFD2.acts_);
+    sysAfterRFD.Nu   = size(slsOutsRFD2.acts_, 1);
+    slsParams.rfd_   = false;
+    slsOutsAfterRFD2 = state_fdbk_sls(sysAfterRFD, slsParams);
+   
+    num_acts         = [num_acts; length(slsOutsRFD2.acts_)];
+    clnorms          = [clnorms; slsOutsAfterRFD2.clnorm_];
 end
 
-figure
+figure;
 plot(num_acts,clnorms,'*-');
-xlabel('Number of actuators')
-ylabel('Close loop norm')
-title('d-localized RFD tradeoff curve')
+xlabel('Number of actuators'); ylabel('Close loop norm');
+title('d-localized RFD tradeoff curve');
 
 %% (3) approximate d-localized sls with rfd
 num_acts = []; clnorms = [];
 
-params.mode_      = SLSMode.ApproxDLocalized;
-params.robCoeff_  = 10^4;
+slsParams.mode_      = SLSMode.ApproxDLocalized;
+slsParams.robCoeff_  = 10^4;
 
 for power = -2:1:3
-    params.rfdCoeff_ = 10^power;
-    [R3, M3, acts]   = state_fdbk_sls_rfd(sys, params);
-    sysAfterRFD.B2   = sys.B2(:, acts);
-    sysAfterRFD.D12  = sys.D12(:, acts);
-    sysAfterRFD.Nu   = size(acts, 1);
-    [R3, M3, clnorm] = state_fdbk_sls(sysAfterRFD, params); % find clnorm 
-    num_acts         = [num_acts; length(acts)];
-    clnorms          = [clnorms; clnorm];
+    slsParams.rfdCoeff_ = 10^power;
+    slsParams.rfd_      = true;
+    slsOutsRFD3         = state_fdbk_sls(sys, slsParams);
+    
+    % check performance with rfd-designed system
+    sysAfterRFD.B2   = sys.B2(:, slsOutsRFD3.acts_);
+    sysAfterRFD.D12  = sys.D12(:, slsOutsRFD3.acts_);
+    sysAfterRFD.Nu   = size(slsOutsRFD3.acts_, 1);
+    slsParams.rfd_   = false;
+    slsOutsAfterRFD3 = state_fdbk_sls(sysAfterRFD, slsParams);
+
+    num_acts         = [num_acts; length(slsOutsRFD3.acts_)];
+    clnorms          = [clnorms; slsOutsAfterRFD3.clnorm_];
 end
 
-figure
+figure;
 plot(num_acts,clnorms,'*-');
-xlabel('Number of actuators')
-ylabel('Close loop norm')
-title('Approx d-localized RFD tradeoff curve')
+xlabel('Number of actuators'); ylabel('Close loop norm');
+title('Approx d-localized RFD tradeoff curve');

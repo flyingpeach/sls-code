@@ -12,9 +12,9 @@ sys.C1  = [speye(sys.Nx); sparse(sys.Nu, sys.Nx)]; % used in H2/HInf ctrl
 sys.D12 = [sparse(sys.Nx, sys.Nu); speye(sys.Nu)];
 
 % sls parameters
-params       = SLSParams;
-params.tFIR_ = 20;
-params.obj_  = Objective.H2; % objective function
+slsParams       = SLSParams;
+slsParams.tFIR_ = 20;
+slsParams.obj_  = Objective.H2; % objective function
 
 % simulation parameters
 TMax                  = 25;                  % amount of time to simulate
@@ -22,30 +22,27 @@ w                     = zeros(sys.Nx, TMax); % disturbance
 w(floor(sys.Nx/2), 1) = 10;
 
 %% (1) basic sls (centralized controller)
-params.mode_      = SLSMode.Basic;
+slsParams.mode_ = SLSMode.Basic;
 
-[R1, M1, clnorm1] = state_fdbk_sls(sys, params);
-
-[x1, u1] = simulate_system(sys, params, TMax, R1, M1, w);
+slsOuts1 = state_fdbk_sls(sys, slsParams);
+[x1, u1] = simulate_system(sys, slsParams, slsOuts1, TMax, w);
 plot_heat_map(x1, sys.B2*u1, 'Centralized');
 
 %% (2) d-localized sls
-params.mode_      = SLSMode.DLocalized;
-params.actDelay_  = 1;
-params.cSpeed_    = 2; % communication speed must be sufficiently large
-params.d_         = 3;
+slsParams.mode_     = SLSMode.DLocalized;
+slsParams.actDelay_ = 1;
+slsParams.cSpeed_   = 2; % communication speed must be sufficiently large
+slsParams.d_        = 3;
 
-[R2, M2, clnorm2] = state_fdbk_sls(sys, params);
-
-[x2, u2] = simulate_system(sys, params, TMax, R2, M2, w);
+slsOuts2 = state_fdbk_sls(sys, slsParams);
+[x2, u2] = simulate_system(sys, slsParams, slsOuts2, TMax, w);
 plot_heat_map(x2, sys.B2*u2, 'Localized');
 
 %% (3) approximate d-localized sls
-params.mode_      = SLSMode.ApproxDLocalized;
-params.cSpeed_    = 1;
-params.robCoeff_  = 10^3;
+slsParams.mode_     = SLSMode.ApproxDLocalized;
+slsParams.cSpeed_   = 1;
+slsParams.robCoeff_ = 10^3;
 
-[R3, M3, clnorm3, robust_stab] = state_fdbk_sls(sys, params);
-
-[x3, u3] = simulate_system(sys, params, TMax, R3, M3, w);
+slsOuts3 = state_fdbk_sls(sys, slsParams);
+[x3, u3] = simulate_system(sys, slsParams, slsOuts3, TMax, w);
 plot_heat_map(x3, sys.B2*u3, 'Approximately Localized');

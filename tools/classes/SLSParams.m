@@ -14,6 +14,8 @@ classdef SLSParams < matlab.mixin.Copyable
       rfdCoeff_; % regularization coeff for rfd (used in rfd only)
       
       mode_;     % an SLSMode (i.e. Basic, DLocalized)
+      rfd_;      % whether we want rfd
+      
       obj_;      % an Objective (i.e. H2, HInf)
       xDes_;     % desired trajectory (only if obj is TrajTrack)
                  % do not directly set; use method setDesiredTraj

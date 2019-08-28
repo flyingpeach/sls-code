@@ -69,15 +69,16 @@ xDes(2, 14) = 20;
 xDes(2, 15) = 20;
 
 % sls setup %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%     
-params           = SLSParams;
-params.actDelay_ = 1;
-params.cSpeed_   = 3;
-params.d_        = 3;
-params.tFIR_     = 17;
-params.obj_      = Objective.TrajTrack;
-params.mode_     = SLSMode.Basic;
+slsParams           = SLSParams;
+slsParams.actDelay_ = 1;
+slsParams.cSpeed_   = 3;
+slsParams.d_        = 3;
+slsParams.tFIR_     = 17;
+slsParams.obj_      = Objective.TrajTrack;
+slsParams.mode_     = SLSMode.Basic;
+slsParams.rfd_      = false;
 
-params.setDesiredTraj(xDes);
+slsParams.setDesiredTraj(xDes);
 
 % sls and simulate system %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % simulation params
@@ -85,14 +86,14 @@ TMax    = 25;                  % amount of time to simulate
 w       = zeros(sys.Nx, TMax); % disturbance
 w(3, 1) = 10;
 
-[R, M]  = state_fdbk_sls(sys, params);
-[x, u]  = simulate_system(sys, params, TMax, R, M, w);
+slsOuts = state_fdbk_sls(sys, slsParams);
+[x, u]  = simulate_system(sys, slsParams, slsOuts, TMax, w);
 
 % visualizations %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Bu = sys.B2*u; % want to look at actuation at each node
 
 if plotAnimation
-    plot_graph_animation(adjMtx, nodeCoords, params, x, Bu);
+    plot_graph_animation(adjMtx, nodeCoords, slsParams, x, Bu);
 end
 
 if plotTimeTraj
