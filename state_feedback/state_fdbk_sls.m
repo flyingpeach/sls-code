@@ -69,7 +69,7 @@ if params.mode_ == SLSMode.ApproxDLocalized
         Delta(:,(t-1)*sys.Nx+1:t*sys.Nx) = R{t+1} - sys.A*R{t} - sys.B2*M{t};
     end
     robust_stab = norm(Delta, inf); % < 1 means we can guarantee stab
-    minimize(objective + params.lambda_ * robust_stab);
+    minimize(objective + params.robCoeff_ * robust_stab);
 
 else
     for t=1:params.tFIR_-1

@@ -10,7 +10,8 @@ classdef SLSParams < matlab.mixin.Copyable
       d_;        % d-hop locality constraint
       tFIR_;     % finite impulse response horizon
       
-      lambda_;   % coeff for robust stability (used in approx-d sls only)
+      robCoeff_; % regularization coeff for robust stability (used in approx-d sls only)
+      rfdCoeff_; % regularization coeff for rfd (used in rfd only)
       
       mode_;     % an SLSMode (i.e. Basic, DLocalized)
       obj_;      % an Objective (i.e. H2, HInf)

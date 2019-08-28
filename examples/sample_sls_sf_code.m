@@ -21,8 +21,8 @@ TMax                  = 25;                  % amount of time to simulate
 w                     = zeros(sys.Nx, TMax); % disturbance
 w(floor(sys.Nx/2), 1) = 10;
 
-%% (1) basic sls with no constraints (centralized controller)
-params.mode_      = SLSMode.Basic; % d-localized
+%% (1) basic sls (centralized controller)
+params.mode_      = SLSMode.Basic;
 
 [R1, M1, clnorm1] = state_fdbk_sls(sys, params);
 
@@ -43,7 +43,7 @@ plot_heat_map(x2, sys.B2*u2, 'Localized');
 %% (3) approximate d-localized sls
 params.mode_      = SLSMode.ApproxDLocalized;
 params.cSpeed_    = 1;
-params.lambda_    = 10^3;
+params.robCoeff_  = 10^3;
 
 [R3, M3, clnorm3, robust_stab] = state_fdbk_sls(sys, params);
 
