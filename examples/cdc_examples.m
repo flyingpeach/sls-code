@@ -1,206 +1,207 @@
-clc; clear; close all;
+clear; close all; clc; 
 
-Nx = 50; % states
-loc = floor(Nx/2); % specify where disturbance hits
+% specify system matrices
+sys    = LTISystem;
+sys.Nx = 50;
 
-actuation = 1; % actuation density
-alpha = 0.4;
-rho = 1;
+alpha = 0.4; rho = 1; actDens = 1;
+generate_dbl_stoch_chain(sys, rho, actDens, alpha); % generate sys.A, sys.B2
 
-% Construct system matrices
-[A,B] = generate_dbl_stoch_chain(Nx,alpha,rho,actuation);
-[~,Nu] = size(B); % number of actuators
+sys.B1  = eye(sys.Nx); % used in simulation
+sys.C1  = [speye(sys.Nx); sparse(sys.Nu, sys.Nx)]; % used in H2/HInf ctrl
+sys.D12 = [sparse(sys.Nx, sys.Nu); speye(sys.Nu)];
 
-% Specify objective function parameters
-C = [speye(Nx); sparse(Nu,Nx)];
-D = [sparse(Nx,Nu); speye(Nu)];
+% sls parameters
+slsParams           = SLSParams;
+slsParams.obj_      = Objective.H2;
+slsParams.tFIR_     = 10;
 
-% locality
-d = 6; 
-comms = 2;
-ta = 1;
+% simulation parameters
+simParams           = SimParams;
+simParams.w_        = zeros(sys.Nx, 100);
+simParams.w_(floor(sys.Nx/2), 1) = 10;
 
-%% Open Loop and Centralized Solutions
-make_heat_map(A,B,10,Nx,Nu,0,0,loc,90,'open loop',1)
+%% open loop and centralized solutions
+slsParams.mode_ = SLSMode.Basic;
+slsOutsCent     = state_fdbk_sls(sys, slsParams);
 
-% Centralized Solution
-T_centralized = 10;
-Tmax = 25;
-Tsim = T_centralized + Tmax;
-[R_central,M_central]  = sf_sls_basic(A,B,C,D,T_centralized,'H2');
-make_heat_map(A,B,T_centralized,Nx,Nu,R_central,M_central,loc,Tsim,[int2str(Nx), ' Node Centralized Solution'])
+% simulate open and closed loop
+simParams.openLoop_ = true; 
+simParams.tSim_ = 90;
+[xOpen, uOpen]  = simulate_system(sys, slsParams, slsOutsCent, simParams);
 
-%% Vary Horizon Length
-ta = 1;
-T = [ 3,4,5,6,7,8]; % FIR horizon length
-for i=1:length(T)
-   Tmax = 16;
-   Tsim = T(i) + Tmax;
+simParams.openLoop_ = false; 
+simParams.tSim_ = 25;
+[xCent, uCent]  = simulate_system(sys, slsParams, slsOutsCent, simParams);
 
-   [R_T{i},M_T{i},obj_T(i)]  = sf_sls_d_localized(A,B,C,D,T(i),d,comms,ta,'H2');
+plot_heat_map(xOpen, sys.B2*uOpen, 'Open loop');
+plot_heat_map(xCent, sys.B2*uCent, [int2str(sys.Nx), ' Node Centralized Solution']);
 
-   % Make a heatmap
-   %loc is where the disturbane hits
-   make_heat_map(A,B,T(i),Nx,Nu,R_T{i},M_T{i},loc,Tsim,[' T = ' int2str(T(i))])
+%% varying horizon lengths (tFIR)
+tFIRs   = [3, 4, 5, 6, 7, 8];
+tPrints = [4, 8];
+
+slsParams.mode_     = SLSMode.DLocalized;
+slsParams.actDelay_ = 1;
+slsParams.cSpeed_   = 2;
+slsParams.d_        = 6;
+simParams.tSim_     = 16;
+clnorms             = zeros(length(tFIRs), 1);
+for i=1:length(tFIRs)
+    slsParams.tFIR_ = tFIRs(i);
+    slsOutsT        = state_fdbk_sls(sys, slsParams);
+    clnorms(i)      = slsOutsT.clnorm_;
+    
+    if ismember(tFIRs(i), tPrints)   
+        [xT, uT] = simulate_system(sys, slsParams, slsOutsT, simParams);
+        plot_heat_map(xT, sys.B2*uT, ['tFIR = ', int2str(tFIRs(i))]);
+    end
 end
-figure
-p = plot(T,obj_T,'o-');
-title([int2str(Nx), ' Node Chain' ])
-set ( gca, 'xdir', 'reverse' )
-xlabel('FIR Horizon T')
-ylabel('Localized H_2-Norm Cost')
-set(gca,'FontSize',16,'fontWeight','bold')
-set(p,'Color','red')
-set(p,'LineWidth', 2)
 
+figure;
+p1=plot(tFIRs, clnorms, 'o-');
+set(gca, 'xdir', 'reverse');
+title([int2str(sys.Nx), ' Node Chain']);
+xlabel('FIR Horizon T'); ylabel('Localized H_2-Norm Cost');
 
-%% Vary Actuator Density
+% These are the font settings from previous papers; uncomment as wanted
+% also applicable to other sections on this plot; just set the plot name
+% (i.e. p1) appropriately
 
-actuation = [1 0.9 0.8 0.7 0.6 0.5 0.4 0.3];
-ta = 1;
-for i = 1:length(actuation)
-   [A,B] = generate_dbl_stoch_chain(Nx,alpha,rho,actuation(i));
-   [~,Nu] = size(B); % number of actuators 
-   C = [speye(Nx); sparse(Nu,Nx)];
-   D = [sparse(Nx,Nu); speye(Nu)];
+% set(gca,'FontSize',16,'fontWeight','bold');
+% set(p1,'Color','red'); set(p1,'LineWidth', 2);
+
+%% varying actuation densities (actDens)
+actDenss  = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1];
+actPrints = [0.2, 0.3, 0.7, 1];
+
+slsParams.tFIR_ = 15;    
+simParams.tSim_ = 45;
+clnorms         = zeros(length(actDenss), 1);
+for i = 1:length(actDenss)
+    generate_dbl_stoch_chain(sys, rho, actDenss(i), alpha); % update A, B2
+    % Nu changed, so have to change these as well
+    sys.C1  = [speye(sys.Nx); sparse(sys.Nu, sys.Nx)];
+    sys.D12 = [sparse(sys.Nx, sys.Nu); speye(sys.Nu)];
+
+    if actDenss(i) == 0.2
+        % in this case density is too low; use approx instead of direct
+        slsParams.mode_     = SLSMode.ApproxDLocalized;
+        slsParams.robCoeff_ = 1000;
+    else
+        slsParams.mode_ = SLSMode.DLocalized;
+    end
+
+    slsOutsAct = state_fdbk_sls(sys, slsParams);
+    clnorms(i) = slsOutsAct.clnorm_;
+    
+    if ismember(actDenss(i), actPrints)
+        [xAct, uAct] = simulate_system(sys, slsParams, slsOutsAct, simParams);
+        plot_heat_map(xAct, sys.B2*uAct, ['Actuation = ', num2str(actDenss(i))]);
+    end
+end
    
-   d = 6; 
-   comms = 2;
-   
-   T = 15;
-   Tmax = 45;
-   Tsim = T + Tmax;
-   [R_act{i},M_act{i},obj_Act(i)]  = sf_sls_d_localized(A,B,C,D,T,d,comms,ta,'H2');
-   make_heat_map(A,B,T,Nx,Nu,R_act{i},M_act{i},loc,Tsim,['Actuation = ',num2str(actuation(i))])
-end
-figure
-p1 = plot(flip(actuation),flip(obj_Act),'o-');
-set ( gca, 'xdir', 'reverse' )
-title([int2str(Nx), ' Node Chain' ])
-xlabel('Actuation Density')
-ylabel('Localized H_2-Norm Cost')
-set(gca,'FontSize',16,'fontWeight','bold')
-set(p1,'Color','red')
-set(p1,'LineWidth', 2)
+figure;
+p2=plot(actDenss, clnorms, 'o-');
+set(gca, 'xdir', 'reverse');
+title([int2str(sys.Nx), ' Node Chain']);
+xlabel('Actuation Density'); ylabel('Localized H_2-Norm Cost');
 
-actuation(i+1) = 0.2; 
-[A,B] = generate_dbl_stoch_chain(Nx,alpha,rho,actuation(i+1));
-[~,Nu] = size(B); % number of actuators 
-C = [speye(Nx); sparse(Nu,Nx)];
-D = [sparse(Nx,Nu); speye(Nu)];
-   
-d = 6; 
-comms = 2;
+%% varying locality constraints (d)
+ds      = [2, 3, 4, 5, 6, 8, 10];
+dPrints = [2, 4, 10];
 
-lambda = 10^3;
-[R_rob_act,M_rob_act,obj_Act(i+1),robust_stab_act]  = sf_sls_approx_d_localized(A,B,C,D,T,d,comms,ta,lambda,'H2');
-make_heat_map(A,B,T,Nx,Nu,R_rob_act,M_rob_act,loc,Tsim,['Actuation = ',num2str(actuation(i+1))])
-figure
+alpha = 0.4; rho = 1; actDens = 1;
+generate_dbl_stoch_chain(sys, rho, actDens, alpha);
+% Nu changed, so have to change these as well
+sys.C1  = [speye(sys.Nx); sparse(sys.Nu, sys.Nx)];
+sys.D12 = [sparse(sys.Nx, sys.Nu); speye(sys.Nu)];
 
-p1 = plot(flip(actuation),flip(obj_Act),'o-');
-set ( gca, 'xdir', 'reverse' )
-title([int2str(Nx), ' Node Chain' ])
-xlabel('Actuation Density')
-ylabel('Localized H_2-Norm Cost')
-set(gca,'FontSize',16,'fontWeight','bold')
-set(p1,'Color','red')
-set(p1,'LineWidth', 2)
+slsParams.tFIR_ = 10;
+simParams.tSim_ = 16;
+clnorms         = zeros(length(ds), 1);
+for i=1:length(ds)
+    slsParams.d_ = ds(i);
+    if ds(i) == 2
+        % in this case locality is too strict; use approx instead of direct
+        slsParams.mode_     = SLSMode.ApproxDLocalized;
+        slsParams.robCoeff_ = 1000;
+    else
+        slsParams.mode_ = SLSMode.DLocalized;
+    end
 
-%% Vary d
-
-ta = 1;
-T = 10;
-d = [10 8 6 5 4 3];
-Tmax = 16;
-Tsim = T + Tmax;
-actuation = 1;
-[A,B] = generate_dbl_stoch_chain(Nx,alpha,rho,actuation);
-[~,Nu] = size(B); % number of actuators
-C = [speye(Nx); sparse(Nu,Nx)];
-D = [sparse(Nx,Nu); speye(Nu)];
-
-for i=1:length(d)
-   [R_d{i},M_d{i},obj_d(i)]  = sf_sls_d_localized(A,B,C,D,T,d(i),comms,ta,'H2');
-
-   % Make a heatmap
-   %loc is where the disturbane hits
-   make_heat_map(A,B,T,Nx,Nu,R_d{i},M_d{i},loc,Tsim,['d = ',int2str(d(i))])
+    slsOutsD   = state_fdbk_sls(sys, slsParams);
+    clnorms(i) = slsOutsD.clnorm_;
+    
+    if ismember(ds(i), dPrints)
+        [xD, uD] = simulate_system(sys, slsParams, slsOutsD, simParams);
+        plot_heat_map(xD, sys.B2*uD, ['Locality = ', int2str(ds(i))]);
+    end   
 end
 
-d(i+1) = 2;
-[R_rob_d,M_rob_d,obj_d(i+1),robust_stab_d]  = sf_sls_approx_d_localized(A,B,C,D,T,d(i+1),comms,ta,lambda,'H2');
-make_heat_map(A,B,T,Nx,Nu,R_rob_d,M_rob_d,loc,Tsim,['d = ',int2str(d(i+1))])
+figure;
+p3=plot(ds, clnorms, 'o-');
+set(gca, 'xdir', 'reverse');
+title([int2str(sys.Nx), ' Node Chain'])
+xlabel('d-hops'); ylabel('Localized H_2-Norm Cost');
 
-figure
-p2 = plot(d,obj_d,'o-');
-set ( gca, 'xdir', 'reverse' )
-title([int2str(Nx), ' Node Chain' ])
-xlabel('d-hops')
-ylabel('Localized H_2-Norm Cost')
-set(gca,'FontSize',16,'fontWeight','bold')
-set(p2,'Color','red')
-set(p2,'LineWidth', 2)
+%% varying communication speeds (cSpeed)
+cSpeeds = [1, 1.25, 1.5, 1.75, 2, 3, 4];
+cPrints = [1, 1.75, 4];
 
-%% Comm speed
+slsParams.mode_ = SLSMode.DLocalized;
+slsParams.d_    = 8;
+simParams.tSim_ = 25;
+clnorms         = zeros(length(cSpeeds), 1);
 
- 
-
-T = 10;
-d = 8;
-comms = [4 3 2 1.75 1.5 1.25 1];
-for i=1:length(comms)
-   Tmax = 25;
-   Tsim = T + Tmax;
-
-   [R_comms{i},M_comms{i},obj_comms(i)]  = sf_sls_d_localized(A,B,C,D,T,d,comms(i),ta,'H2');
-
-   % Make a heatmap
-   %loc is where the disturbane hits
-   make_heat_map(A,B,T,Nx,Nu,R_comms{i},M_comms{i},loc,Tsim,[' Comms = ' int2str(comms(i))])
+for i=1:length(cSpeeds)
+    slsParams.cSpeed_ = cSpeeds(i);
+    slsOutsC        = state_fdbk_sls(sys, slsParams);
+    clnorms(i)      = slsOutsC.clnorm_;
+    
+    if ismember(cSpeeds(i), cPrints)   
+        [xC, uC] = simulate_system(sys, slsParams, slsOutsC, simParams);
+        plot_heat_map(xC, sys.B2*uC, ['Comm Speed = ', num2str(cSpeeds(i))]);
+    end
 end
 
-figure
-p4 = plot(comms,obj_comms,'o-');
-set ( gca, 'xdir', 'reverse' )
-title([int2str(Nx), ' Node Chain' ])
-xlabel('\alpha')
-ylabel('Localized H_2-Norm Cost')
-set(gca,'FontSize',16,'fontWeight','bold')
-set(p4,'Color','red')
-set(p4,'LineWidth', 2)
+figure;
+p4=plot(cSpeeds, clnorms, 'o-');
+set(gca, 'xdir', 'reverse');
+title([int2str(sys.Nx), ' Node Chain']);
+xlabel('\alpha'); ylabel('Localized H_2-Norm Cost');
 
+%% varying state spread (alpha)
+alphas   = linspace(0, 0.8, 10);
+printIdx = [1 5 10];
 
+slsParams.mode_   = SLSMode.DLocalized;
+slsParams.d_      = 6;
+slsParams.cSpeed_ = 2;
+clnorms           = zeros(length(alphas), 1);
+specRadii         = zeros(length(alphas), 1);
+for i=1:length(alphas)
+    generate_dbl_stoch_chain(sys, rho, actDens, alphas(i)); % update A, B2
+    % Nu changed, so have to change these as well
+    sys.C1  = [speye(sys.Nx); sparse(sys.Nu, sys.Nx)];
+    sys.D12 = [sparse(sys.Nx, sys.Nu); speye(sys.Nu)];
+    
+    slsOutsAlpha = state_fdbk_sls(sys, slsParams);
+    clnorms(i)   = slsOutsAlpha.clnorm_;
+    specRadii(i) = max(abs(eig(full(sys.A))));
 
-
-%% Spread of state
-d = 6;
-comms = 2;
-alpha = linspace(0,0.8,10);
-actuation = 1; % actuation density
-rho = 1;
-T = 10;
-
-for i=1:length(alpha)
-   % Construct system matrices
-   [A,B] = generate_dbl_stoch_chain(Nx,alpha(i),rho,actuation);
-   disp(['Alpha = ', num2str(alpha(i))])
-   disp((['Spectral Radius:']))
-   max(abs(eig(full(A))))
-   [~,Nu] = size(B); % number of actuators
-
-   % Specify objective function parameters
-   C = [speye(Nx); sparse(Nu,Nx)];
-   D = [sparse(Nx,Nu); speye(Nu)];
-   
-    [R_alpha{i},M_alpha{i},obj_alpha(i)]  = sf_sls_d_localized(A,B,C,D,T,d,comms,ta,'H2');
-    make_heat_map(A,B,T,Nx,Nu,R_alpha{i},M_alpha{i},loc,Tsim,['\alpha = ' num2str(alpha(i))])
+    if ismember(i, printIdx)
+        [xAlpha, uAlpha] = simulate_system(sys, slsParams, slsOutsAlpha, simParams);
+        plot_heat_map(xAlpha, sys.B2*uAlpha, ['\alpha = ', num2str(alphas(i))])
+    end
 end
 
-figure
-p3 = plot(alpha,obj_alpha,'o-');
-title([int2str(Nx), ' Node Chain' ])
-xlabel('\alpha')
-ylabel('Localized H_2-Norm Cost')
-set(gca,'FontSize',16,'fontWeight','bold')
-set(p3,'Color','red')
-set(p3,'LineWidth', 2)
+figure;
+p5=plot(alphas, clnorms, 'o-');
+title([int2str(sys. Nx), ' Node Chain']);
+xlabel('\alpha'); ylabel('Localized H_2-Norm Cost');
+
+figure;
+p6=plot(alphas, specRadii, 'o-');
+title([int2str(sys. Nx), ' Node Chain']);
+xlabel('\alpha'); ylabel('Spectral Radius');
