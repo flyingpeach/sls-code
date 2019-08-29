@@ -4,7 +4,7 @@ clear; close all; clc;
 sys    = LTISystem;
 sys.Nx = 10;
 
-alpha = 0.2; rho = 0.8; actDens = 1;
+rho = 0.8; actDens = 1;
 randn('seed', 0);
 generate_rand_chain(sys, rho, actDens); % generate sys.A, sys.B2
 
@@ -16,11 +16,6 @@ sys.D12 = [sparse(sys.Nx, sys.Nu); speye(sys.Nu)];
 slsParams       = SLSParams;
 slsParams.tFIR_ = 15;
 slsParams.obj_  = Objective.H2; % objective function
-
-% simulation parameters
-TMax                  = 25;                  % amount of time to simulate
-w                     = zeros(sys.Nx, TMax); % disturbance
-w(floor(sys.Nx/2), 1) = 10;
 
 %% (1) basic sls (centralized controller) with rfd
 num_acts = []; clnorms = [];
