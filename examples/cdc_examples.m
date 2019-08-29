@@ -149,13 +149,20 @@ xlabel('d-hops'); ylabel('Localized H_2-Norm Cost');
 cSpeeds = [1, 1.25, 1.5, 1.75, 2, 3, 4];
 cPrints = [1, 1.75, 4];
 
-slsParams.mode_ = SLSMode.DLocalized;
 slsParams.d_    = 8;
 simParams.tSim_ = 25;
 clnorms         = zeros(length(cSpeeds), 1);
-
 for i=1:length(cSpeeds)
     slsParams.cSpeed_ = cSpeeds(i);
+    
+    if cSpeeds(i) == 1
+        % in this case comm speed too slow; use approx instead of direct
+        slsParams.mode_     = SLSMode.ApproxDLocalized;
+        slsParams.robCoeff_ = 1000;
+    else
+        slsParams.mode_ = SLSMode.DLocalized;
+    end
+        
     slsOutsC        = state_fdbk_sls(sys, slsParams);
     clnorms(i)      = slsOutsC.clnorm_;
     
