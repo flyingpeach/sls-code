@@ -1,3 +1,5 @@
+% note: run sequentially; some params from later sections depend on
+% params specified in previous sections
 clear; close all; clc;
 
 % specify system matrices
