@@ -102,21 +102,6 @@ end
 end
 
 
-function objective = get_objective(sys, params, R, M)
-switch params.obj_
-    case Objective.TrajTrack
-        objective = traj_track(sys, params, R, M);
-    case Objective.H2
-        objective = compute_H2(sys, params, R, M);
-    case Objective.HInf
-        objective = compute_Hinf(sys, params, R, M);
-    otherwise
-        objective = 0;
-        warning('Objective = constant, only finding feasible solution')
-end
-end
-
-
 function actPenalty = get_act_penalty(sys, params, M)
 actPenalty = 0;
 if params.rfd_
