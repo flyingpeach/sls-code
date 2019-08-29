@@ -2,26 +2,14 @@ function slsOuts = state_fdbk_sls(sys, params)
 % System level synthesis with state feedback
 % Can optionally use regularization for design (rfd) as well
 % Returns 
-%    slsouts: SLSOutputs containing system responses and other info
+%    slsOuts: SLSOutputs containing system responses and other info
 % Inputs
 %    sys    : LTISystem containing system matrices
 %    params : SLSParams containing parameters
 
-slsOuts = SLSOutputs;
-
-% used in rfd
-tol = 1e-4;
-
-if params.mode_ ~= SLSMode.Basic  
-    make_d_localized_constraints(sys, params);
-    [Rsupport, Msupport, count] = make_d_localized_constraints(sys, params);
-end
-
 cvx_begin
-
 % decision variables
 if params.mode_ ~= SLSMode.Basic
-    variable X(count)
     expression Rs(sys.Nx, sys.Nx, params.tFIR_)
     expression Ms(sys.Nu, sys.Nx, params.tFIR_)
     if params.mode_ == SLSMode.ApproxDLocalized
@@ -33,42 +21,35 @@ else % basic SLS
 end
 
 % populate decision variables
+% not totally necessarily but makes code easier to understand / use
 for t = 1:params.tFIR_
     R{t} = Rs(:,:,t);
     M{t} = Ms(:,:,t);
 end
 
-% locality constraints 
+% locality constraints
 % automatically enforced by limiting support of R, M
 if params.mode_ ~= SLSMode.Basic  
+    [RSupport, MSupport, count] = get_localized_supports(sys, params);
+    variable X(count)
+
     spot = 0;
     for t = 1:params.tFIR_
-        suppR = find(Rsupport{t});
-        num = sum(sum(Rsupport{t}));
+        suppR = find(RSupport{t});
+        num = sum(sum(RSupport{t}));
         R{t}(suppR) = X(spot+1:spot+num);
         spot = spot + num;
 
-        suppM = find(Msupport{t});
-        num = sum(sum(Msupport{t}));
+        suppM = find(MSupport{t});
+        num = sum(sum(MSupport{t}));
         M{t}(suppM) = X(spot+1:spot+num);
         spot = spot + num;
     end
 end
-
-objective   = get_objective(sys, params, R, M);
-robust_stab = 0;
-
-% rfd actuation penalty
-act_penalty = 0;
-if params.rfd_
-    for i = 1:sys.Nu
-        Mi = [];
-        for t = 1:params.tFIR_
-            Mi = [Mi, M{t}(i,:)];
-        end    
-        act_penalty = act_penalty + norm(Mi, 2);
-    end
-end
+ 
+objective  = get_objective(sys, params, R, M);
+actPenalty = get_act_penalty(sys, params, M);
+robustStab = 0;
 
 % achievability  / approx achievability constraints
 R{1} == eye(sys.Nx);
@@ -78,8 +59,8 @@ if params.mode_ == SLSMode.ApproxDLocalized
     for t=1:params.tFIR_-1
         Delta(:,(t-1)*sys.Nx+1:t*sys.Nx) = R{t+1} - sys.A*R{t} - sys.B2*M{t};
     end
-    robust_stab = norm(Delta, inf); % < 1 means we can guarantee stab
-    objective = objective + params.robCoeff_ * robust_stab;    
+    robustStab = norm(Delta, inf); % < 1 means we can guarantee stab
+    objective = objective + params.robCoeff_ * robustStab;    
 else
     for t=1:params.tFIR_-1
         R{t+1} == sys.A*R{t} + sys.B2*M{t};
@@ -87,44 +68,36 @@ else
 end
 
 if params.rfd_
-    objective = objective + params.rfdCoeff_ * act_penalty;
+    objective = objective + params.rfdCoeff_ * actPenalty;
 end
 
 % solve minimization problem
 minimize(objective);
 cvx_end
 
-% rfd actuator selection
-if params.rfd_
-    acts = [];
-    for i=1:sys.Nu
-        if norm(vec(M{1}(i,:)),2) > tol
-            acts = [acts; i];
-        end
-    end
-    slsOuts.acts_ = acts;
-else
-    % not set in case of rfd
-    % doesn't include regularization terms
-    slsOuts.clnorm_ = get_objective(sys, params, R, M);
-end
+% outputs
+slsOuts             = SLSOutputs;
+slsOuts.acts_       = get_acts_rfd(sys, params, M); % rfd actuator selection
+slsOuts.R_          = R;
+slsOuts.M_          = M;
+slsOuts.robustStab_ = robustStab;
 
-slsOuts.R_           = R;
-slsOuts.M_           = M;
-slsOuts.robust_stab_ = robust_stab;
+% optimal value of objective function without regularization terms
+slsOuts.clnorm_     = get_objective(sys, params, R, M);
+
 end
 
 
 % local functions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [Rsupport, Msupport, count] = make_d_localized_constraints(sys, params)
+function [RSupport, MSupport, count] = get_localized_supports(sys, params)
 commsAdj  = abs(sys.A) > 0;
 localityR = commsAdj^(params.d_-1) > 0;
 
 count = 0;
 for t = 1:params.tFIR_
-    Rsupport{t} = min(commsAdj^(floor(max(0, params.cSpeed_*(t-params.actDelay_)))),localityR) > 0;
-    Msupport{t} = (abs(sys.B2)'*Rsupport{t}) > 0;
-    count       = count + sum(sum(Rsupport{t})) + sum(sum(Msupport{t}));
+    RSupport{t} = min(commsAdj^(floor(max(0, params.cSpeed_*(t-params.actDelay_)))),localityR) > 0;
+    MSupport{t} = (abs(sys.B2)'*RSupport{t}) > 0;
+    count       = count + sum(sum(RSupport{t})) + sum(sum(MSupport{t}));
 end
 end
 
@@ -140,5 +113,33 @@ switch params.obj_
     otherwise
         objective = 0;
         warning('Objective = constant, only finding feasible solution')
+end
+end
+
+
+function actPenalty = get_act_penalty(sys, params, M)
+actPenalty = 0;
+if params.rfd_
+    for i = 1:sys.Nu
+        Mi = [];
+        for t = 1:params.tFIR_
+            Mi = [Mi, M{t}(i,:)];
+        end    
+        actPenalty = actPenalty + norm(Mi, 2);
+    end
+end
+end
+
+
+function acts = get_acts_rfd(sys, params, M)
+tol = 1e-4;
+
+acts = [];
+if params.rfd_
+    for i=1:sys.Nu
+        if norm(vec(M{1}(i,:)),2) > tol
+            acts = [acts; i];
+        end
+    end    
 end
 end

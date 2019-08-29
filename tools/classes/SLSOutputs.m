@@ -14,11 +14,12 @@ classdef SLSOutputs < matlab.mixin.Copyable
       N_; % dy to x transfer matrix (phi_xy)
       L_; % dy to u transfer matrix (phi_uy)
         
-      clnorm_; % final (optimal value) of objective, not set for rfd
+      clnorm_; % final (optimal value) of original objectiv
+               % doesn't include regularization terms
       acts_;   % indices of actuators (u) kept after rfd
       
       % TODO: this enforces small gain on l1->l1; should generalize
-      robust_stab_; % inf norm of delta from (2.24), (4.22)
-                    % <1 means we can guarantee stab
+      robustStab_; % inf norm of delta from (2.24), (4.22)
+                   % <1 means we can guarantee stab
     end    
 end
