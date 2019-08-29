@@ -1,26 +1,20 @@
-function [x, u] = simulate_system(sys, slsParams, slsOuts, TMax, w, openLoop)
+function [x, u] = simulate_system(sys, slsParams, slsOuts, simParams)
 % Simulate system as per equation (2.8)
 % Returns 
-%    x, u     : state and actuation values
+%    x, u      : state and actuation values
 % Inputs
 %    sys       : LTISystem containing system matrices
 %    slsParams : SLSParams containing parameters
 %    slsOuts   : SLSOutputs containing system responses and other info
-%    TMax      : total amount of time to simulate for
-%    w         : disturbance values (Nx by TMax)
-%    openLoop  : optional, set to 1 if you want open loop simulation
-
-if nargin == 5
-    openLoop = 0;
-end
+%    simParams : SimParams; parameters for the simulation
    
-x     = zeros(sys.Nx, TMax); 
-u     = zeros(sys.Nu, TMax);
-x_hat = zeros(sys.Nx, TMax); 
-w_hat = zeros(sys.Nx, TMax);
+x     = zeros(sys.Nx, simParams.tSim_); 
+u     = zeros(sys.Nu, simParams.tSim_);
+x_hat = zeros(sys.Nx, simParams.tSim_); 
+w_hat = zeros(sys.Nx, simParams.tSim_);
 
-for t=1:1:TMax-1
-    if (openLoop ~= 1) % closed loop simulation
+for t=1:1:simParams.tSim_-1
+    if (simParams.openLoop_ ~= 1) % closed loop simulation
         for tau=1:1:min(t-1, slsParams.tFIR_)
            u(:,t) = u(:,t) + slsOuts.M_{tau}*w_hat(:,t-tau);
         end
@@ -30,6 +24,6 @@ for t=1:1:TMax-1
         end 
     end
     
-    x(:,t+1) = sys.A*x(:,t) + sys.B1*w(:,t)+ sys.B2*u(:,t);
+    x(:,t+1) = sys.A*x(:,t) + sys.B1*simParams.w_(:,t)+ sys.B2*u(:,t);
     w_hat(:,t) = x(:,t+1) - x_hat(:,t+1);
 end

@@ -68,7 +68,7 @@ xDes(3, 13) = 20;
 xDes(2, 14) = 20;
 xDes(2, 15) = 20;
 
-% sls setup %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%     
+% sls %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%     
 slsParams           = SLSParams;
 slsParams.actDelay_ = 1;
 slsParams.cSpeed_   = 3;
@@ -79,15 +79,16 @@ slsParams.mode_     = SLSMode.Basic;
 slsParams.rfd_      = false;
 
 slsParams.setDesiredTraj(xDes);
-
-% sls and simulate system %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-% simulation params
-TMax    = 25;                  % amount of time to simulate
-w       = zeros(sys.Nx, TMax); % disturbance
-w(3, 1) = 10;
-
 slsOuts = state_fdbk_sls(sys, slsParams);
-[x, u]  = simulate_system(sys, slsParams, slsOuts, TMax, w);
+
+% simulation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+simParams           = SimParams;
+simParams.tSim_     = 25;
+simParams.w_        = zeros(sys.Nx, simParams.tSim_); % disturbance
+simParams.w_(3, 1)  = 10;
+simParams.openLoop_ = false;
+
+[x, u]  = simulate_system(sys, slsParams, slsOuts, simParams);
 
 % visualizations %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Bu = sys.B2*u; % want to look at actuation at each node
@@ -99,7 +100,7 @@ end
 if plotTimeTraj
    % TODO: hack: need to shift xDesired twice since we already shifted it
    %             once in SLSParams
-   timediff = TMax - size(xDes, 2);
+   timediff = simParams.tSim_ - size(xDes, 2);
    xDes     = [zeros(sys.Nx, 2) xDes zeros(sys.Nx, timediff-2)];
    plot_time_traj(x, Bu, xDes);
 end
