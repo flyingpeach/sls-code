@@ -23,7 +23,8 @@ classdef SLSParams < matlab.mixin.Copyable
     
     methods
       function setDesiredTraj(obj, xDes)
-        % TODO: pad first column with zeros (slightly hacky)
+        % TODO: this is hacky
+        % pad first column with zeros
         % also pad with zeros if xDes not specified for all time
         timediff  = obj.tFIR_ - size(xDes, 2);
         obj.xDes_ = [zeros(size(xDes, 1), 1), xDes, zeros(size(xDes, 1), timediff-1)];

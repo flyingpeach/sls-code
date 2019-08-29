@@ -9,4 +9,15 @@ classdef LTISystem < matlab.mixin.Copyable
       
       Nx; Nu; % number of states and number of actuators
     end
+    
+    methods
+      function obj = updateActuation(oldObj, slsOuts)
+        % make a new system with the dynamics of the old system and updated
+        % actuation (based on rfd output)
+        obj     = copy(oldObj);
+        obj.B2  = oldObj.B2(:, slsOuts.acts_);
+        obj.D12 = oldObj.D12(:, slsOuts.acts_);
+        obj.Nu  = size(slsOuts.acts_, 1);      
+      end
+    end         
 end
