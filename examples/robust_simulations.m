@@ -28,38 +28,38 @@ simParams.w_(floor(sys.Nx/2), 1) = 10;
 simParams.openLoop_ = false;
 
 cSpeeds = [2 1.5 1.4 1.3 1.2 1.1 1 0.9 0.8 0.7 0.6 0.5 0.4];
-cSims   = [2 1 0.4]; % which comm speeds to simulate & plot
+cPrints = [2 1 0.4]; % which comm speeds to simulate & plot
 
 clnorms     = zeros(length(cSpeeds), 1); 
 robustStabs = zeros(length(cSpeeds), 1);
-
 for i=1:length(cSpeeds)
     slsParams.cSpeed_ = cSpeeds(i);
-    slsOuts = state_fdbk_sls(sys, slsParams);
+    slsOuts           = state_fdbk_sls(sys, slsParams);
+    clnorms(i)        = slsOuts.clnorm_;
+    robustStabs(i)    = slsOuts.robustStab_;   
 
-    if ismember(cSpeeds(i), cSims)
+    if ismember(cSpeeds(i), cPrints)
         [x, u] = simulate_system(sys, slsParams, slsOuts, simParams);
         plot_heat_map(x, sys.B2*u, ['Comms = ',num2str(cSpeeds(i))]);
     end
-
-    clnorms(i)     = slsOuts.clnorm_;
-    robustStabs(i) = slsOuts.robustStab_;    
 end
 
 figure;
 p1=plot(cSpeeds, clnorms,'o-');
 set(gca, 'xdir', 'reverse');
-title([int2str(sys.Nx), ' Node Chain' ]);
+title([int2str(sys.Nx), ' Node Chain']);
 xlabel('Comm Speed'); ylabel('Localized H_2-Norm Cost');
 
-figure
+figure;
 p2=plot(cSpeeds,robustStabs,'o-');
 set(gca, 'xdir', 'reverse');
-title([int2str(sys.Nx), ' Node Chain' ]);
+title([int2str(sys.Nx), ' Node Chain']);
 xlabel('Comm Speed'); ylabel('Stability Margin');
 
 % These are the font settings from previous papers; uncomment as wanted
-% set(gca,'FontSize',16,'fontWeight','bold')
-% set(p1,'Color','red')
-% set(p1,'LineWidth', 2)
+% set(gca,'FontSize',16,'fontWeight','bold');
+% set(p1,'Color','red'); set(p1,'LineWidth', 2);
+% set(gca,'FontSize',16,'fontWeight','bold');
+% set(p2,'Color','red'); set(p2,'LineWidth', 2);
+
 
