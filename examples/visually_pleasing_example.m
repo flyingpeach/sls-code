@@ -1,0 +1,44 @@
+clear; close all; clc; 
+
+% specify system matrices
+sys    = LTISystem;
+sys.Nx = 50;
+
+alpha = 0.8; rho = 1; actDens = 1; 
+generate_dbl_stoch_chain(sys, rho, actDens, alpha); % update A, B2
+sys.B1  = eye(sys.Nx); % used in simulation
+sys.C1  = [speye(sys.Nx); sparse(sys.Nu, sys.Nx)];
+sys.D12 = [sparse(sys.Nx, sys.Nu); speye(sys.Nu)];
+
+% sls parameters
+slsParams           = SLSParams;
+slsParams.obj_      = Objective.H2;
+slsParams.tFIR_     = 10;
+slsParams.actDelay_ = 1;
+slsParams.cSpeed_   = 1;
+slsParams.d_        = 8;
+slsParams.robCoeff_ = 1000;
+slsParams.mode_     = SLSMode.ApproxDLocalized;
+
+% simulation parameters
+simParams           = SimParams;
+simParams.tSim_     = 80;
+simParams.openLoop_ = false;
+simParams.w_        = zeros(sys.Nx, 100);
+simParams.w_(floor(sys.Nx/2), 1) = 10;
+
+slsOuts = state_fdbk_sls(sys, slsParams);
+[x, u]  = simulate_system(sys, slsParams, slsOuts, simParams);
+
+%% plot graph animation
+nodeCoords = [1:1:sys.Nx;
+              zeros(1, sys.Nx)]';
+
+onesVec = ones(sys.Nx - 1, 1);
+adjMtx  = eye(sys.Nx) + diag(onesVec, 1) + diag(onesVec, -1);
+
+waitTime = 0.05;
+plot_graph_animation(adjMtx, nodeCoords, slsParams, x, sys.B2*u, waitTime);
+
+%% plot heat map
+plot_heat_map(x, sys.B2*u, '');
