@@ -1,8 +1,8 @@
 clear; close all; clc; 
 
 % which things we want to plot
-plotAnimation = false;
-plotTimeTraj  = true;
+plotAnimation = true;
+plotTimeTraj  = false;
 plotHeatMap   = false;
 
 % graph architecture %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -94,7 +94,8 @@ simParams.openLoop_ = false;
 Bu = sys.B2*u; % want to look at actuation at each node
 
 if plotAnimation
-    plot_graph_animation(adjMtx, nodeCoords, slsParams, x, Bu);
+    waitTime = 0.5;
+    plot_graph_animation(adjMtx, nodeCoords, slsParams, x, Bu, waitTime);
 end
 
 if plotTimeTraj
