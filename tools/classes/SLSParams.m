@@ -48,5 +48,70 @@ classdef SLSParams < matlab.mixin.Copyable
         timediff  = obj.tFIR_ - size(xDes, 2);
         obj.xDes_ = [zeros(size(xDes, 1), 1), xDes, zeros(size(xDes, 1), timediff-1)];
       end
+      
+      function statusTxt = sanity_check(obj)
+        if not(obj.tFIR_)
+            error('[SLS ERROR] tFIR=0. Did you forget to specify it?');
+        end
+
+        paramStr = [char(10), char(9), sprintf('tFIR=%d', obj.tFIR_)];
+        
+        switch obj.mode_ % check mode & needed params
+            case SLSMode.Basic
+                modeStr = 'basic';
+            case SLSMode.DLocalized
+                paramStr = check_d_local(obj, paramStr);
+                modeStr = 'd-localized';
+            case SLSMode.ApproxDLocalized
+                if not(obj.robCoeff_)
+                    error('[SLS ERROR] Solving with approximate d-localized SLS but robCoeff=0. Did you forget to specify it?');
+                end
+                paramStr = check_d_local(obj, paramStr);
+                paramStr = [paramStr, sprintf(', robCoeff=%0.2f', obj.robCoeff_)];
+                modeStr  = 'approx d-localized';
+            otherwise
+                error('[SLS ERROR] SLS mode unknown or unspecified!');
+        end
+
+        switch obj.obj_ % check objective & needed params
+            case Objective.TrajTrack
+                if not(obj.xDes_)
+                    error('[SLS ERROR] Solving with trajectory tracking but no trajectory was specified!');     
+                end
+                objStr = 'trajectory tracking';
+            case Objective.H2
+                objStr = 'H2';
+            case Objective.HInf
+                objStr = 'HInf';
+            otherwise
+                objStr = 'constant';
+        end
+        
+        statusTxt = [modeStr, ' SLS with ', objStr, ' objective'];
+
+        if obj.rfd_ == true
+            if not(obj.rfdCoeff_)
+                disp('[SLS WARNING] Solving with RFD but rfdCoeff=0. Did you forget to specify it?');
+            end
+            statusTxt = [statusTxt, ' and RFD, ', sprintf('rfdCoeff=%0.2f', obj.rfdCoeff_)];
+        end
+        statusTxt = [statusTxt, paramStr];
+      end
+
+      function paramStr = check_d_local(obj, paramStr)
+        % ensure all the needed parameters for localized sls are specified
+        if not(obj.d_)
+            disp('[SLS WARNING] Solving with locality constraints but d=0. Did you forget to specify it?');
+        end
+        if not(obj.cSpeed_)            
+            disp('[SLS WARNING] Solving with locality constraints but cSpeed=0. Did you forget to specify it?');
+        end
+        if not(obj.actDelay_)
+            disp('[SLS WARNING] Solving with locality constraints but actDelay=0. Did you forget to specify it?');
+        end
+        
+        paramStr = [paramStr, sprintf(', d=%d, cSpeed=%0.2f, actDelay=%d', ...
+                              obj.d_, obj.cSpeed_, obj.actDelay_)];
+      end
     end     
 end

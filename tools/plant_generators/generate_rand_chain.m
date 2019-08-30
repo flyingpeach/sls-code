@@ -8,7 +8,7 @@ function generate_rand_chain(sys, rho, actDens)
 %              this is approximate; only exact if things divide exactly
 
 if not(sys.Nx)
-    error('Nx = 0 in the LTISystem! Please specify it first');
+    error('[SLS ERROR] Nx = 0 in the LTISystem! Please specify it first');
 end
 
 sys.Nu = ceil(sys.Nx * actDens);

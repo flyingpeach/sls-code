@@ -15,7 +15,7 @@ switch params.obj_
         objective = compute_Hinf(sys, params, R, M);
     otherwise
         objective = 0;
-        warning('Objective = constant, only finding feasible solution')
+        disp('[SLS WARNING] Objective = constant, only finding feasible solution')
 end
 end
 

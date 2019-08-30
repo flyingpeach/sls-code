@@ -7,7 +7,12 @@ function slsOuts = state_fdbk_sls(sys, params)
 %    sys    : LTISystem containing system matrices
 %    params : SLSParams containing parameters
 
-cvx_begin
+statusTxt = params.sanity_check();
+statusTxt = [char(10), 'Solving ', statusTxt];
+disp(statusTxt);
+
+cvx_begin quiet
+
 % decision variables
 if params.mode_ ~= SLSMode.Basic
     expression Rs(sys.Nx, sys.Nx, params.tFIR_)

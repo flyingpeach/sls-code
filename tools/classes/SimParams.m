@@ -25,7 +25,7 @@ classdef SimParams < matlab.mixin.Copyable
         
         % sanity check
         if size(obj.w_, 2) < obj.tSim_
-            error('The specified length of the disturbance (w) is less than tSim!')
+            error('[SLS ERROR] The specified length of the disturbance (w) is less than tSim!')
         end
       end
     end
