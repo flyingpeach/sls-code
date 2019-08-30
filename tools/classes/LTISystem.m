@@ -11,6 +11,14 @@ classdef LTISystem < matlab.mixin.Copyable
     end
     
     methods
+      function obj = LTISystem()
+        % initialize to zero instead of empty array
+        obj.A  = 0; obj.B1  = 0; obj.B2  = 0; 
+        obj.C1 = 0; obj.D11 = 0; obj.D12 = 0;
+        obj.C2 = 0; obj.D21 = 0; obj.D22 = 0;
+        obj.Nx = 0; obj.Nu = 0;
+      end
+
       function obj = updateActuation(oldObj, slsOuts)
         % make a new system with the dynamics of the old system and updated
         % actuation (based on rfd output)

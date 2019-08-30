@@ -7,8 +7,8 @@ function generate_rand_chain(sys, rho, actDens)
 %    actDens : actuation density of B, in (0, 1]
 %              this is approximate; only exact if things divide exactly
 
-if isempty(sys.Nx) % Expect this to be nonempty
-    error('Nx in the LTISystem is empty! Please specify it first')
+if not(sys.Nx)
+    error('Nx = 0 in the LTISystem! Please specify it first');
 end
 
 sys.Nu = ceil(sys.Nx * actDens);

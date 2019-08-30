@@ -9,6 +9,13 @@ classdef SimParams < matlab.mixin.Copyable
     end
     
     methods
+      function obj = SimParams()
+        % initialize to zero instead of empty array
+        obj.tSim_     = 0; 
+        obj.w_        = 0; 
+        obj.openLoop_ = 0;
+      end
+        
       function txt = print_and_check(obj)
         modestr = 'closed-loop';
         if obj.openLoop_ == 1
