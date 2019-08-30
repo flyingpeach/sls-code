@@ -1,12 +1,11 @@
 function generate_dbl_stoch_chain(sys, rho, actDens, alpha)
 % Populates (A, B2) of the specified system with these dynamics:
-
 % x_1(t+1) = rho*[(1-alpha)*x_1(t) + alpha x_2(t)] + B(1,1)u_1(t)
 % x_i(t+1) = rho*[alpha*x_{i-1}(t) + (1-2*alpha)x_i(t) + alpha*x_{i+1}(t)] + B(i,i)u_i(t)
 % x_N(t+1) = rho*[alpha*x_{N-1}(t) + (1-alpha)x_N(t)] + B(N,N)u_N(t)
-
+% Also sets Nu of the system accordingly
 % Inputs
-%    sys     : an LTISystem
+%    sys     : LTISystem containing system matrices
 %    rho     : stability of A; choose rho=1 for dbl stochastic A
 %    actDens : actuation density of B, in (0, 1]
 %              this is approximate; only exact if things divide exactly

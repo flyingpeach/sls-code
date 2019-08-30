@@ -1,7 +1,7 @@
 classdef SLSOutputs < matlab.mixin.Copyable
-    % inherits handle class with deep copy functionality
-    % contains outputs of SLS 
-    % depending on the solver / mode called, not all outputs are set 
+    % Contains outputs of SLS 
+    % Depending on the solver / mode called, not all outputs are set 
+    % Inherits handle class with deep copy functionality
     
     properties 
       % based on (5.1),(5.2),(5.3)
@@ -32,4 +32,5 @@ classdef SLSOutputs < matlab.mixin.Copyable
         obj.robustStab_ = 0;
       end
     end
+    
 end

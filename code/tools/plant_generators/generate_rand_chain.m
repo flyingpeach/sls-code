@@ -1,8 +1,9 @@
 function generate_rand_chain(sys, rho, actDens)
 % Populates (A, B2) of the specified system with a random chain 
 % (tridiagonal A matrix) and a random actuation (B) matrix
+% Also sets Nu of the system accordingly
 % Inputs
-%    sys     : an LTISystem
+%    sys     : LTISystem containing system matrices
 %    rho     : normalization value; A is generated s.t. max |eig(A)| = rho
 %    actDens : actuation density of B, in (0, 1]
 %              this is approximate; only exact if things divide exactly

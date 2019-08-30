@@ -1,5 +1,5 @@
 function plot_vertex(node, nodeCoords, colour)
-% adds colour & label to specified vertex / node
+% Adds colour & label to specified vertex / node
 %   node       : the node we're plotting
 %   nodeCoords : x,y coordinates of each node (in order)
 %   colour     : colour of node, either a letter or a RGB coordinate

@@ -1,5 +1,5 @@
 function plot_graph(adjMtx, nodeCoords, colour)
-% visualizes graph
+% Visualizes graph
 %   adjMtx     : adjacency matrix
 %   nodeCoords : x,y coordinates of each node (in order)
 %   colour     : colour of nodes, either a letter or a RGB coordinate

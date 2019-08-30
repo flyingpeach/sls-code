@@ -1,5 +1,5 @@
 classdef SLSMode
-    % enumeration class containing modes of sls
+    % Enumeration class containing modes of sls
     enumeration
       Basic, DLocalized, ApproxDLocalized
     end

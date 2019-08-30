@@ -1,7 +1,7 @@
 classdef SLSParams < matlab.mixin.Copyable
-    % inherits handle class with deep copy functionality
-    % contains parameters for SLS 
-    % note that depending on the solver called, not all params may be used
+    % Contains parameters for SLS 
+    % Note that depending on the solver called, not all params may be used
+    % Inherits handle class with deep copy functionality
     
     properties  
       mode_;     % an SLSMode (i.e. Basic, DLocalized)
@@ -113,5 +113,6 @@ classdef SLSParams < matlab.mixin.Copyable
         paramStr = [paramStr, sprintf(', d=%d, cSpeed=%0.2f, actDelay=%d', ...
                               obj.d_, obj.cSpeed_, obj.actDelay_)];
       end
-    end     
+    end
+    
 end

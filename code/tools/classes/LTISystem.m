@@ -1,6 +1,7 @@
 classdef LTISystem < matlab.mixin.Copyable
-    % inherits handle class with deep copy functionality
-    % contains all matrices of an LTI system as per (3.1)
+    % Contains all matrices of an LTI system as per (3.1)
+    % Inherits handle class with deep copy functionality
+
     properties
       % matrices
       A;  B1;  B2;  % state       : x(t+1)= A*x(t)  + B1*w(t)  + B2*u(t)
@@ -27,5 +28,6 @@ classdef LTISystem < matlab.mixin.Copyable
         obj.D12 = oldObj.D12(:, slsOuts.acts_);
         obj.Nu  = size(slsOuts.acts_, 1);      
       end
-    end         
+    end
+
 end

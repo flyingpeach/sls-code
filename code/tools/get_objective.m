@@ -3,7 +3,7 @@ function objective = get_objective(sys, params, R, M)
 % Returns 
 %    objective : objective function value
 % Inputs
-%    sys       : an LTISystem
+%    sys       : LTISystem containing system matrices
 %    params    : SLSParams containing parameters
 
 switch params.obj_
@@ -20,7 +20,7 @@ end
 end
 
 
-% local functions
+% local functions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function objective = traj_track(sys, params, R, M)
 % Reformulation of (x-xd)' Q (x-xd) + u' R u
 % i.e. track desired trajectory while minimizing input
