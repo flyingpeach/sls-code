@@ -8,9 +8,9 @@ function [x, u] = simulate_system(sys, slsParams, slsOuts, simParams)
 %    slsOuts   : SLSOutputs containing system responses and other info
 %    simParams : SimParams; parameters for the simulation
 
-txt = simParams.print_and_check();
-txt = ['Simulating with ', txt];
-disp(txt);
+statusTxt = simParams.sanity_check();
+statusTxt = ['Simulating with ', statusTxt];
+disp(statusTxt);
         
 x     = zeros(sys.Nx, simParams.tSim_); 
 u     = zeros(sys.Nu, simParams.tSim_);

@@ -16,12 +16,12 @@ classdef SimParams < matlab.mixin.Copyable
         obj.openLoop_ = 0;
       end
         
-      function txt = print_and_check(obj)
+      function statusTxt = sanity_check(obj)
         modestr = 'closed-loop';
         if obj.openLoop_ == 1
             modestr = 'open-loop';
         end
-        txt = ['tSim=', num2str(obj.tSim_), ', ', modestr];
+        statusTxt = ['tSim=', num2str(obj.tSim_), ', ', modestr];
         
         % sanity check
         if size(obj.w_, 2) < obj.tSim_
