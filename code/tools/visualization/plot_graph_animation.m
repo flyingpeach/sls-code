@@ -1,4 +1,4 @@
-function plot_graph_animation(adjMtx, nodeCoords, slsParams, x, Bu, waitTime)
+function plot_graph_animation(adjMtx, nodeCoords, slsParams, x, Bu, waitTime, logScale)
 % Plots topology of graph and animates states values at nodes
 % Inputs
 %   adjMtx     : adjacency matrix
@@ -6,6 +6,11 @@ function plot_graph_animation(adjMtx, nodeCoords, slsParams, x, Bu, waitTime)
 %   slsParams  : SLSParams containing parameters
 %   x, Bu      : state and actuation values at nodes
 %   waitTime   : amount of time to wait between steps
+%   logScale   : whether to use the same scale as heat map plotter
+
+if nargin == 6
+    logScale = false;
+end
 
 % make full-screen
 figure('units','normalized','outerposition',[0 0 1 1])
@@ -16,8 +21,24 @@ TMax = size(x, 2);
 colormap jet; 
 cmap    = colormap; 
 
-maxmagx = max(abs(vec(x)));  % max magnitude
-maxmagu = max(abs(vec(Bu)));
+if logScale
+    logmin  = -4; % these match the axes in plot_heat_map
+    logmax  = 0;
+
+    % clamp values within min and max
+    normedx = max(min(log10(abs(x)), logmax), logmin);
+    normedu = max(min(log10(abs(Bu)), logmax), logmin);
+    
+    % normalize values
+    normedx = (normedx - logmin)./ (logmax - logmin);
+    normedu = (normedu - logmin)./ (logmax - logmin);
+
+else
+    maxmagx = max(abs(vec(x)));  % max magnitude
+    maxmagu = max(abs(vec(Bu)));
+    normedx = abs(x) ./ maxmagx;
+    normedu = abs(Bu) ./ maxmagu;
+end
 
 subplot(2,1,1);
 plot_graph(adjMtx, nodeCoords, cmap(1,:));
@@ -34,9 +55,7 @@ for time=1:TMax-1
     if time > 1
         delete(timeText)
     end
-    normedx = abs(x(:,time)) ./ maxmagx;
-    normedu = abs(Bu(:,time)) ./ maxmagu;
-
+    
     if (time == slsParams.tFIR_)
         timeText = text(2, -0.3, strcat('t=', num2str(time)), 'Color', 'r');
     else
@@ -45,9 +64,9 @@ for time=1:TMax-1
 
     for node=1:Nx
         subplot(2,1,1)
-        plot_vertex(node, nodeCoords, get_colour(normedx(node), cmap));
+        plot_vertex(node, nodeCoords, get_colour(normedx(node, time), cmap));
         subplot(2,1,2)
-        plot_vertex(node, nodeCoords, get_colour(normedu(node), cmap));
+        plot_vertex(node, nodeCoords, get_colour(normedu(node, time), cmap));
     end
 end
 end

@@ -37,8 +37,9 @@ nodeCoords = [1:1:sys.Nx;
 onesVec = ones(sys.Nx - 1, 1);
 adjMtx  = eye(sys.Nx) + diag(onesVec, 1) + diag(onesVec, -1);
 
-waitTime = 0.05;
-plot_graph_animation(adjMtx, nodeCoords, slsParams, x, sys.B2*u, waitTime);
+waitTime = 0.01;
+logScale = true; % want colours to match the heat map colours
+plot_graph_animation(adjMtx, nodeCoords, slsParams, x, sys.B2*u, waitTime, logScale);
 
 %% plot heat map
 plot_heat_map(x, sys.B2*u, '');
