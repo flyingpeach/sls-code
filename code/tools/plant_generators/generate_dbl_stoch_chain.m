@@ -9,6 +9,7 @@ function generate_dbl_stoch_chain(sys, rho, actDens, alpha)
 %    rho     : stability of A; choose rho=1 for dbl stochastic A
 %    actDens : actuation density of B, in (0, 1]
 %              this is approximate; only exact if things divide exactly
+%    alpha   : how much state is spread between neighbours
 
 if not(sys.Nx)
     error('[SLS ERROR] Nx = 0 in the LTISystem! Please specify it first');
