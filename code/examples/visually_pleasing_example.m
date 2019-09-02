@@ -1,5 +1,9 @@
 clear; close all; clc; 
 
+% which things we want to plot
+plotAnimation = false;
+plotHeatMap   = true;
+
 % specify system matrices
 sys    = LTISystem;
 sys.Nx = 50;
@@ -30,16 +34,18 @@ simParams.w_(floor(sys.Nx/2), 1) = 10;
 slsOuts = state_fdbk_sls(sys, slsParams);
 [x, u]  = simulate_system(sys, slsParams, slsOuts, simParams);
 
-%% plot graph animation
 nodeCoords = [1:1:sys.Nx;
               zeros(1, sys.Nx)]';
 
 onesVec = ones(sys.Nx - 1, 1);
 adjMtx  = eye(sys.Nx) + diag(onesVec, 1) + diag(onesVec, -1);
 
-waitTime = 0.01;
-logScale = true; % want colours to match the heat map colours
-plot_graph_animation(adjMtx, nodeCoords, slsParams, x, sys.B2*u, waitTime, logScale);
+if plotAnimation
+    waitTime = 0.01;
+    logScale = true; % want colours to match the heat map colours
+    plot_graph_animation(adjMtx, nodeCoords, slsParams, x, sys.B2*u, waitTime, logScale);
+end
 
-%% plot heat map
-plot_heat_map(x, sys.B2*u, '');
+if plotHeatMap
+    plot_heat_map(x, sys.B2*u, '');
+end
