@@ -83,6 +83,8 @@ classdef SLSParams < matlab.mixin.Copyable
                 objStr = 'H2';
             case Objective.HInf
                 objStr = 'HInf';
+            case Objective.L1
+                objStr = 'L1';
             otherwise
                 objStr = 'constant';
         end
