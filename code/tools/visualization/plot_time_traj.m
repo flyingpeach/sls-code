@@ -11,7 +11,7 @@ TMax = size(x, 2);
 maxy = max([max(vec(x)) max(vec(Bu)) max(vec(xDes))]) + 2;
 miny = min([min(vec(x)) min(vec(Bu)) max(vec(xDes))]) - 2;
 
-err = abs(xDes - x) / max(vec(xDes));
+err = abs(xDes - x);
 maxe = max(vec(err)) * 1.1; 
 mine = min(vec(err));
     
@@ -38,7 +38,7 @@ xlabel('time step');
 set(gca,'XTickLabelMode','auto');
 
 subplot(Nx, 2, Nx * 2)
-legend('normed err');
+legend('error');
 xlabel('time step');
 set(gca,'XTickLabelMode','auto');
 end
