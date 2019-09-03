@@ -26,4 +26,4 @@ Several example files can be found in `code/examples`. Some of these (especially
 
 ## Old version
 The pre-github version of the code can be found on the [SLS Wiki](
-http://slswiki.cms.caltech.edu/index.php/SLS_Toolbox). Alternatively, check out commit 345982.
+http://slswiki.cms.caltech.edu/index.php/SLS_Toolbox). It is also tagged as a release on the repository; use `git checkout v1.0` to access it.
