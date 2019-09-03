@@ -19,8 +19,6 @@ classdef SLSParams < matlab.mixin.Copyable
       rfdCoeff_; % regularization coeff for rfd (used in rfd only)
       
       obj_;      % an Objective (i.e. H2, HInf)
-      xDes_;     % desired trajectory (only if obj is TrajTrack)
-                 % do not directly set; use method setDesiredTraj
     end
     
     methods
@@ -38,15 +36,6 @@ classdef SLSParams < matlab.mixin.Copyable
         obj.rfdCoeff_ = 0;
         
         obj.obj_      = 0;
-        obj.xDes_     = 0;        
-      end
-        
-      function setDesiredTraj(obj, xDes)
-        % TODO: this is hacky
-        % pad first column with zeros
-        % also pad with zeros if xDes not specified for all time
-        timediff  = obj.tFIR_ - size(xDes, 2);
-        obj.xDes_ = [zeros(size(xDes, 1), 1), xDes, zeros(size(xDes, 1), timediff-1)];
       end
       
       function statusTxt = sanity_check(obj)
@@ -74,11 +63,6 @@ classdef SLSParams < matlab.mixin.Copyable
         end
 
         switch obj.obj_ % check objective & needed params
-            case Objective.TrajTrack
-                if not(obj.xDes_)
-                    error('[SLS ERROR] Solving with trajectory tracking but no trajectory was specified!');     
-                end
-                objStr = 'trajectory tracking';
             case Objective.H2
                 objStr = 'H2';
             case Objective.HInf

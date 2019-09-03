@@ -1,8 +1,8 @@
 clear; close all; clc; 
 
 % which things we want to plot
-plotAnimation = true;
-plotTimeTraj  = false;
+plotAnimation = false;
+plotTimeTraj  = true;
 plotHeatMap   = false;
 
 % graph architecture %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -44,51 +44,86 @@ sys.B2  = bii * eye(sys.Nx);
 sys.C1  = [speye(sys.Nx); sparse(sys.Nu, sys.Nx)];
 sys.D12 = [sparse(sys.Nx, sys.Nu); speye(sys.Nu)];
 
-% desired trajectory %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-xDes = zeros(sys.Nx, 15);
-
-xDes(6:7, 1)  = 20; % pedal
-xDes(6:7, 5)  = 20;
-xDes(6:7, 9)  = 20;
-xDes(6:7, 13) = 20;
-
-xDes(3, 1)  = 20; % melody
-xDes(3, 2)  = 20;
-xDes(4, 3)  = 20;
-xDes(5, 4)  = 20;
-xDes(5, 5)  = 20;
-xDes(4, 6)  = 20;
-xDes(3, 7)  = 20;
-xDes(2, 8)  = 20;
-xDes(1, 9)  = 20;
-xDes(1, 10) = 20;
-xDes(2, 11) = 20;
-xDes(3, 12) = 20;
-xDes(3, 13) = 20;
-xDes(2, 14) = 20;
-xDes(2, 15) = 20;
-
-% sls %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%     
+% sls %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 slsParams           = SLSParams;
 slsParams.actDelay_ = 1;
 slsParams.cSpeed_   = 3;
 slsParams.d_        = 3;
 slsParams.tFIR_     = 17;
-slsParams.obj_      = Objective.TrajTrack;
+slsParams.obj_      = Objective.H2;
 slsParams.mode_     = SLSMode.Basic;
 slsParams.rfd_      = false;
 
-slsParams.setDesiredTraj(xDes);
+% note: we are doing H2-SLS on the error of the trajectory (xd, ud)
 slsOuts = state_fdbk_sls(sys, slsParams);
+
+% desired trajectory %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+xDes    = zeros(sys.Nx, slsParams.tFIR_);
+
+xDes(6:7, 1)  = 1; % pedal
+xDes(6:7, 5)  = 1;
+xDes(6:7, 9)  = 1;
+xDes(6:7, 13) = 1;
+
+xDes(3, 1)  = 1; % melody
+xDes(3, 2)  = 1;
+xDes(4, 3)  = 1;
+xDes(5, 4)  = 1;
+xDes(5, 5)  = 1;
+xDes(4, 6)  = 1;
+xDes(3, 7)  = 1;
+xDes(2, 8)  = 1;
+xDes(1, 9)  = 1;
+xDes(1, 10) = 1;
+xDes(2, 11) = 1;
+xDes(3, 12) = 1;
+xDes(3, 13) = 1;
+xDes(2, 14) = 1;
+xDes(2, 15) = 1;
+
+trajMag = 10; % magnitude of trajectory (const magnitude for now)
+xDes    = xDes .* trajMag;
+
+% use LQR to find xd, ud
+xPenalty = 1;
+uPenalty = 0.1;
+QLQR     = xPenalty * eye(sys.Nx);
+RLQR     = uPenalty * eye(sys.Nu);
+
+cvx_begin quiet
+variable xd(sys.Nx, slsParams.tFIR_)
+variable ud(sys.Nu, slsParams.tFIR_)
+
+objective = 0;
+for t = 1:slsParams.tFIR_
+    objective = objective + norm(QLQR*(xd(:,t)-xDes(:,t))) + norm(RLQR*ud(:,t));
+    if t < slsParams.tFIR_
+        xd(:,t+1) == sys.A*xd(:,t) + sys.B2*ud(:,t); % enforce dynamics
+    end
+end
+
+minimize(objective);
+cvx_end
+
+lqrStatus = sprintf('LQR trajectory tracking, xPenalty=%0.2f, uPenalty=%0.2f cost=%0.2f', ...
+                    xPenalty, uPenalty, objective);
+disp(lqrStatus);
 
 % simulation %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 simParams           = SimParams;
 simParams.tSim_     = 25;
-simParams.w_        = zeros(sys.Nx, simParams.tSim_); % disturbance
-simParams.w_(3, 1)  = 10;
 simParams.openLoop_ = false;
+% white noise disturbance
+simParams.w_        = wgn(sys.Nx, simParams.tSim_, trajMag ./ 10);
 
-[x, u]  = simulate_system(sys, slsParams, slsOuts, simParams);
+% note: these are the errors of the trajectories
+[xerr, uerr]  = simulate_system(sys, slsParams, slsOuts, simParams);
+
+% pad trajectories with zeros so that dimensions work out
+timediff = simParams.tSim_ - slsParams.tFIR_;
+x    = xerr + [xd zeros(sys.Nx, timediff)]; % x = xerror + trajectory
+u    = uerr + [ud zeros(sys.Nu, timediff)]; % u = uerror + trajectory
+xDes = [xDes zeros(sys.Nx, timediff)];
 
 % visualizations %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Bu = sys.B2*u; % want to look at actuation at each node
@@ -99,10 +134,6 @@ if plotAnimation
 end
 
 if plotTimeTraj
-   % TODO: hack: need to shift xDesired twice since we already shifted it
-   %             once in SLSParams
-   timediff = simParams.tSim_ - size(xDes, 2);
-   xDes     = [zeros(sys.Nx, 2) xDes zeros(sys.Nx, timediff-2)];
    plot_time_traj(x, Bu, xDes);
 end
  
