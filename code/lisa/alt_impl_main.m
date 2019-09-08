@@ -3,9 +3,9 @@ clear; close all; clc;
 
 % specify system matrices
 sys    = LTISystem;
-sys.Nx = 10;
+sys.Nx = 20;
 
-alpha = 0.5; rho = 1; actDens = 0.8;
+alpha = 0.2; rho = 1; actDens = 0.5;
 generate_dbl_stoch_chain(sys, rho, actDens, alpha); % generate sys.A, sys.B2
 
 sys.B1  = eye(sys.Nx); % used in simulation
@@ -26,9 +26,12 @@ simParams.openLoop_ = false;
 slsParams.mode_     = SLSMode.Basic;
 
 slsOuts = state_fdbk_sls(sys, slsParams);
-disp('Done')
+[xOld, uOld] = simulate_system(sys, slsParams, slsOuts, simParams);
+plot_heat_map(xOld, sys.B2*uOld, 'Old');
 
 %% find new implementations Rc, Mc; calculate stats
+close all;
+
 Tc          = 3;
 slsOuts_alt = find_alt_impl(sys, slsParams, slsOuts, Tc);
 TMax        = max(Tc, slsParams.tFIR_);
@@ -59,11 +62,9 @@ Mdiff
 slsParams_alt       = copy(slsParams);
 slsParams_alt.tFIR_ = Tc;
 
-[xOld, uOld] = simulate_system(sys, slsParams, slsOuts, simParams);
 [xNew, uNew] = simulate_system(sys, slsParams_alt, slsOuts_alt, simParams);
 
 xDiff = norm(xNew-xOld)
 uDiff = norm(uNew-uOld)
 
-plot_heat_map(xOld, sys.B2*uOld, 'Old');
 plot_heat_map(xNew, sys.B2*uNew, 'New');
