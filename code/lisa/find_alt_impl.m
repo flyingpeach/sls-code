@@ -13,6 +13,7 @@ statusTxt = [char(10), statusTxt];
 disp(statusTxt);
 
 cvx_begin
+cvx_precision low
 
 TMax = max(Tc, slsParams.tFIR_);
 
