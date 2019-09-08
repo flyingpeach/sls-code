@@ -1,4 +1,4 @@
-%% setup; copied from state fdbk example
+%% setup1; copied from state fdbk example
 clear; close all; clc; 
 
 % specify system matrices
@@ -27,7 +27,7 @@ slsParams.mode_     = SLSMode.Basic;
 
 slsOuts = state_fdbk_sls(sys, slsParams);
 [xOld, uOld] = simulate_system(sys, slsParams, slsOuts, simParams);
-plot_heat_map(xOld, sys.B2*uOld, 'Old');
+plot_heat_map(xOld, sys.B2*uOld, 'Original');
 
 %% find new implementations Rc, Mc; calculate stats
 tFIR    = slsParams.tFIR_;
