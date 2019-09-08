@@ -1,17 +1,35 @@
 %% choose the system you want to work with
-setup3;
+setup1;
 
 %% sandbox
-Tc = 2;
+Tc = 5;
 slsOuts_alt = find_alt_impl(sys, slsParams, slsOuts, Tc);
 
 slsParams_alt       = copy(slsParams);
 slsParams_alt.tFIR_ = Tc;
 
 [xNew, uNew] = simulate_system(sys, slsParams_alt, slsOuts_alt, simParams);
+
+% Simulate but only use first Tc entries of original R, M
+[xTrn, uTrn] = simulate_system(sys, slsParams_alt, slsOuts, simParams);
+
 plot_heat_map(xOld, sys.B2*uOld, 'Original');
+plot_heat_map(xTrn, sys.B2*uTrn, ['Truncated to Tc=', int2str(Tc)]);
 plot_heat_map(xNew, sys.B2*uNew, ['New, Tc=', int2str(Tc)]);
-plot_heat_map(xNew-xOld, sys.B2*(uNew-uOld), ['Diff, Tc=', int2str(Tc)]);
+
+L1NormOrig = 0;
+L1NormTrunc = 0;
+for t=1:slsParams.tFIR_    
+    L1NormOrig = L1NormOrig + norm([sys.C1, sys.D12]*[slsOuts.R_{t}; slsOuts.M_{t}], 1);
+
+    if t <= Tc % only count norms of first Tc terms
+        L1NormTrunc = L1NormTrunc + norm([sys.C1, sys.D12]*[slsOuts.R_{t}; slsOuts.M_{t}], 1);
+    end
+end
+
+L1NormOrig 
+L1NormTrunc
+L1NormNew = slsOuts_alt.clnorm_
 
 %% find new implementations Rc, Mc; calculate stats
 tFIR    = slsParams.tFIR_;
