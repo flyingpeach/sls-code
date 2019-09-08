@@ -1,9 +1,21 @@
-% find new implementations Rc, Mc; calculate stats
-setup1;
+%% choose the system you want to work with
+setup2;
 
+%% sandbox
+Tc = 3;
+slsOuts_alt = find_alt_impl(sys, slsParams, slsOuts, Tc);
+
+slsParams_alt       = copy(slsParams);
+slsParams_alt.tFIR_ = Tc;
+
+[xNew, uNew] = simulate_system(sys, slsParams_alt, slsOuts_alt, simParams);
+plot_heat_map(xNew, sys.B2*uNew, ['New, Tc=', int2str(Tc)]);
+plot_heat_map(xNew-xOld, sys.B2*(uNew-uOld), ['Diff, Tc=', int2str(Tc)]);
+
+%% find new implementations Rc, Mc; calculate stats
 tFIR    = slsParams.tFIR_;
-Tcs     = [2:tFIR, tFIR+1, tFIR+5];
-plotTcs = [2, floor(tFIR/4), floor(tFIR/2), floor(tFIR*3/4)];
+Tcs     = [3:tFIR, tFIR+1, tFIR+5];
+plotTcs = [3, floor(tFIR/4), floor(tFIR/2), floor(tFIR*3/4)];
 
 RDiffs  = zeros(length(Tcs), 1); MDiffs = zeros(length(Tcs), 1);
 xDiffs  = zeros(length(Tcs), 1); uDiffs = zeros(length(Tcs), 1);
@@ -71,7 +83,7 @@ L1NormOrig = 0;
 for t=1:tFIR    
     L1NormOrig = L1NormOrig + norm([sys.C1, sys.D12]*[R{t}; M{t}], 1);
 end
-    
+
 figure; hold on;
 plot(Tcs, L1Norms, 'o-');
 plot(Tcs, L1NormOrig * ones(length(Tcs), 1));
