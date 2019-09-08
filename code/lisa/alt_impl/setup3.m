@@ -1,11 +1,11 @@
-% setup2 (d-localized)
+% setup3 (approx d-localized)
 clear; close all; clc; 
 
 % specify system matrices
 sys    = LTISystem;
-sys.Nx = 10;
+sys.Nx = 20;
 
-alpha = 0.4; rho = 1; actDens = 1;
+alpha = 0.2; rho = 1; actDens = 1;
 generate_dbl_stoch_chain(sys, rho, actDens, alpha); % generate sys.A, sys.B2
 
 sys.B1  = eye(sys.Nx); % used in simulation
@@ -17,10 +17,12 @@ slsParams       = SLSParams;
 slsParams.tFIR_ = 15;
 slsParams.obj_  = Objective.H2; % objective function
 
-slsParams.mode_     = SLSMode.DLocalized;
 slsParams.actDelay_ = 1;
-slsParams.cSpeed_   = 2; % communication speed must be sufficiently large
-slsParams.d_        = 4;
+slsParams.cSpeed_   = 1;
+slsParams.d_        = 3;
+
+slsParams.mode_     = SLSMode.ApproxDLocalized;
+slsParams.robCoeff_ = 10^3;
 
 % simulation parameters
 simParams           = SimParams;

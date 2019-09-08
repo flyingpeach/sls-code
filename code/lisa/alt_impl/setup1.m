@@ -1,4 +1,4 @@
-% setup1
+% setup1 (basic / centralized)
 clear; close all; clc; 
 
 % specify system matrices

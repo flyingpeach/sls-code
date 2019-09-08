@@ -1,21 +1,22 @@
 %% choose the system you want to work with
-setup2;
+setup3;
 
 %% sandbox
-Tc = 3;
+Tc = 2;
 slsOuts_alt = find_alt_impl(sys, slsParams, slsOuts, Tc);
 
 slsParams_alt       = copy(slsParams);
 slsParams_alt.tFIR_ = Tc;
 
 [xNew, uNew] = simulate_system(sys, slsParams_alt, slsOuts_alt, simParams);
+plot_heat_map(xOld, sys.B2*uOld, 'Original');
 plot_heat_map(xNew, sys.B2*uNew, ['New, Tc=', int2str(Tc)]);
 plot_heat_map(xNew-xOld, sys.B2*(uNew-uOld), ['Diff, Tc=', int2str(Tc)]);
 
 %% find new implementations Rc, Mc; calculate stats
 tFIR    = slsParams.tFIR_;
-Tcs     = [3:tFIR, tFIR+1, tFIR+5];
-plotTcs = [3, floor(tFIR/4), floor(tFIR/2), floor(tFIR*3/4)];
+Tcs     = [2:tFIR, tFIR+1, tFIR+5];
+plotTcs = [2, floor(tFIR/4), floor(tFIR/2), floor(tFIR*3/4)];
 
 RDiffs  = zeros(length(Tcs), 1); MDiffs = zeros(length(Tcs), 1);
 xDiffs  = zeros(length(Tcs), 1); uDiffs = zeros(length(Tcs), 1);
