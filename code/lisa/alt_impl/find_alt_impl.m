@@ -19,7 +19,7 @@ TMax = max(Tc, slsParams.tFIR_);
 
 variable Rcs(sys.Nx, sys.Nx, Tc)
 variable Mcs(sys.Nu, sys.Nx, Tc)
-expression Dellcs(sys.Nx, sys.Nx, TMax)
+expression Dellcs(sys.Nx, sys.Nx, Tc)
 expression Rcsums(sys.Nx, sys.Nx, Tc)
 expression Mcsums(sys.Nu, sys.Nx, Tc)
 
