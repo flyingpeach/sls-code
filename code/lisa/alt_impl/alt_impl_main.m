@@ -2,7 +2,7 @@
 setup1;
 
 %% sandbox
-Tc = 5;
+Tc = 2;
 slsOuts_alt = find_alt_impl(sys, slsParams, slsOuts, Tc);
 
 slsParams_alt       = copy(slsParams);
@@ -10,35 +10,23 @@ slsParams_alt.tFIR_ = Tc;
 
 [xNew, uNew] = simulate_system(sys, slsParams_alt, slsOuts_alt, simParams);
 
-% Simulate but only use first Tc entries of original R, M
-[xTrn, uTrn] = simulate_system(sys, slsParams_alt, slsOuts, simParams);
-
 plot_heat_map(xOld, sys.B2*uOld, 'Original');
-plot_heat_map(xTrn, sys.B2*uTrn, ['Truncated to Tc=', int2str(Tc)]);
 plot_heat_map(xNew, sys.B2*uNew, ['New, Tc=', int2str(Tc)]);
-
-L1NormOrig = 0;
-L1NormTrunc = 0;
-for t=1:slsParams.tFIR_    
-    L1NormOrig = L1NormOrig + norm([sys.C1, sys.D12]*[slsOuts.R_{t}; slsOuts.M_{t}], 1);
-
-    if t <= Tc % only count norms of first Tc terms
-        L1NormTrunc = L1NormTrunc + norm([sys.C1, sys.D12]*[slsOuts.R_{t}; slsOuts.M_{t}], 1);
-    end
-end
-
-L1NormOrig 
-L1NormTrunc
-L1NormNew = slsOuts_alt.clnorm_
 
 %% find new implementations Rc, Mc; calculate stats
 tFIR    = slsParams.tFIR_;
-Tcs     = [2:tFIR, tFIR+1, tFIR+5];
-plotTcs = [2, floor(tFIR/4), floor(tFIR/2), floor(tFIR*3/4)];
+Tcs     = [2:15];
+plotTcs = []; % which Tcs you want to plot for
+
+thresh  = 1e-9; % below this value we'll count the value as a zero
 
 RDiffs  = zeros(length(Tcs), 1); MDiffs = zeros(length(Tcs), 1);
 xDiffs  = zeros(length(Tcs), 1); uDiffs = zeros(length(Tcs), 1);
 L1Norms = zeros(length(Tcs), 1);
+
+% count nonzero entries
+RcNonzeros = zeros(length(Tcs), 1); 
+McNonzeros = zeros(length(Tcs), 1);
 
 slsParams_alt = copy(slsParams); % for simulation; uses Tc instead of tFIR
 
@@ -62,12 +50,12 @@ for i=1:length(Tcs)
         Mc{t} = zeros(sys.Nu, sys.Nx);
     end
 
-    RDiff = 0; MDiff = 0;
     for t=1:TMax
-        RDiff = RDiff + norm(full(R{t} - Rc{t}));
-        MDiff = MDiff + norm(full(M{t} - Mc{t}));
+        RDiffs(i) = RDiffs(i) + norm(full(R{t} - Rc{t}));
+        MDiffs(i) = MDiffs(i) + norm(full(M{t} - Mc{t}));
+        RcNonzeros(i) = RcNonzeros(i) + full(sum(vec(Rc{t} > thresh)));
+        McNonzeros(i) = McNonzeros(i) + full(sum(vec(Mc{t} > thresh))); 
     end
-    RDiffs(i) = RDiff; MDiffs(i) = MDiff;
 
     slsParams_alt.tFIR_ = Tc;
     [xNew, uNew] = simulate_system(sys, slsParams_alt, slsOuts_alt, simParams);
@@ -81,31 +69,103 @@ for i=1:length(Tcs)
     end
 end
 
-%% plot trends
+%% calculate reference values
 
-figure; hold on;
-plot(Tcs, RDiffs, 'o-');
-plot(Tcs, MDiffs, 'o-');
-title('Normed diffs between Rc/Mc, R/M');
-xlabel('Tc'); ylabel('Normed difference');
-legend('||Rc-R||_2', '||Mc-M||_2');
-
-figure; hold on;
-plot(Tcs, xDiffs, 'o-');
-plot(Tcs, uDiffs, 'o-');
-title('Normed diffs between CL responses');
-xlabel('Tc'); ylabel('Normed difference');
-legend('||xc-x||_2', '||uc-u||_2');
-
-% L1 norm of original
+% original stats
 L1NormOrig = 0;
+RNonzero   = 0; MNonzero  = 0; 
+
 for t=1:tFIR    
     L1NormOrig = L1NormOrig + norm([sys.C1, sys.D12]*[R{t}; M{t}], 1);
+    RNonzero = RNonzero + full(sum(vec(R{t} > thresh)));
+    MNonzero = MNonzero + full(sum(vec(M{t} > thresh)));
 end
 
-figure; hold on;
+% reference stats
+% our reference is truncated R, M (i.e. take only first Tc entries)
+RTDiffs  = zeros(length(Tcs), 1); MTDiffs = zeros(length(Tcs), 1);
+xTDiffs  = zeros(length(Tcs), 1); uTDiffs = zeros(length(Tcs), 1);
+L1NormsT = zeros(length(Tcs), 1);
+
+RTNonzeros = zeros(length(Tcs), 1);
+MTNonzeros = zeros(length(Tcs), 1);
+
+for i=1:length(Tcs)
+    Tc = Tcs(i);
+    slsParams_alt.tFIR_ = Tc;
+    
+    for t=Tc+1:tFIR
+        RTDiffs(i) = RTDiffs(i) + norm(full(R{t}));
+        MTDiffs(i) = MTDiffs(i) + norm(full(M{t}));
+    end
+   
+   [xT, uT]   = simulate_system(sys, slsParams_alt, slsOuts, simParams);
+   xTDiffs(i) = norm(xT-xOld);
+   uTDiffs(i) = norm(uT-uOld);
+
+   for t=1:Tc
+       L1NormsT(i) = L1NormsT(i) + norm([sys.C1, sys.D12]*[R{t}; M{t}], 1);
+       RTNonzeros(i) = RTNonzeros(i) + full(sum(vec(R{t} > thresh)));
+       MTNonzeros(i) = MTNonzeros(i) + full(sum(vec(M{t} > thresh)));
+   end
+end
+
+%% plot trends
+
+figure; % differences between the matrices
+subplot(2,1,1); hold on;
+plot(Tcs, RDiffs, 'o-');
+plot(Tcs, RTDiffs, 'x-');
+title('Normed diffs between R/Rc/RT');
+ylabel('Normed difference');
+legend('||Rc-R||_2', '||RT-R||_2');
+
+subplot(2,1,2); hold on;
+plot(Tcs, MDiffs, 'o-');
+plot(Tcs, MTDiffs, 'x-');
+title('Normed diffs between M/Mc/MT');
+xlabel('Tc'); ylabel('Normed difference');
+legend('||Mc-M||_2', '||MT-M||_2');
+
+
+figure; % differences between CL state / inputs
+subplot(2,1,1); hold on;
+plot(Tcs, xDiffs, 'o-');
+plot(Tcs, xTDiffs, 'x-');
+title('Normed diffs between CL states');
+ylabel('Normed difference');
+legend('||xc-x||_2', '||xT-x||_2');
+
+subplot(2,1,2); hold on;
+plot(Tcs, uDiffs, 'o-');
+plot(Tcs, uTDiffs, 'x-');
+title('Normed diffs between CL responses');
+xlabel('Tc'); ylabel('Normed difference');
+legend('||uc-u||_2', '||uT-u||_2');
+
+
+figure; hold on; % compare L1 norms
 plot(Tcs, L1Norms, 'o-');
+plot(Tcs, L1NormsT, 'x-');
 plot(Tcs, L1NormOrig * ones(length(Tcs), 1));
 title('L1 norms of new implementation');
 xlabel('Tc'); ylabel('L1-norm');
-legend('L1 norms', 'Original L1 norm');
+legend('L1 norms', 'L1 norms truncated', 'Original L1 norm');
+
+
+figure; % compare # nonzero entries
+subplot(2,1,1); hold on;
+plot(Tcs, RcNonzeros, 'o-');
+plot(Tcs, RTNonzeros, 'x-');
+plot(Tcs, RNonzero * ones(length(Tcs), 1));
+title(sprintf('Entries of Rc/RT/R > %0.1s', thresh));
+ylabel('# Nonzero entries');
+legend('Rc', 'RT', 'R');
+
+subplot(2,1,2); hold on;
+plot(Tcs, McNonzeros, 'o-');
+plot(Tcs, MTNonzeros, 'x-');
+plot(Tcs, MNonzero * ones(length(Tcs), 1));
+title(sprintf('Entries of Mc/MT/M > %0.1s', thresh));
+xlabel('Tc'); ylabel('# Nonzero entries');
+legend('Mc', 'MT', 'M');
