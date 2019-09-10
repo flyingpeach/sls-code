@@ -81,11 +81,19 @@ minimize(objective);
 cvx_end
 
 % outputs
-slsOuts             = SLSOutputs;
-slsOuts.acts_       = get_acts_rfd(sys, params, M); % rfd actuator selection
-slsOuts.R_          = R;
-slsOuts.M_          = M;
-slsOuts.robustStab_ = robustStab;
+slsOuts              = SLSOutputs;
+slsOuts.acts_        = get_acts_rfd(sys, params, M); % rfd actuator selection
+slsOuts.R_           = R;
+slsOuts.M_           = M;
+slsOuts.robustStab_  = robustStab;
+slsOuts.solveStatus_ = cvx_status;
+
+if strcmp(cvx_status, 'Solved')
+    statusTxt = 'Solved!';
+else
+    statusTxt = sprintf('[SLS WARNING] Solver exited with status %s', cvx_status);
+end
+disp([char(9), statusTxt]);
 
 % optimal value of objective function without regularization terms
 slsOuts.clnorm_     = get_objective(sys, params, R, M);

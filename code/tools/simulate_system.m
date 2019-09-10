@@ -9,7 +9,7 @@ function [x, u] = simulate_system(sys, slsParams, slsOuts, simParams)
 %    simParams : SimParams; parameters for the simulation
 
 statusTxt = simParams.sanity_check();
-statusTxt = ['Simulating with ', statusTxt];
+statusTxt = [char(10), 'Simulating with ', statusTxt];
 disp(statusTxt);
         
 x     = zeros(sys.Nx, simParams.tSim_); 
