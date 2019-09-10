@@ -3,7 +3,7 @@ clear; close all; clc;
 
 % specify system matrices
 sys    = LTISystem;
-sys.Nx = 20;
+sys.Nx = 10;
 
 alpha = 0.2; rho = 1; actDens = 1;
 generate_dbl_stoch_chain(sys, rho, actDens, alpha); % generate sys.A, sys.B2
