@@ -23,6 +23,7 @@ disp(statusTxt);
 T = slsParams.tFIR_;
 
 cvx_begin
+cvx_solver sdpt3
 cvx_precision low
 
 variable Rcs(sys.Nx, sys.Nx, Tc)
