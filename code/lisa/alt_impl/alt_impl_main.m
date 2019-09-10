@@ -15,7 +15,7 @@ plot_heat_map(xNew, sys.B2*uNew, ['New, Tc=', int2str(Tc)]);
 
 %% find new implementations Rc, Mc; calculate stats
 tFIR    = slsParams.tFIR_;
-Tcs     = [2:15];
+Tcs     = [2:25];
 plotTcs = []; % which Tcs you want to plot for
 
 thresh  = 1e-9; % below this value we'll count the value as a zero
@@ -62,8 +62,9 @@ for i=1:length(Tcs)
     xDiffs(i)    = norm(xNew-xOld);
     uDiffs(i)    = norm(uNew-uOld);
 
-    L1Norms(i) = slsOuts_alt.clnorm_;
-
+    L1Norms(i)  = slsOuts_alt.clnorm_;
+    statuses{i} = slsOuts_alt.solveStatus_;
+    
     if ismember(Tc, plotTcs)
         plot_heat_map(xNew, sys.B2*uNew, ['New, Tc=', int2str(Tc)]);
     end
@@ -99,7 +100,11 @@ for i=1:length(Tcs)
         MTDiffs(i) = MTDiffs(i) + norm(full(M{t}));
     end
    
-   [xT, uT]   = simulate_system(sys, slsParams_alt, slsOuts, simParams);
+   if Tc < tFIR
+       [xT, uT]   = simulate_system(sys, slsParams_alt, slsOuts, simParams);
+   else
+       xT = xOld; uT = uOld;
+   end
    xTDiffs(i) = norm(xT-xOld);
    uTDiffs(i) = norm(uT-uOld);
 
@@ -139,7 +144,7 @@ legend('||xc-x||_2', '||xT-x||_2');
 subplot(2,1,2); hold on;
 plot(Tcs, uDiffs, 'o-');
 plot(Tcs, uTDiffs, 'x-');
-title('Normed diffs between CL responses');
+title('Normed diffs between CL inputs');
 xlabel('Tc'); ylabel('Normed difference');
 legend('||uc-u||_2', '||uT-u||_2');
 

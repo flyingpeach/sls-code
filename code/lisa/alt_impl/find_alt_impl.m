@@ -4,11 +4,11 @@ function slsOuts_alt = find_alt_impl(sys, slsParams, slsOuts, Tc, approx)
 %       get it from SLS but from postprocessing SLS
 %    slsOuts_alt : contains clnorm and new R, M
 % Inputs
-%    sys       : LTISystem containing system matrices
-%    slsParams : SLSParams containing parameters
-%    slsOuts   : contains info from SLS (original R, M)
-%    approx    : put any value here if you want approximate solution
-%                (i.e. drop trailing zero constraints)
+%    sys         : LTISystem containing system matrices
+%    slsParams   : SLSParams containing parameters
+%    slsOuts     : contains info from SLS (original R, M)
+%    approx      : put any value here if you want approximate solution
+%                  (i.e. drop trailing zero constraints)
 if nargin == 4
     approx    = false;
     statusTxt = 'Finding *exact* alt implementation';
@@ -83,6 +83,7 @@ minimize(objective);
 cvx_end
 
 % outputs
-slsOuts_alt.R_      = Rc;
-slsOuts_alt.M_      = Mc;
-slsOuts_alt.clnorm_ = objective;
+slsOuts_alt.R_           = Rc;
+slsOuts_alt.M_           = Mc;
+slsOuts_alt.clnorm_      = objective;
+slsOuts_alt.solveStatus_ = cvx_status;
