@@ -70,6 +70,13 @@ for i=1:length(Tcs)
     end
 end
 
+statusTxt = 'Statuses:';
+for i=1:length(Tcs)
+    Tc = Tcs(i);
+    statusTxt = [statusTxt, char(10), sprintf('Tc=%d, %s', Tc, statuses{i})];
+end
+disp(statusTxt);
+
 %% calculate reference values
 
 % original stats
@@ -117,6 +124,8 @@ end
 
 %% plot trends
 
+savepath = 'C:\Users\Lisa\Desktop\caltech\research\implspace\tmp\';
+
 figure; % differences between the matrices
 subplot(2,1,1); hold on;
 plot(Tcs, RDiffs, 'o-');
@@ -131,6 +140,7 @@ plot(Tcs, MTDiffs, 'x-');
 title('Normed diffs between M/Mc/MT');
 xlabel('Tc'); ylabel('Normed difference');
 legend('||Mc-M||_2', '||MT-M||_2');
+savefig([savepath, 'mtxdiff.fig']);
 
 
 figure; % differences between CL state / inputs
@@ -147,6 +157,7 @@ plot(Tcs, uTDiffs, 'x-');
 title('Normed diffs between CL inputs');
 xlabel('Tc'); ylabel('Normed difference');
 legend('||uc-u||_2', '||uT-u||_2');
+savefig([savepath, 'cldiff.fig']);
 
 
 figure; hold on; % compare L1 norms
@@ -156,6 +167,7 @@ plot(Tcs, L1NormOrig * ones(length(Tcs), 1));
 title('L1 norms of new implementation');
 xlabel('Tc'); ylabel('L1-norm');
 legend('L1 norms', 'L1 norms truncated', 'Original L1 norm');
+savefig([savepath, 'l1normdiff.fig']);
 
 
 figure; % compare # nonzero entries
@@ -174,3 +186,4 @@ plot(Tcs, MNonzero * ones(length(Tcs), 1));
 title(sprintf('Entries of Mc/MT/M > %0.1s', thresh));
 xlabel('Tc'); ylabel('# Nonzero entries');
 legend('Mc', 'MT', 'M');
+savefig([savepath, 'nonzeros.fig']);
