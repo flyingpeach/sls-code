@@ -13,35 +13,43 @@ slsParams_alt.tFIR_ = Tc;
 plot_heat_map(xOld, sys.B2*uOld, 'Original');
 plot_heat_map(xNew, sys.B2*uNew, ['New, Tc=', int2str(Tc)]);
 
-%% find new implementations Rc, Mc; calculate stats
-tFIR    = slsParams.tFIR_;
-Tcs     = [2:25];
+%% find new implementations Rc, Mc
+Tcs     = [2:8];
+numTcs  = length(Tcs);
 plotTcs = []; % which Tcs you want to plot for
 
-thresh  = 1e-6; % below this value we'll count the value as a zero
+% slsOuts_alts{i} contains alternate implementation for Tc=Tcs(i)
+slsOuts_alts = cell(numTcs, 1);
 
-RDiffs  = zeros(length(Tcs), 1); MDiffs = zeros(length(Tcs), 1);
-xDiffs  = zeros(length(Tcs), 1); uDiffs = zeros(length(Tcs), 1);
-L1Norms = zeros(length(Tcs), 1);
+for i=1:numTcs
+    Tc          = Tcs(i);
+    slsOuts_alts{i} = find_alt_impl(sys, slsParams, slsOuts, Tc, 'approx');
+end
 
-% count nonzero entries
-RcNonzeros = zeros(length(Tcs), 1); 
-McNonzeros = zeros(length(Tcs), 1);
+%% calculate stats
+zthresh = 1e-6; % below this value we'll count the value as a zero
 
-slsParams_alt = copy(slsParams); % for simulation; uses Tc instead of tFIR
+% original values (renamed for easier reference)
+T = slsParams.tFIR_;
+R = slsOuts.R_; M = slsOuts.M_;
 
-for i=1:length(Tcs)
-    Tc = Tcs(i); TMax = max(Tc, tFIR);
+% stats for Rc, Mc
+RDiffs     = zeros(numTcs, 1); MDiffs = zeros(numTcs, 1);
+xDiffs     = zeros(numTcs, 1); uDiffs = zeros(numTcs, 1);
+RcNonzeros = zeros(numTcs, 1); McNonzeros = zeros(numTcs, 1);
+L1Norms    = zeros(numTcs, 1);
 
-    % find Rc, Mc (alternate implementations)
-    slsOuts_alt = find_alt_impl(sys, slsParams, slsOuts, Tc);
-    
-    R  = slsOuts.R_; Rc = slsOuts_alt.R_;
-    M  = slsOuts.M_; Mc = slsOuts_alt.M_;
+statusTxt = 'Statuses:'; % for writing out cvx statuses for each Tc
 
-    % calculate stats
+slsParams_alt = copy(slsParams); % for simulation; uses Tc instead of T
+
+for i=1:numTcs
+    Tc = Tcs(i); TMax = max(Tc, T);
+    Rc = slsOuts_alts{i}.R_;
+    Mc = slsOuts_alts{i}.M_;
+   
     % make Rc, R equal length for easier comparisons
-    for t=tFIR+1:TMax % pad R, M with zeros if needed
+    for t=T+1:TMax % pad R, M with zeros if needed
         R{t} = zeros(sys.Nx, sys.Nx);
         M{t} = zeros(sys.Nu, sys.Nx);
     end
@@ -53,61 +61,53 @@ for i=1:length(Tcs)
     for t=1:TMax
         RDiffs(i) = RDiffs(i) + norm(full(R{t} - Rc{t}));
         MDiffs(i) = MDiffs(i) + norm(full(M{t} - Mc{t}));
-        RcNonzeros(i) = RcNonzeros(i) + full(sum(vec(Rc{t} > thresh)));
-        McNonzeros(i) = McNonzeros(i) + full(sum(vec(Mc{t} > thresh))); 
+        RcNonzeros(i) = RcNonzeros(i) + full(sum(vec(Rc{t} > zthresh)));
+        McNonzeros(i) = McNonzeros(i) + full(sum(vec(Mc{t} > zthresh))); 
     end
 
     slsParams_alt.tFIR_ = Tc;
-    [xNew, uNew] = simulate_system(sys, slsParams_alt, slsOuts_alt, simParams);
+    [xNew, uNew] = simulate_system(sys, slsParams_alt, slsOuts_alts{i}, simParams);
     xDiffs(i)    = norm(xNew-xOld);
     uDiffs(i)    = norm(uNew-uOld);
-
-    L1Norms(i)  = slsOuts_alt.clnorm_;
-    statuses{i} = slsOuts_alt.solveStatus_;
+    L1Norms(i)   = slsOuts_alts{i}.clnorm_;
     
+    status    = slsOuts_alts{i}.solveStatus_;
+    statusTxt = [statusTxt, char(10), sprintf('Tc=%d, %s', Tc, status)];
+
     if ismember(Tc, plotTcs)
         plot_heat_map(xNew, sys.B2*uNew, ['New, Tc=', int2str(Tc)]);
     end
 end
 
-statusTxt = 'Statuses:';
-for i=1:length(Tcs)
-    Tc = Tcs(i);
-    statusTxt = [statusTxt, char(10), sprintf('Tc=%d, %s', Tc, statuses{i})];
-end
-disp(statusTxt);
-
-%% calculate reference values
-
 % original stats
 L1NormOrig = 0;
 RNonzero   = 0; MNonzero  = 0; 
 
-for t=1:tFIR    
+for t=1:T  
     L1NormOrig = L1NormOrig + norm([sys.C1, sys.D12]*[R{t}; M{t}], 1);
-    RNonzero = RNonzero + full(sum(vec(R{t} > thresh)));
-    MNonzero = MNonzero + full(sum(vec(M{t} > thresh)));
+    RNonzero = RNonzero + full(sum(vec(R{t} > zthresh)));
+    MNonzero = MNonzero + full(sum(vec(M{t} > zthresh)));
 end
 
 % reference stats
 % our reference is truncated R, M (i.e. take only first Tc entries)
-RTDiffs  = zeros(length(Tcs), 1); MTDiffs = zeros(length(Tcs), 1);
-xTDiffs  = zeros(length(Tcs), 1); uTDiffs = zeros(length(Tcs), 1);
-L1NormsT = zeros(length(Tcs), 1);
+RTDiffs  = zeros(numTcs, 1); MTDiffs = zeros(numTcs, 1);
+xTDiffs  = zeros(numTcs, 1); uTDiffs = zeros(numTcs, 1);
+L1NormsT = zeros(numTcs, 1);
 
-RTNonzeros = zeros(length(Tcs), 1);
-MTNonzeros = zeros(length(Tcs), 1);
+RTNonzeros = zeros(numTcs, 1);
+MTNonzeros = zeros(numTcs, 1);
 
-for i=1:length(Tcs)
+for i=1:numTcs
     Tc = Tcs(i);
     slsParams_alt.tFIR_ = Tc;
     
-    for t=Tc+1:tFIR
+    for t=Tc+1:T
         RTDiffs(i) = RTDiffs(i) + norm(full(R{t}));
         MTDiffs(i) = MTDiffs(i) + norm(full(M{t}));
     end
    
-   if Tc < tFIR
+   if Tc < T
        [xT, uT]   = simulate_system(sys, slsParams_alt, slsOuts, simParams);
    else
        xT = xOld; uT = uOld;
@@ -117,14 +117,15 @@ for i=1:length(Tcs)
 
    for t=1:Tc
        L1NormsT(i) = L1NormsT(i) + norm([sys.C1, sys.D12]*[R{t}; M{t}], 1);
-       RTNonzeros(i) = RTNonzeros(i) + full(sum(vec(R{t} > thresh)));
-       MTNonzeros(i) = MTNonzeros(i) + full(sum(vec(M{t} > thresh)));
+       RTNonzeros(i) = RTNonzeros(i) + full(sum(vec(R{t} > zthresh)));
+       MTNonzeros(i) = MTNonzeros(i) + full(sum(vec(M{t} > zthresh)));
    end
 end
 
 %% plot trends
 
 savepath = 'C:\Users\Lisa\Desktop\caltech\research\implspace\tmp\';
+disp(statusTxt);
 
 figure; % differences between the matrices
 subplot(2,1,1); hold on;
@@ -163,7 +164,7 @@ savefig([savepath, 'cldiff.fig']);
 figure; hold on; % compare L1 norms
 plot(Tcs, L1Norms, 'o-');
 plot(Tcs, L1NormsT, 'x-');
-plot(Tcs, L1NormOrig * ones(length(Tcs), 1));
+plot(Tcs, L1NormOrig * ones(numTcs, 1));
 title('L1 norms of new implementation');
 xlabel('Tc'); ylabel('L1-norm');
 legend('L1 norms', 'L1 norms truncated', 'Original L1 norm');
@@ -174,16 +175,16 @@ figure; % compare # nonzero entries
 subplot(2,1,1); hold on;
 plot(Tcs, RcNonzeros, 'o-');
 plot(Tcs, RTNonzeros, 'x-');
-plot(Tcs, RNonzero * ones(length(Tcs), 1));
-title(sprintf('Entries of Rc/RT/R > %0.1s', thresh));
+plot(Tcs, RNonzero * ones(numTcs, 1));
+title(sprintf('Entries of Rc/RT/R > %0.1s', zthresh));
 ylabel('# Nonzero entries');
 legend('Rc', 'RT', 'R');
 
 subplot(2,1,2); hold on;
 plot(Tcs, McNonzeros, 'o-');
 plot(Tcs, MTNonzeros, 'x-');
-plot(Tcs, MNonzero * ones(length(Tcs), 1));
-title(sprintf('Entries of Mc/MT/M > %0.1s', thresh));
+plot(Tcs, MNonzero * ones(numTcs, 1));
+title(sprintf('Entries of Mc/MT/M > %0.1s', zthresh));
 xlabel('Tc'); ylabel('# Nonzero entries');
 legend('Mc', 'MT', 'M');
 savefig([savepath, 'nonzeros.fig']);
