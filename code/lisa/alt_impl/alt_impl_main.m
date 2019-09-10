@@ -18,7 +18,7 @@ tFIR    = slsParams.tFIR_;
 Tcs     = [2:25];
 plotTcs = []; % which Tcs you want to plot for
 
-thresh  = 1e-9; % below this value we'll count the value as a zero
+thresh  = 1e-6; % below this value we'll count the value as a zero
 
 RDiffs  = zeros(length(Tcs), 1); MDiffs = zeros(length(Tcs), 1);
 xDiffs  = zeros(length(Tcs), 1); uDiffs = zeros(length(Tcs), 1);
