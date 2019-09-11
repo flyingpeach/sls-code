@@ -2,6 +2,7 @@ function slsOuts_alt = find_alt_impl(sys, slsParams, slsOuts, Tc, approx)
 % Find alternate implementation, returned in slsOuts_alt
 % TODO: technically slsOuts_alt is a misnomer here as we didn't
 %       get it from SLS but from postprocessing SLS
+% Outputs
 %    slsOuts_alt : contains clnorm and new R, M
 % Inputs
 %    sys         : LTISystem containing system matrices
