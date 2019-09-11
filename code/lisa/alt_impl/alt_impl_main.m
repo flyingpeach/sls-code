@@ -2,16 +2,15 @@
 setup1;
 
 %% sandbox
-Tc = 2;
-slsOuts_alt = find_alt_impl(sys, slsParams, slsOuts, Tc);
+Tc = 4;
+slsOuts_alt = find_alt_impl(sys, slsParams, slsOuts, Tc, 'approx');
 
-slsParams_alt       = copy(slsParams);
-slsParams_alt.tFIR_ = Tc;
-
-[xNew, uNew] = simulate_system(sys, slsParams_alt, slsOuts_alt, simParams);
-
-plot_heat_map(xOld, sys.B2*uOld, 'Original');
-plot_heat_map(xNew, sys.B2*uNew, ['New, Tc=', int2str(Tc)]);
+s_a{1}  = slsOuts_alt;
+zThresh = 1e-6;
+met     = AltImplMetrics([Tc], zThresh);
+met     = calc_mtx_metrics(met, sys, slsParams, slsOuts, s_a);
+met     = calc_cl_metrics(met, sys, simParams, slsParams, slsOuts, s_a, [], '');
+met % output metrics
 
 %% find new implementations Rc, Mc
 Tcs = [2:8];
