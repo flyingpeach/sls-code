@@ -2,8 +2,8 @@
 setup1;
 
 %% sandbox
-Tc = 4;
-slsOuts_alt = find_alt_impl(sys, slsParams, slsOuts, Tc, 'approx');
+Tc = 20;
+slsOuts_alt = find_alt_impl(sys, slsParams, slsOuts, Tc);
 
 s_a{1}  = slsOuts_alt;
 zThresh = 1e-6;
@@ -11,6 +11,8 @@ met     = AltImplMetrics([Tc], zThresh);
 met     = calc_mtx_metrics(met, sys, slsParams, slsOuts, s_a);
 met     = calc_cl_metrics(met, sys, simParams, slsParams, slsOuts, s_a, [], '');
 met % output metrics
+
+visualize_matrices(slsOuts, slsOuts_alt, Tc, 'all');
 
 %% find new implementations Rc, Mc
 Tcs = [2:8];
