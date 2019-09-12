@@ -9,13 +9,13 @@ s_a{1}  = slsOuts_alt;
 zThresh = 1e-6;
 met     = AltImplMetrics([Tc], zThresh);
 met     = calc_mtx_metrics(met, sys, slsParams, slsOuts, s_a);
-met     = calc_cl_metrics(met, sys, simParams, slsParams, slsOuts, s_a, [], '');
-met % output metrics
+met     = calc_cl_metrics(met, sys, simParams, slsParams, slsOuts, s_a);
+met
 
 visualize_matrices(slsOuts, slsOuts_alt, Tc, 'all');
 
 %% find new implementations Rc, Mc
-Tcs = [2:8];
+Tcs = [2:20];
 
 % slsOuts_alts{i} contains alternate implementation for Tc=Tcs(i)
 slsOuts_alts = cell(length(Tcs), 1);
@@ -28,9 +28,6 @@ end
 disp(['Statuses:', print_statuses(slsOuts_alts)]); % check solver statuses
 
 %% calculate stats & generate plots
-savepath = 'C:\Users\Lisa\Desktop\caltech\research\implspace\tmp\';
-plotTcs  = [2];
-
 zThresh = 1e-6;
 met     = AltImplMetrics(Tcs, zThresh);
 
@@ -38,8 +35,8 @@ met     = AltImplMetrics(Tcs, zThresh);
 met = calc_mtx_metrics(met, sys, slsParams, slsOuts, slsOuts_alts);
 
 % calculate closed-loop metrics and plot select heat maps
-met = calc_cl_metrics(met, sys, simParams, slsParams, slsOuts,...
-                      slsOuts_alts, plotTcs, savepath);
+met = calc_cl_metrics(met, sys, simParams, slsParams, slsOuts, slsOuts_alts);
 
-% plot metrics
+% plot metrics and save to file
+savepath = 'C:\Users\Lisa\Desktop\caltech\research\implspace\tmp\';
 plot_metrics(met, savepath);

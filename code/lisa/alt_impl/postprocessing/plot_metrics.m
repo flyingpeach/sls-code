@@ -21,21 +21,21 @@ xlabel('Tc'); ylabel('Normed difference');
 legend('||Mc-M||_2', '||MTc-M||_2');
 savefig([savepath, '\mtx_diff.fig']);
 
-% differences between CL states / inputs %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% differences between CL maps %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 figure;
 subplot(2,1,1); hold on;
-plot(met.Tcs, met.xDiffs, 'o-');
-plot(met.Tcs, met.xTcDiffs, 'x-');
-title('Normed diffs between CL states');
+plot(met.Tcs, met.GcDiffs, 'o-');
+plot(met.Tcs, met.GTcDiffs, 'x-');
+title('Normed diffs between CL maps from w to x');
 ylabel('Normed difference');
-legend('||xc-x||_2', '||xTc-x||_2');
+legend('||Gc-R||_2', '||GTc-R||_2');
 
 subplot(2,1,2); hold on;
-plot(met.Tcs, met.uDiffs, 'o-');
-plot(met.Tcs, met.uTcDiffs, 'x-');
-title('Normed diffs between CL inputs');
+plot(met.Tcs, met.HcDiffs, 'o-');
+plot(met.Tcs, met.HTcDiffs, 'x-');
+title('Normed diffs between CL maps from w to u');
 xlabel('Tc'); ylabel('Normed difference');
-legend('||uc-u||_2', '||uTc-u||_2');
+legend('||Hc-M||_2', '||HTc-M||_2');
 savefig([savepath, '\cl_diff.fig']);
 
 % compare L1 norms %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
