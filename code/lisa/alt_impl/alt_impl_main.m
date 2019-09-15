@@ -30,6 +30,13 @@ numTcs = length(Tcs);
 
 % slsOuts_alts{i} contains alternate implementation for Tc=Tcs(i)
 slsOuts_alts = cell(numTcs, 1);
+
+for idx=1:length(Tcs)
+    Tc = Tcs(idx);
+    slsOuts_alts{idx} = find_alt_impl(sys, slsParams, slsOuts, Tc);
+end
+
+%% check feasibility / solver statuses
 rankFs       = zeros(numTcs, 1);
 rankF2s      = zeros(numTcs, 1);
 
@@ -37,10 +44,8 @@ for idx=1:length(Tcs)
     Tc = Tcs(idx);
 
     [rankFs(idx), rankF2s(idx)] = get_rank(sys, slsParams, slsOuts, Tc, tol);
-    slsOuts_alts{idx} = find_alt_impl(sys, slsParams, slsOuts, Tc);
 end
 
-% check solver/feasibility statuses
 disp(['Statuses:', print_statuses(sys, slsOuts_alts, rankFs, rankF2s)]); 
 
 %% plot stuff
