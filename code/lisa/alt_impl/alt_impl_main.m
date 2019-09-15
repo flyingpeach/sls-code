@@ -9,7 +9,7 @@ tol = eps.^(1/4);
 close all;
 %% sandbox
 Tc = 2;
-slsOuts_alt = find_alt_impl(sys, slsParams, slsOuts, Tc);
+slsOuts_alt = find_alt_impl_block(sys, slsParams, slsOuts, Tc);
 
 s_a{1}  = slsOuts_alt;
 
@@ -32,7 +32,7 @@ slsOuts_alts = cell(numTcs, 1);
 
 for idx=1:length(Tcs)
     Tc = Tcs(idx);
-    slsOuts_alts{idx} = find_alt_impl(sys, slsParams, slsOuts, Tc);
+    slsOuts_alts{idx} = find_alt_impl_block(sys, slsParams, slsOuts, Tc);
 end
 
 % check feasibility / solver statuses
