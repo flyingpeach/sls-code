@@ -15,7 +15,7 @@ for i=1:length(slsOuts_alts)
 
     solnSpaceSize = 0;
     if rankFs(i) == rankF2s(i);
-        solnSpaceSize = Tc*(sys.Nx + sys.Nu - 1) - rankFs(i);
+        solnSpaceSize = (Tc*(sys.Nx + sys.Nu - 1) - rankFs(i)) * sys.Nx;
     end
 
     status    = slsOuts_alts{i}.solveStatus_;
