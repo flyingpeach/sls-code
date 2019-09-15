@@ -10,7 +10,9 @@ function solnSpaceSize = get_soln_size(sys, slsParams, slsOuts, Tc, tol)
 %     tol           : tolerance to use for rank calculation
 
 solnSpaceSize   = 0;
-[rankF, rankF2] = get_rank(sys, slsParams, slsOuts, Tc, tol);
+F      = get_F(sys, slsParams, slsOuts, Tc);
+rankF  = rank(F, tol);
+rankF2 = rank(F(:,sys.Nx+1:end), tol);
 
 if rankF == rankF2
     solnSpaceSize = (Tc*(sys.Nx + sys.Nu - 1) - rankF) * sys.Nx;

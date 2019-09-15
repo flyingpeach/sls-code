@@ -1,15 +1,13 @@
-function [rankF, rankF2] = get_rank(sys, slsParams, slsOuts, Tc, tol)
-% Returns the rank of F and F2. This can be used to determine whether an
-% alternate implementation exists, and how big the solution space is
+function F = get_F(sys, slsParams, slsOuts, Tc)
+% Returns the matrix F = [F1, F2] where F1 are the first Nx columns
+% This will provide the constraint F1[Rc; Mc] = F2
 % Outputs
-%    rankF     : rank of F
-%    rankF2    : rank of F without its first column
+%    F         : constraint matrix
 % Inputs
 %    sys       : LTISystem containing system matrices
 %    slsParams : SLSParams containing parameters
 %    slsOuts   : contains info from SLS (original R, M)
 %    Tc        : length of the approximate solution
-%    tol       : tolerance to use for rank calculation
 
 T      = slsParams.tFIR_;
 Rblock = cell(T+Tc, Tc+1);
@@ -71,5 +69,3 @@ myEye = eye(Tc*(sys.Nx + sys.Nu));
 myZer = zeros(T*(sys.Nx + sys.Nu), Tc*(sys.Nx + sys.Nu));
 
 F = [Ralpha; Malpha; Rbeta; Mbeta] * Dellc - [myEye; myZer];
-rankF  = rank(F, tol);
-rankF2 = rank(F(:,sys.Nx+1:end), tol);
