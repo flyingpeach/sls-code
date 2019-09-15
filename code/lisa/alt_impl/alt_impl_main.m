@@ -1,15 +1,16 @@
 %% choose the system you want to work with
-setup3;
+setup1;
 
 % for rank/zero conditions, try to match the precision of cvx_precision low
 % http://cvxr.com/cvx/doc/solver.html#solver-precision
 eps = 2.22e-16;
-tol = eps.^(1/4);
+tol = eps.^(3/8);
 
 close all;
 %% sandbox
-Tc = 2;
-slsOuts_alt = find_alt_impl_block(sys, slsParams, slsOuts, Tc);
+Tc = 15;
+%slsOuts_alt = find_alt_impl_block(sys, slsParams, slsOuts, Tc);
+slsOuts_alt = find_alt_impl_precise(sys, slsParams, slsOuts, Tc);
 
 s_a{1}  = slsOuts_alt;
 
@@ -32,7 +33,8 @@ slsOuts_alts = cell(numTcs, 1);
 
 for idx=1:length(Tcs)
     Tc = Tcs(idx);
-    slsOuts_alts{idx} = find_alt_impl_block(sys, slsParams, slsOuts, Tc);
+    %slsOuts_alts{idx} = find_alt_impl_block(sys, slsParams, slsOuts, Tc);
+    slsOuts_alts{idx} = find_alt_impl_precise(sys, slsParams, slsOuts, Tc);
 end
 
 % check feasibility / solver statuses
@@ -42,7 +44,7 @@ disp(['Statuses:', print_statuses(sys, slsParams, slsOuts, slsOuts_alts, tol)]);
 % we might not want to plot all of slsOuts_alts, so this is the sandbox to
 % adjust slsOuts_alts / Tcs to our liking
 
-TcsWanted = 4:20;
+TcsWanted = Tcs;
 myIdx = [];
 
 for i=1:numTcs
@@ -68,4 +70,4 @@ savepath = 'C:\Users\Lisa\Desktop\caltech\research\implspace\tmp\';
 plot_metrics(met, savepath);
 
 % print again
-disp(['Statuses:', print_statuses(sys, slsOuts_alts, rankFs, rankF2s)]); 
+disp(['Statuses:', print_statuses(sys, slsParams, slsOuts, slsOuts_alts, tol)]);  
