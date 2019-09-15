@@ -18,11 +18,10 @@ met     = calc_mtx_metrics(met, sys, slsParams, slsOuts, s_a);
 met     = calc_cl_metrics(met, sys, simParams, slsParams, slsOuts, s_a);
 met
 
-[rankF, rankF2] = get_rank(sys, slsParams, slsOuts, Tc, tol);
 visualize_matrices(slsOuts, slsOuts_alt, Tc, 'all');
 
 % check solver/feasibility statuses
-disp(['Statuses:', print_statuses(sys, s_a, rankF, rankF2)]); 
+disp(['Statuses:', print_statuses(sys, slsParams, slsOuts, s_a, tol)]);
 
 %% find new implementations Rc, Mc
 Tcs    = 2:slsParams.tFIR_+5;
@@ -36,17 +35,8 @@ for idx=1:length(Tcs)
     slsOuts_alts{idx} = find_alt_impl(sys, slsParams, slsOuts, Tc);
 end
 
-%% check feasibility / solver statuses
-rankFs       = zeros(numTcs, 1);
-rankF2s      = zeros(numTcs, 1);
-
-for idx=1:length(Tcs)
-    Tc = Tcs(idx);
-
-    [rankFs(idx), rankF2s(idx)] = get_rank(sys, slsParams, slsOuts, Tc, tol);
-end
-
-disp(['Statuses:', print_statuses(sys, slsOuts_alts, rankFs, rankF2s)]); 
+% check feasibility / solver statuses
+disp(['Statuses:', print_statuses(sys, slsParams, slsOuts, slsOuts_alts, tol)]); 
 
 %% plot stuff
 % we might not want to plot all of slsOuts_alts, so this is the sandbox to
