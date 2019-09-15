@@ -8,6 +8,7 @@ function slsOuts_alt = find_alt_impl(sys, slsParams, slsOuts, Tc, approx)
 %    sys         : LTISystem containing system matrices
 %    slsParams   : SLSParams containing parameters
 %    slsOuts     : contains info from SLS (original R, M)
+%    Tc          : length of the approximate solution
 %    approx      : put any value here if you want approximate solution
 %                  (i.e. drop trailing zero constraints)
 if nargin == 4

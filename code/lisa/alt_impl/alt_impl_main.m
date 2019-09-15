@@ -1,35 +1,50 @@
 %% choose the system you want to work with
 setup1;
 
+% for rank/zero conditions, try to match the precision of cvx_precision low
+% http://cvxr.com/cvx/doc/solver.html#solver-precision
+eps = 2.22e-16;
+tol = eps.^(1/4);
+
+close all;
 %% sandbox
-Tc = 20;
+Tc = 2;
 slsOuts_alt = find_alt_impl(sys, slsParams, slsOuts, Tc);
 
 s_a{1}  = slsOuts_alt;
-zThresh = 1e-6;
-met     = AltImplMetrics([Tc], zThresh);
+
+met     = AltImplMetrics([Tc], tol);
 met     = calc_mtx_metrics(met, sys, slsParams, slsOuts, s_a);
 met     = calc_cl_metrics(met, sys, simParams, slsParams, slsOuts, s_a);
 met
 
+[rankF, rankF2] = get_rank(sys, slsParams, slsOuts, Tc, tol);
 visualize_matrices(slsOuts, slsOuts_alt, Tc, 'all');
 
+% check solver/feasibility statuses
+disp(['Statuses:', print_statuses(sys, s_a, rankF, rankF2)]); 
+
 %% find new implementations Rc, Mc
-Tcs = [2:20];
+Tcs    = [2:25];
+numTcs = length(Tcs);
 
 % slsOuts_alts{i} contains alternate implementation for Tc=Tcs(i)
-slsOuts_alts = cell(length(Tcs), 1);
+slsOuts_alts = cell(numTcs, 1);
+rankFs       = zeros(numTcs, 1);
+rankF2s      = zeros(numTcs, 1);
 
-for i=1:length(Tcs)
-    Tc              = Tcs(i);
-    slsOuts_alts{i} = find_alt_impl(sys, slsParams, slsOuts, Tc, 'approx');
+for idx=1:length(Tcs)
+    Tc = Tcs(idx);
+
+    [rankFs(idx), rankF2s(idx)] = get_rank(sys, slsParams, slsOuts, Tc, tol);
+    slsOuts_alts{idx} = find_alt_impl(sys, slsParams, slsOuts, Tc);
 end
 
-disp(['Statuses:', print_statuses(slsOuts_alts)]); % check solver statuses
+% check solver/feasibility statuses
+disp(['Statuses:', print_statuses(sys, slsOuts_alts, rankFs, rankF2s)]); 
 
 %% calculate stats & generate plots
-zThresh = 1e-6;
-met     = AltImplMetrics(Tcs, zThresh);
+met     = AltImplMetrics(Tcs, tol);
 
 % calculate matrix-specific metrics
 met = calc_mtx_metrics(met, sys, slsParams, slsOuts, slsOuts_alts);

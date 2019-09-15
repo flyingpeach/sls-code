@@ -7,8 +7,8 @@ classdef AltImplMetrics < matlab.mixin.Copyable
     % RTc/MTc are original CL responses clipped to be Tc long (if Tc<T)
 
     properties
-      Tcs;     % list of Tcs for which Rc/Mc was generated
-      zThresh; % anything lower than this is counted as 0 for RNonzero, etc.
+      Tcs; % list of Tcs for which Rc/Mc was generated
+      tol; % tolerance used for zero and for rank calculations
 
       % properties of original R, M
       L1NormOrig;         % L1 norm of R/M
@@ -30,10 +30,10 @@ classdef AltImplMetrics < matlab.mixin.Copyable
     end
     
     methods
-      function obj = AltImplMetrics(Tcs, zThresh) % initializer
-        obj.Tcs     = Tcs;
-        obj.zThresh = zThresh;
-        numTcs      = length(Tcs);
+      function obj = AltImplMetrics(Tcs, tol) % initializer
+        obj.Tcs = Tcs;
+        obj.tol = tol;
+        numTcs  = length(Tcs);
         
         obj.L1NormOrig = 0;
         obj.RNonzero   = 0; obj.MNonzero = 0;
@@ -46,7 +46,7 @@ classdef AltImplMetrics < matlab.mixin.Copyable
         obj.L1NormsTc   = zeros(numTcs,1);
         obj.RTcNonzeros = zeros(numTcs,1); obj.MTcNonzeros = zeros(numTcs,1);
         obj.RTcDiffs    = zeros(numTcs,1); obj.MTcDiffs    = zeros(numTcs,1);
-        obj.GTcDiffs    = zeros(numTcs,1); obj.HTcDiffs    = zeros(numTcs,1);              
+        obj.GTcDiffs    = zeros(numTcs,1); obj.HTcDiffs    = zeros(numTcs,1); 
       end
     end
     

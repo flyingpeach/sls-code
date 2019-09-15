@@ -54,7 +54,7 @@ subplot(2,1,1); hold on;
 plot(met.Tcs, met.RcNonzeros, 'o-');
 plot(met.Tcs, met.RTcNonzeros, 'x-');
 plot(met.Tcs, met.RNonzero * ones(length(met.Tcs), 1));
-title(sprintf('Entries of Rc/RTc/R > %0.1s', met.zThresh));
+title(sprintf('Entries of Rc/RTc/R > %0.1s', met.tol));
 ylabel('# Nonzero entries');
 legend('Rc', 'RTc', 'R');
 
@@ -62,7 +62,7 @@ subplot(2,1,2); hold on;
 plot(met.Tcs, met.McNonzeros, 'o-');
 plot(met.Tcs, met.MTcNonzeros, 'x-');
 plot(met.Tcs, met.MNonzero * ones(length(met.Tcs), 1));
-title(sprintf('Entries of Mc/MTc/M > %0.1s', met.zThresh));
+title(sprintf('Entries of Mc/MTc/M > %0.1s', met.tol));
 xlabel('Tc'); ylabel('# Nonzero entries');
 legend('Mc', 'MTc', 'M');
 savefig([savepath, '\nonzeros.fig']);
