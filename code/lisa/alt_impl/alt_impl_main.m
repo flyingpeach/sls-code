@@ -8,10 +8,13 @@ tol = eps.^(3/8);
 
 close all;
 %% sandbox
-Tc = 5;
+Tc = 2;
 %slsOuts_alt = find_alt_impl_block(sys, slsParams, slsOuts, Tc);
-%slsOuts_alt = find_alt_impl_precise(sys, slsParams, slsOuts, Tc);
-slsOuts_alt = find_alt_impl_ls(sys, slsParams, slsOuts, Tc);
+%slsOuts_alt = find_alt_impl_precise(sys, slsParams, slsOuts, Tc, 'approx', 1e4);
+%slsOuts_alt = find_alt_impl_ls(sys, slsParams, slsOuts, Tc);
+
+relaxAmt = 0.85;
+slsOuts_alt = find_alt_impl_approx(sys, slsParams, slsOuts, Tc, relaxAmt);
 
 s_a{1}  = slsOuts_alt;
 
