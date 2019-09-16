@@ -8,9 +8,10 @@ tol = eps.^(3/8);
 
 close all;
 %% sandbox
-Tc = 15;
+Tc = 5;
 %slsOuts_alt = find_alt_impl_block(sys, slsParams, slsOuts, Tc);
-slsOuts_alt = find_alt_impl_precise(sys, slsParams, slsOuts, Tc);
+%slsOuts_alt = find_alt_impl_precise(sys, slsParams, slsOuts, Tc);
+slsOuts_alt = find_alt_impl_ls(sys, slsParams, slsOuts, Tc);
 
 s_a{1}  = slsOuts_alt;
 
