@@ -1,6 +1,6 @@
 function F = get_F(sys, slsParams, slsOuts, Tc)
 % Returns the matrix F = [F1, F2] where F1 are the first Nx columns
-% This will provide the constraint F1[Rc; Mc] = F2
+% This will provide the constraint F2[Rc; Mc] = -F1
 % Outputs
 %    F         : constraint matrix
 % Inputs
