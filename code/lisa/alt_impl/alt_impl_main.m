@@ -8,13 +8,15 @@ tol = eps.^(3/8);
 
 close all;
 %% sandbox
-Tc = 2;
-%slsOuts_alt = find_alt_impl_block(sys, slsParams, slsOuts, Tc);
-%slsOuts_alt = find_alt_impl_precise(sys, slsParams, slsOuts, Tc, 'approx', 1e4);
-%slsOuts_alt = find_alt_impl_ls(sys, slsParams, slsOuts, Tc);
+settings = AltImplSettings;
 
-relaxAmt = 0.85;
-slsOuts_alt = find_alt_impl_approx(sys, slsParams, slsOuts, Tc, relaxAmt);
+% modes: ImplicitOpt, ExplicitOpt, Analytic, ApproxDrop, ApproxLeaky
+settings.mode_      = AltImplMode.ApproxLeaky;
+settings.clDiffPen_ = 1e4;
+%settings.relaxPct_  = 0.85;
+
+Tc = 4;
+slsOuts_alt = find_alt_impl(sys, slsParams, slsOuts, Tc, settings);
 
 s_a{1}  = slsOuts_alt;
 
@@ -37,8 +39,7 @@ slsOuts_alts = cell(numTcs, 1);
 
 for idx=1:length(Tcs)
     Tc = Tcs(idx);
-    %slsOuts_alts{idx} = find_alt_impl_block(sys, slsParams, slsOuts, Tc);
-    slsOuts_alts{idx} = find_alt_impl_precise(sys, slsParams, slsOuts, Tc);
+    slsOuts_alts{idx} = find_alt_impl(sys, slsParams, slsOuts, Tc, settings);
 end
 
 % check feasibility / solver statuses
