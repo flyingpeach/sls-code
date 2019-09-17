@@ -1,5 +1,5 @@
 %% choose the system you want to work with
-setup1;
+setup3;
 
 % for rank/zero conditions, try to match the precision of cvx_precision low
 % http://cvxr.com/cvx/doc/solver.html#solver-precision
@@ -11,9 +11,9 @@ close all;
 settings = AltImplSettings;
 
 % modes: ImplicitOpt, ExplicitOpt, Analytic, ApproxDrop, ApproxLeaky
-settings.mode_      = AltImplMode.ApproxLeaky;
-settings.clDiffPen_ = 1e4;
-%settings.relaxPct_  = 0.85;
+settings.mode_      = AltImplMode.ApproxDrop;
+%settings.clDiffPen_ = 1e4;
+settings.relaxPct_  = 0.6;
 
 Tc = 4;
 slsOuts_alt = find_alt_impl(sys, slsParams, slsOuts, Tc, settings);

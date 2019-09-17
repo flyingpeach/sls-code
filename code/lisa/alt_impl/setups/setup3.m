@@ -1,4 +1,4 @@
-% setup3 (approx d-localized)
+% setup3 (d-localized)
 clear; close all; clc; 
 
 % specify system matrices
@@ -15,14 +15,12 @@ sys.D12 = [sparse(sys.Nx, sys.Nu); speye(sys.Nu)];
 % sls parameters
 slsParams       = SLSParams;
 slsParams.tFIR_ = 15;
-slsParams.obj_  = Objective.H2; % objective function
+slsParams.obj_  = Objective.L1; % objective function
 
+slsParams.mode_     = SLSMode.DLocalized;
 slsParams.actDelay_ = 1;
-slsParams.cSpeed_   = 1;
+slsParams.cSpeed_   = 2;
 slsParams.d_        = 3;
-
-slsParams.mode_     = SLSMode.ApproxDLocalized;
-slsParams.robCoeff_ = 10^3;
 
 % simulation parameters
 simParams           = SimParams;
