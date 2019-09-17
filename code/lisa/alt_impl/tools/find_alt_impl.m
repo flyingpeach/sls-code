@@ -11,7 +11,7 @@ function slsOuts_alt = find_alt_impl(sys, slsParams, slsOuts, Tc, settings)
 % TODO: this output is a misnomer as it's not really an "slsout"
 
 statusTxt = settings.sanity_check();
-statusTxt = [char(10), 'Finding alt implementation, ', statusTxt];
+statusTxt = [char(10), sprintf('Finding alt implementation, %s, Tc=%d', statusTxt, Tc)];
 disp(statusTxt);
 
 if settings.mode_ ~= AltImplMode.ImplicitOpt
