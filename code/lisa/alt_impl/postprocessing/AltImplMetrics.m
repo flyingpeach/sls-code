@@ -7,7 +7,10 @@ classdef AltImplMetrics < matlab.mixin.Copyable
     % RTc/MTc are original CL responses clipped to be Tc long (if Tc<T)
 
     properties
-      Tcs; % list of Tcs for which Rc/Mc was generated
+      Tcs;              % list of Tcs (if sweeping over Tcs) or a single Tc
+      sweepParams;      % if not sweeping over Tcs, the other things we sweep over
+      sweepParamName;   % name of the sweep parameter (i.e. 'Tc')   
+            
       tol; % tolerance used for zero and for rank calculations
 
       % properties of original R, M
@@ -30,23 +33,36 @@ classdef AltImplMetrics < matlab.mixin.Copyable
     end
     
     methods
-      function obj = AltImplMetrics(Tcs, tol) % initializer
-        obj.Tcs = Tcs;
-        obj.tol = tol;
-        numTcs  = length(Tcs);
+      function obj = AltImplMetrics(tol, Tcs, sweepParamName, sweepParams) 
+        % initializer
+        if nargin == 2
+            obj.sweepParamName = 'Tc';
+        else
+            obj.sweepParamName = sweepParamName;
+            obj.sweepParams    = sweepParams;
+        end
+        
+        obj.tol = tol;        
+        obj.Tcs            = Tcs;
+        
+        if strcmp(obj.sweepParamName, 'Tc')
+            numItems = length(Tcs);
+        else
+            numItems = length(sweepParams);
+        end
         
         obj.L1NormOrig = 0;
         obj.RNonzero   = 0; obj.MNonzero = 0;
         
-        obj.L1Norms    = zeros(numTcs,1);
-        obj.RcNonzeros = zeros(numTcs,1); obj.McNonzeros = zeros(numTcs,1);
-        obj.RDiffs     = zeros(numTcs,1); obj.MDiffs     = zeros(numTcs,1);
-        obj.GcDiffs    = zeros(numTcs,1); obj.HcDiffs    = zeros(numTcs,1);
+        obj.L1Norms    = zeros(numItems,1);
+        obj.RcNonzeros = zeros(numItems,1); obj.McNonzeros = zeros(numItems,1);
+        obj.RDiffs     = zeros(numItems,1); obj.MDiffs     = zeros(numItems,1);
+        obj.GcDiffs    = zeros(numItems,1); obj.HcDiffs    = zeros(numItems,1);
         
-        obj.L1NormsTc   = zeros(numTcs,1);
-        obj.RTcNonzeros = zeros(numTcs,1); obj.MTcNonzeros = zeros(numTcs,1);
-        obj.RTcDiffs    = zeros(numTcs,1); obj.MTcDiffs    = zeros(numTcs,1);
-        obj.GTcDiffs    = zeros(numTcs,1); obj.HTcDiffs    = zeros(numTcs,1); 
+        obj.L1NormsTc   = zeros(numItems,1);
+        obj.RTcNonzeros = zeros(numItems,1); obj.MTcNonzeros = zeros(numItems,1);
+        obj.RTcDiffs    = zeros(numItems,1); obj.MTcDiffs    = zeros(numItems,1);
+        obj.GTcDiffs    = zeros(numItems,1); obj.HTcDiffs    = zeros(numItems,1); 
       end
     end
     

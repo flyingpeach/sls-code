@@ -22,8 +22,17 @@ for t=1:T
     met.MNonzero = met.MNonzero + full(sum(vec(M{t} > met.tol)));
 end
 
-for i=1:numTcs
-    Tc = met.Tcs(i);
+if strcmp(met.sweepParamName, 'Tc')
+    numItems = numTcs;
+else
+    numItems = length(met.sweepParams);
+    Tc       = met.Tcs;
+end
+
+for i=1:numItems
+    if strcmp(met.sweepParamName, 'Tc')
+        Tc = met.Tcs(i);
+    end
     Rc = slsOuts_alts{i}.R_; Mc = slsOuts_alts{i}.M_;
 
     % calculate metrics for Rc, Mc %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

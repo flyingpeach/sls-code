@@ -29,9 +29,19 @@ end
 slsParams_alt = copy(slsParams);
 slsOutsTc     = copy(slsOuts);
 
-for i=1:numTcs
-    Tc                  = met.Tcs(i);
+if strcmp(met.sweepParamName, 'Tc')
+    numItems = numTcs;
+else
+    numItems            = length(met.sweepParams);
+    Tc                  = met.Tcs;
     slsParams_alt.tFIR_ = Tc;
+end
+
+for i=1:numItems
+    if strcmp(met.sweepParamName, 'Tc')
+        Tc                  = met.Tcs(i);
+        slsParams_alt.tFIR_ = Tc;
+    end
 
     % calculate CL map using Rc, Mc
     [Gc, Hc] = calc_cl_map(sys, slsParams_alt, slsOuts_alts{i}, simParams, tTotal);

@@ -32,7 +32,7 @@ switch settings.mode_
         numDrop     = settings.relaxPct_ * size(F, 1);
         [F1, F2]    = drop_constr(F1, F2, numDrop);
         leaky       = false;
-        slsOuts_alt = fai_explicit(sys, Tc, F1, F2, leaky)
+        slsOuts_alt = fai_explicit(sys, Tc, F1, F2, leaky);
     case AltImplMode.ApproxLeaky
         leaky       = true;
         slsOuts_alt =  fai_explicit(sys, Tc, F1, F2, leaky, settings.clDiffPen_);
