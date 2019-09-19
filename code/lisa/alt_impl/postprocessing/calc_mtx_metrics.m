@@ -18,8 +18,8 @@ R = slsOuts.R_; M = slsOuts.M_;
 % calculate metrics for original R, M %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 for t=1:T  
     met.L1NormOrig = met.L1NormOrig + norm([sys.C1, sys.D12]*[R{t}; M{t}], 1);
-    met.RNonzero = met.RNonzero + full(sum(vec(R{t} > met.tol)));
-    met.MNonzero = met.MNonzero + full(sum(vec(M{t} > met.tol)));
+    met.RNonzero = met.RNonzero + sum(abs(vec(R{t})) > met.tol);
+    met.MNonzero = met.MNonzero + sum(abs(vec(M{t})) > met.tol);
 end
 
 if strcmp(met.sweepParamName, 'Tc')
@@ -49,8 +49,8 @@ for i=1:numItems
     for t=1:TMax
         met.L1Norms(i) = met.L1Norms(i) + norm([sys.C1, sys.D12]*[Rc{t}; Mc{t}], 1);
         
-        met.RcNonzeros(i) = met.RcNonzeros(i) + full(sum(vec(Rc{t} > met.tol)));
-        met.McNonzeros(i) = met.McNonzeros(i) + full(sum(vec(Mc{t} > met.tol)));
+        met.RcNonzeros(i) = met.RcNonzeros(i) + sum(abs(vec(Rc{t})) > met.tol);
+        met.McNonzeros(i) = met.McNonzeros(i) + sum(abs(vec(Mc{t})) > met.tol);
 
         met.RDiffs(i) = met.RDiffs(i) + norm(full(R{t} - Rc{t}));
         met.MDiffs(i) = met.MDiffs(i) + norm(full(M{t} - Mc{t}));
@@ -60,8 +60,8 @@ for i=1:numItems
     for t=1:Tc
        met.L1NormsTc(i) = met.L1NormsTc(i) + norm([sys.C1, sys.D12]*[R{t}; M{t}], 1);
        
-       met.RTcNonzeros(i) = met.RTcNonzeros(i) + full(sum(vec(R{t} > met.tol)));
-       met.MTcNonzeros(i) = met.MTcNonzeros(i) + full(sum(vec(M{t} > met.tol)));
+       met.RTcNonzeros(i) = met.RTcNonzeros(i) + sum(abs(vec(R{t})) > met.tol);
+       met.MTcNonzeros(i) = met.MTcNonzeros(i) + sum(abs(vec(M{t})) > met.tol);
     end
 
     for t=Tc+1:T
