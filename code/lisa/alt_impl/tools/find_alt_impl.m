@@ -103,7 +103,7 @@ for t = 1:Tc
     Msum{t}  = Msums(:,:,t);
     
     % L1 norm to enforce sparsity
-    objective = objective + norm([sys.C1, sys.D12]*[Rc{t}; Mc{t}], 1);
+    objective = objective + norm([Rc{t}; Mc{t}], 1);
 end
 Dellc{Tc+1} = Dellcs(:,:,Tc+1);
 for t=Tc+1:Tc+T
@@ -158,14 +158,8 @@ cvx_precision low
 variable Rcs(sys.Nx * (Tc-1), sys.Nx) % Rc{1} == 1 so it's not a variable
 variable Mcs(sys.Nu * Tc, sys.Nx)
 expression Delta(Tc * (sys.Nx + sys.Nu) - sys.Nx, sys.Nx) 
-
-[Rc, Mc] = block_to_cell(Rcs, Mcs, Tc, sys);
     
-objective = 0;
-for t = 1:Tc
-    % L1 norm to enforce sparsity
-    objective = objective + norm([sys.C1, sys.D12]*[Rc{t}; Mc{t}], 1);
-end
+objective = norm([Rcs; Mcs], 1);
 
 if leaky
     Delta = F2 * [Rcs; Mcs] + F1;    
@@ -179,8 +173,7 @@ minimize(objective);
 cvx_end
 
 % outputs
-slsOuts_alt.R_           = Rc;
-slsOuts_alt.M_           = Mc;
+[slsOuts_alt.R_, slsOuts_alt.M_] = block_to_cell(Rcs, Mcs, Tc, sys);
 
 % want original L1norm
 if leaky
@@ -204,13 +197,9 @@ Rcs      = RMc(1:sys.Nx * (Tc-1), :);
 Mcs      = RMc(sys.Nx * (Tc-1) + 1:end, :);
 [Rc, Mc] = block_to_cell(Rcs, Mcs, Tc, sys);
 
-L1norm = 0;
-for t = 1:Tc
-    L1norm = L1norm + norm([sys.C1, sys.D12]*[Rc{t}; Mc{t}], 1);
-end
+L1norm = norm([Rcs; Mcs], 1);
+[slsOuts_alt.R_, slsOuts_alt.M_] = block_to_cell(Rcs, Mcs, Tc, sys);
 
-slsOuts_alt.R_           = Rc;
-slsOuts_alt.M_           = Mc;
 slsOuts_alt.clnorm_      = L1norm;
 slsOuts_alt.solveStatus_ = 'Analytic';
 end
