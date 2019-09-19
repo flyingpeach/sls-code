@@ -11,14 +11,17 @@ classdef AltImplSettings < matlab.mixin.Copyable
 
       relaxPct_;  % used for ApproxDrop mode only
                   % % of total constraints that are dropped
+      
+      tol_;       % tolerance used for rank / nullspace calculations
     end
     
     methods
-      function obj = AltImplSettings()
+      function obj = AltImplSettings(tol)
         % initialize to zero instead of empty array
         obj.mode_      = 0;
         obj.clDiffPen_ = 0;
         obj.relaxPct_  = 0;
+        obj.tol_       = tol;
       end
       
       function statusTxt = sanity_check(obj)
@@ -28,6 +31,8 @@ classdef AltImplSettings < matlab.mixin.Copyable
                 modeStr = 'L1-opt/implicit constr';
             case AltImplMode.ExplicitOpt
                 modeStr = 'L1-opt/explicit constr';
+            case AltImplMode.NullsOpt
+                modeStr = 'L1-opt/null space search'
             case AltImplMode.Analytic
                 modeStr  = 'analytic';
             case AltImplMode.ApproxDrop

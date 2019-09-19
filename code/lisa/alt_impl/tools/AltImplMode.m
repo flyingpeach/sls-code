@@ -7,7 +7,10 @@ classdef AltImplMode
       ExplicitOpt % Minimizes L1 norm of [Rc; Mc]
                   % with F2 * [Rc; Mc] == -F1 
                   % where F1, F2 do not depend on [Rc, Mc]
-                   
+
+      NullsOpt    % Minimizes L1 norm of [Rc; Mc]
+                  % by searching over Rc_specific + Rc_homogenous
+
       Analytic    % [Rc; Mc] = -F2 \ F1
 
       ApproxDrop  % ExplicitOpt but with some dropped constraints

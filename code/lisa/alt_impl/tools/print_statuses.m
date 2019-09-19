@@ -14,7 +14,10 @@ statusTxt = [];
 for i=1:length(slsOuts_alts)
     Tc = length(slsOuts_alts{i}.R_);
 
-    solnSpaceSize = get_soln_size(sys, slsParams, slsOuts, Tc, tol);
+    F  = get_F(sys, slsParams, slsOuts, Tc);
+    F2 = F(:,sys.Nx+1:end);
+    
+    solnSpaceSize = size(get_soln_sp(F2, tol), 2);
     status        = slsOuts_alts{i}.solveStatus_;
 
     statusTxt = [statusTxt, char(10), sprintf('Tc=%d, %s, solnSpaceSize=%d', Tc, status, solnSpaceSize)];     

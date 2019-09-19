@@ -26,6 +26,8 @@ switch settings.mode_
     case AltImplMode.ExplicitOpt
         leaky       = false;
         slsOuts_alt = fai_explicit(sys, Tc, F1, F2, leaky);
+    case AltImplMode.NullsOpt
+        slsOuts_alt = fai_nullsopt(sys, Tc, F1, F2, settings.tol_);
     case AltImplMode.Analytic
         slsOuts_alt = fai_analytic(sys, Tc, F1, F2);
     case AltImplMode.ApproxDrop
@@ -179,6 +181,40 @@ cvx_end
 if leaky
     objective = objective - clDiffPen * clDiff;
 end
+slsOuts_alt.clnorm_      = objective;
+slsOuts_alt.solveStatus_ = cvx_status;
+end
+
+
+function slsOuts_alt = fai_nullsopt(sys, Tc, F1, F2, tol)
+
+if rank(F2, tol) == rank([F1 F2], tol)
+    RMc_p     = F2 \ (-F1); % particular solution
+else
+   slsOuts_alt.solveStatus_ = 'Infeasible (analytic)';
+   return
+end
+
+nullSp        = get_soln_sp(F2, tol);
+solnSpaceSize = size(nullSp, 2);
+
+cvx_begin
+cvx_solver sdpt3
+cvx_precision low
+
+variable coeff(solnSpaceSize, sys.Nx)
+
+RMc = RMc_p + nullSp*coeff;
+Rcs = RMc(1:sys.Nx * (Tc-1), :);
+Mcs = RMc(sys.Nx * (Tc-1) + 1:end, :);
+    
+objective = norm([Rcs; Mcs], 1);
+
+minimize(objective);
+cvx_end
+
+% outputs
+[slsOuts_alt.R_, slsOuts_alt.M_] = block_to_cell(Rcs, Mcs, Tc, sys);
 slsOuts_alt.clnorm_      = objective;
 slsOuts_alt.solveStatus_ = cvx_status;
 end

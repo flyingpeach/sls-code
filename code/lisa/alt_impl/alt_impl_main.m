@@ -1,5 +1,5 @@
 %% choose the system you want to work with
-setup2;
+setup1;
 
 % for rank/zero conditions, try to match the precision of cvx_precision low
 % http://cvxr.com/cvx/doc/solver.html#solver-precision
@@ -7,14 +7,14 @@ eps = 2.22e-16;
 tol = eps.^(3/8);
 close all;
 
-settings = AltImplSettings;
+settings = AltImplSettings(tol);
 %% sandbox
 % modes: ImplicitOpt, ExplicitOpt, Analytic, ApproxDrop, ApproxLeaky
-settings.mode_      = AltImplMode.Analytic;
+settings.mode_      = AltImplMode.NullsOpt;
 %settings.clDiffPen_ = 1e4;
 %settings.relaxPct_  = 0.6;
 
-Tc          = round(slsParams.tFIR_/2);
+Tc          = slsParams.tFIR_-2;
 slsOuts_alt = find_alt_impl(sys, slsParams, slsOuts, Tc, settings);
 
 s_a{1}  = slsOuts_alt;
@@ -24,7 +24,7 @@ met     = calc_mtx_metrics(met, sys, slsParams, slsOuts, s_a);
 met     = calc_cl_metrics(met, sys, simParams, slsParams, slsOuts, s_a);
 met
 
-visualize_matrices(slsOuts, slsOuts_alt, Tc, 'all');
+%visualize_matrices(slsOuts, slsOuts_alt, Tc, 'all');
 
 % check solver/feasibility statuses
 disp(['Statuses:', print_statuses(sys, slsParams, slsOuts, s_a, tol)]);
