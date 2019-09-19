@@ -27,7 +27,7 @@ switch settings.mode_
         leaky       = false;
         slsOuts_alt = fai_explicit(sys, Tc, F1, F2, leaky);
     case AltImplMode.NullsOpt
-        slsOuts_alt = fai_nullsopt(sys, Tc, F1, F2, settings.tol_);
+        slsOuts_alt = fai_nullsopt(sys, slsParams, Tc, F1, F2, settings.tol_, settings.strictLocal_);
     case AltImplMode.Analytic
         slsOuts_alt = fai_analytic(sys, Tc, F1, F2);
     case AltImplMode.ApproxDrop
@@ -186,7 +186,7 @@ slsOuts_alt.solveStatus_ = cvx_status;
 end
 
 
-function slsOuts_alt = fai_nullsopt(sys, Tc, F1, F2, tol)
+function slsOuts_alt = fai_nullsopt(sys, slsParams, Tc, F1, F2, tol, local)
 
 if rank(F2, tol) == rank([F1 F2], tol)
     RMc_p     = F2 \ (-F1); % particular solution
@@ -210,11 +210,35 @@ Mcs = RMc(sys.Nx * (Tc-1) + 1:end, :);
     
 objective = norm([Rcs; Mcs], 1);
 
+[Rc, Mc] = block_to_cell(Rcs, Mcs, Tc, sys);
+
+slsParams_alt       = copy(slsParams);
+slsParams_alt.tFIR_ = Tc;
+
+if local
+    [RSupp, MSupp, ~] = get_localized_supports(sys, slsParams_alt);
+
+    for t=1:Tc
+        Rc{t}(not(RSupp{t})) == 0;
+        Mc{t}(not(MSupp{t})) == 0;
+    end
+end
+
 minimize(objective);
 cvx_end
 
+[Rc, Mc] = block_to_cell(Rcs, Mcs, Tc, sys);
+
+if local % enforce locality again by just zeroing out non-local elements
+    for t=1:Tc
+        Rc{t}(not(RSupp{t})) = 0;
+        Mc{t}(not(MSupp{t})) = 0;
+    end
+end
+
 % outputs
-[slsOuts_alt.R_, slsOuts_alt.M_] = block_to_cell(Rcs, Mcs, Tc, sys);
+slsOuts_alt.R_           = Rc;
+slsOuts_alt.M_           = Mc;
 slsOuts_alt.clnorm_      = objective;
 slsOuts_alt.solveStatus_ = cvx_status;
 end

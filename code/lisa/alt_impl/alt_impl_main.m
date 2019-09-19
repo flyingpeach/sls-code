@@ -1,5 +1,5 @@
 %% choose the system you want to work with
-setup1;
+setup3;
 
 % for rank/zero conditions, try to match the precision of cvx_precision low
 % http://cvxr.com/cvx/doc/solver.html#solver-precision
@@ -8,13 +8,14 @@ tol = eps.^(3/8);
 close all;
 
 settings = AltImplSettings(tol);
+
 %% sandbox
 % modes: ImplicitOpt, ExplicitOpt, Analytic, ApproxDrop, ApproxLeaky
 settings.mode_      = AltImplMode.NullsOpt;
 %settings.clDiffPen_ = 1e4;
 %settings.relaxPct_  = 0.6;
 
-Tc          = slsParams.tFIR_-2;
+Tc          = slsParams.tFIR_;
 slsOuts_alt = find_alt_impl(sys, slsParams, slsOuts, Tc, settings);
 
 s_a{1}  = slsOuts_alt;
@@ -24,11 +25,38 @@ met     = calc_mtx_metrics(met, sys, slsParams, slsOuts, s_a);
 met     = calc_cl_metrics(met, sys, simParams, slsParams, slsOuts, s_a);
 met
 
-%visualize_matrices(slsOuts, slsOuts_alt, Tc, 'all');
+visualize_matrices(slsOuts, slsOuts_alt, Tc, 'all');
 
 % check solver/feasibility statuses
 disp(['Statuses:', print_statuses(sys, slsParams, slsOuts, s_a, tol)]);
 
+%% check locality violation
+slsParams_alt = copy(slsParams);
+slsParams_alt.tFIR_ = Tc;
+[RSupp, MSupp, ~] = get_localized_supports(sys, slsParams_alt);
+
+Rc = slsOuts_alt.R_;
+Mc = slsOuts_alt.M_;
+
+RLocViolations = 0;
+MLocViolations = 0;
+totalRSBZ = 0;
+totalMSBZ = 0;
+
+for t=1:Tc
+    RShouldBZero   = Rc{t}(not(RSupp{t}));
+    RLocViolations = RLocViolations + sum(abs(RShouldBZero) > tol);
+    totalRSBZ      = totalRSBZ + sum(vec(not(RSupp{t}) > 0));
+    
+    MShouldBZero   = Mc{t}(not(MSupp{t}));
+    MLocViolations = MLocViolations + sum(abs(MShouldBZero) > tol);
+    totalMSBZ      = totalMSBZ + sum(vec(not(MSupp{t}) > 0));
+end
+
+RLocViolations
+MLocViolations
+totalRSBZ
+totalMSBZ
 %% find new impl over different Tcs
 settings.mode_      = AltImplMode.ApproxLeaky;
 settings.clDiffPen_ = 1e3;
@@ -41,7 +69,7 @@ for idx=1:numTcs
     slsOuts_alts{idx} = find_alt_impl(sys, slsParams, slsOuts, Tc, settings);
 end
 
-scanH1 = slsOuts_alts;
+scanH3 = slsOuts_alts;
 %% find new impl over different approximations (ApproxDrop) 
 Tc = round(slsParams.tFIR_/2);
 

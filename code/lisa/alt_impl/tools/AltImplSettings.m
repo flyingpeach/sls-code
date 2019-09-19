@@ -13,6 +13,8 @@ classdef AltImplSettings < matlab.mixin.Copyable
                   % % of total constraints that are dropped
       
       tol_;       % tolerance used for rank / nullspace calculations
+      
+      strictLocal_; % whether to enforce locality
     end
     
     methods
@@ -22,6 +24,7 @@ classdef AltImplSettings < matlab.mixin.Copyable
         obj.clDiffPen_ = 0;
         obj.relaxPct_  = 0;
         obj.tol_       = tol;
+        obj.strictLocal_ = 0;
       end
       
       function statusTxt = sanity_check(obj)
