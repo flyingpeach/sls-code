@@ -56,6 +56,17 @@ objective  = get_objective(sys, params, R, M);
 actPenalty = get_act_penalty(sys, params, M);
 robustStab = 0;
 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% TEMP: SLS with commspeed constraints but no 
+% delay=1; % HACKY: make sure it maches the one in alt_impl_main
+% [RZeros, MZeros] = delay_constraints(sys, params.tFIR_, delay);
+% for t=1:params.tFIR_
+%     R{t}(RZeros{t}) == 0;
+%     M{t}(MZeros{t}) == 0;
+% end  
+%     
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
+
 % achievability  / approx achievability constraints
 R{1} == eye(sys.Nx);
 R{params.tFIR_} == zeros(sys.Nx, sys.Nx);

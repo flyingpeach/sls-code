@@ -32,13 +32,6 @@ met     = calc_mtx_metrics(met, sys, slsParams, slsOuts, s_a);
 met     = calc_cl_metrics(met, sys, simParams, slsParams, slsOuts, s_a);
 met
 
-
-%% Internal stability
-
-%lternatively check that the $\Delta(z)$ is norm smaller than 1 in some robustifying norm
-%where [zI-A, -B][Rc;Mc] = (I+Delta(z)) correct
-
-
 %% LQR/H2 costs
 
 % inf-horizon centralized
@@ -75,6 +68,38 @@ end
 
 % output all
 [infH2Cost, centH2Cost, locSLSH2Cost, reImplH2Cost]
+
+%% Internal stability
+
+T = slsParams.tFIR_;
+
+Rc = slsOuts_alt.R_;
+Mc = slsOuts_alt.M_;
+
+for k=1:Tc-1
+    Dellc{k} = Rc{k+1} - sys.A*Rc{k} - sys.B2*Mc{k};
+end
+Dellc{Tc} = - sys.A*Rc{Tc} - sys.B2*Mc{Tc};
+
+intStabMtx = zeros(sys.Nx*(Tc+1), sys.Nx*(Tc+1));
+
+% copied from get_F
+get_range = @(idx, size) (size*(idx-1)+1:size*(idx-1)+size);
+
+for i=1:Tc
+    ix     = get_range(i, sys.Nx);
+    ixplus = get_range(i+1, sys.Nx); 
+    intStabMtx(ix, ixplus) = eye(sys.Nx);
+end
+
+for i=2:Tc
+    ix   = get_range(i, sys.Nx);
+    endx = get_range(Tc+1, sys.Nx);
+    
+    intStabMtx(endx, ix) = Dellc{Tc+2-i};
+end
+
+sort(abs(eig(intStabMtx)))
 
 
 %%
