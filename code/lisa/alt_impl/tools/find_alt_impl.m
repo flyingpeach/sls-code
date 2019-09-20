@@ -27,7 +27,7 @@ switch settings.mode_
         leaky       = false;
         slsOuts_alt = fai_explicit(sys, Tc, F1, F2, leaky);
     case AltImplMode.NullsOpt
-        slsOuts_alt = fai_nullsopt(sys, slsParams, Tc, F1, F2, settings.tol_, settings.strictLocal_);
+        slsOuts_alt = fai_nullsopt(sys, slsParams, Tc, F1, F2, settings.tol_, settings.locality_, settings.delay_);
     case AltImplMode.Analytic
         slsOuts_alt = fai_analytic(sys, Tc, F1, F2);
     case AltImplMode.ApproxDrop
@@ -186,7 +186,15 @@ slsOuts_alt.solveStatus_ = cvx_status;
 end
 
 
-function slsOuts_alt = fai_nullsopt(sys, slsParams, Tc, F1, F2, tol, local)
+function slsOuts_alt = fai_nullsopt(sys, slsParams, Tc, F1, F2, tol, locality, delay)
+
+strictLocal    = false;
+encourageLocal = false;
+if strcmp(locality, 'strict')
+    strictLocal = true;
+elseif strcmp(locality, 'encouraged')
+    encourageLocal = true;
+end
 
 if rank(F2, tol) == rank([F1 F2], tol)
     RMc_p     = F2 \ (-F1); % particular solution
@@ -215,12 +223,33 @@ objective = norm([Rcs; Mcs], 1);
 slsParams_alt       = copy(slsParams);
 slsParams_alt.tFIR_ = Tc;
 
-if local
-    [RSupp, MSupp, ~] = get_localized_supports(sys, slsParams_alt);
-
+% add locality enforcement
+if encourageLocal
+    const = 1;
     for t=1:Tc
-        Rc{t}(not(RSupp{t})) == 0;
-        Mc{t}(not(MSupp{t})) == 0;
+        t
+        
+        BM = sys.B2 * Mc{t};
+    
+        for i=1:sys.Nx
+            for j=1:sys.Nx % note: this distance metric only for chain
+                objective = objective + const * exp(-t) * exp(abs(i-j))*norm(Rc{t}(i,j));
+            end
+        end
+
+        for i=1:sys.Nu
+            for j=1:sys.Nx
+                objective = objective + const * exp(-t) * exp(abs(i-j))*norm(BM(i,j));
+            end
+        end
+    end
+end
+
+if strictLocal
+    [RZeros, MZeros] = delay_constraints(sys, Tc, delay);
+    for t=1:Tc
+        Rc{t}(RZeros{t}) == 0;
+        Mc{t}(MZeros{t}) == 0;
     end
 end
 
@@ -229,10 +258,10 @@ cvx_end
 
 [Rc, Mc] = block_to_cell(Rcs, Mcs, Tc, sys);
 
-if local % enforce locality again by just zeroing out non-local elements
+if strictLocal % enforce locality again by just zeroing out non-local elements
     for t=1:Tc
-        Rc{t}(not(RSupp{t})) = 0;
-        Mc{t}(not(MSupp{t})) = 0;
+        Rc{t}(RZeros{t}) = 0;
+        Mc{t}(MZeros{t}) = 0;
     end
 end
 

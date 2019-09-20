@@ -1,4 +1,4 @@
-function visualize_matrices(slsOuts, slsOuts_alt, Tc, t)
+function visualize_matrices(sys, slsOuts, slsOuts_alt, Tc, t)
 % Plot log magnitudes of R, M, Rc, Mc
 % Inputs
 %     slsOuts     : original closed loop system (contains R, M)
@@ -9,8 +9,9 @@ function visualize_matrices(slsOuts, slsOuts_alt, Tc, t)
 
 logmin = -6; logmax = 1;
 
-Nu      = size(slsOuts.M_{1}, 1);
+%Nu      = size(slsOuts.M_{1}, 1);
 Nx      = size(slsOuts.M_{1}, 2);
+Nu = Nx;
 
 % nice spacing / arrangement
 xgap    = 0.05;
@@ -57,14 +58,14 @@ for t_=ts % either a single value or array
     title('R'); caxis([logmin logmax]);
 
     subplot('position', pos11);
-    imagesc(log10(abs(slsOuts_alt.M_{t_}))); 
+    imagesc(log10(abs(sys.B2*slsOuts_alt.M_{t_}))); 
     colorbar; colormap jet; axis equal; axis tight;
-    title('Mc'); caxis([logmin logmax]);
+    title('B*Mc'); caxis([logmin logmax]);
 
     subplot('position', pos21);
-    imagesc(log10(abs(slsOuts.M_{t_}))); 
+    imagesc(log10(abs(sys.B2*slsOuts.M_{t_}))); 
     colorbar; colormap jet; axis equal; axis tight;
-    title('M'); caxis([logmin logmax]);
+    title('B*M'); caxis([logmin logmax]);
 
     pause(0.7);
 end

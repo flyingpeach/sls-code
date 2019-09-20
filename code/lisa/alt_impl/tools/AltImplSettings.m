@@ -14,7 +14,8 @@ classdef AltImplSettings < matlab.mixin.Copyable
       
       tol_;       % tolerance used for rank / nullspace calculations
       
-      strictLocal_; % whether to enforce locality
+      locality_;  % 0, 'strict', or 'encouraged'
+      delay_;     % amount of delay to enforce for strict locality
     end
     
     methods
@@ -24,7 +25,8 @@ classdef AltImplSettings < matlab.mixin.Copyable
         obj.clDiffPen_ = 0;
         obj.relaxPct_  = 0;
         obj.tol_       = tol;
-        obj.strictLocal_ = 0;
+        obj.locality_  = 0;
+        obj.delay_     = 0;
       end
       
       function statusTxt = sanity_check(obj)
