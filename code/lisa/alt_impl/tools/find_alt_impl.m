@@ -211,12 +211,13 @@ cvx_solver sdpt3
 cvx_precision low
 
 variable coeff(solnSpaceSize, sys.Nx)
-
+%variable RMcSlack(size(RMc_p, 1), sys.Nx)
+    
 RMc = RMc_p + nullSp*coeff;
 Rcs = RMc(1:sys.Nx * (Tc-1), :);
 Mcs = RMc(sys.Nx * (Tc-1) + 1:end, :);
-    
-objective = norm([Rcs; Mcs], 1);
+
+objective  = norm([Rcs; Mcs], 1);
 
 [Rc, Mc] = block_to_cell(Rcs, Mcs, Tc, sys);
 
@@ -246,10 +247,17 @@ if encourageLocal
 end
 
 if strictLocal
+    % overwrite original constraints with M1slack
+
     [RZeros, MZeros] = delay_constraints(sys, Tc, delay);
     for t=1:Tc
         Rc{t}(RZeros{t}) == 0;
-        Mc{t}(MZeros{t}) == 0;
+        if t==1
+            M1Pen = 1e3;
+            objective = objective + M1Pen*norm(Mc{t}(MZeros{t}));
+        else
+            Mc{t}(MZeros{t}) == 0;
+        end
     end
 end
 

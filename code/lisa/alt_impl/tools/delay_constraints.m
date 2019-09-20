@@ -3,7 +3,6 @@ function [RZeros, MZeros] = delay_constraints(sys, Tc, delay)
 
 for t=1:Tc
     RZeros{t} = false(sys.Nx, sys.Nx);
-    MZeros{t} = false(sys.Nu, sys.Nx);
     
     for i=1:sys.Nx % note: distance metric only works for chains rn
         for j=1:sys.Nx % for R
@@ -13,7 +12,5 @@ for t=1:Tc
         end            
     end
 
-    if t > 1 % since Mc{1} == M{1}, don't interfere with that
-        MZeros{t} = abs(sys.B2)' * RZeros{t} > 0; 
-    end
+    MZeros{t} = abs(sys.B2)' * RZeros{t} > 0; 
 end
