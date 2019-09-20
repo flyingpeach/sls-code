@@ -23,14 +23,58 @@ Tc          = slsParams.tFIR_;
 %settings.clDiffPen_ = 1e4;
 %settings.relaxPct_  = 0.6;
 
-%%
 slsOuts_alt = find_alt_impl(sys, slsParams, slsOuts, Tc, settings);
+%%
 s_a{1}  = slsOuts_alt;
 
 met     = AltImplMetrics(tol, Tc);
 met     = calc_mtx_metrics(met, sys, slsParams, slsOuts, s_a);
 met     = calc_cl_metrics(met, sys, simParams, slsParams, slsOuts, s_a);
 met
+
+
+%% Internal stability
+
+%lternatively check that the $\Delta(z)$ is norm smaller than 1 in some robustifying norm
+%where [zI-A, -B][Rc;Mc] = (I+Delta(z)) correct
+
+
+%% LQR/H2 costs
+
+% inf-horizon centralized
+[P,L,K] = dare(full(sys.A), full(sys.B2), eye(sys.Nx), eye(sys.Nu));
+
+infH2Cost = 0;
+for i=1:sys.Nx % H2 cost is sum of all costs from init condn
+    x0    = zeros(sys.Nx, 1);
+    x0(i) = 1;
+    infH2Cost = infH2Cost + x0'*P*x0;
+end
+
+% centralized SLS (from setup1)
+centH2Cost = 0;
+for t=1:slsParams.tFIR_  
+    centH2Cost = centH2Cost + norm(full([slsOuts.R_{t};slsOuts.M_{t}]), 'fro').^2;
+end
+
+% localized SLS
+% for delay=1, 
+locSLSH2Cost = 16.7383;
+
+% centralized re-implementation
+reImplH2Cost = 0;
+tTotal = slsParams.tFIR_;
+
+slsParams_alt = copy(slsParams);
+slsParams_alt.tFIR_ = Tc;
+
+[G, H] = calc_cl_map(sys, slsParams_alt, slsOuts_alt, simParams, tTotal);
+for t=1:tTotal
+    reImplH2Cost = reImplH2Cost + norm(full([G{t}; H{t}]), 'fro').^2;
+end
+
+% output all
+[infH2Cost, centH2Cost, locSLSH2Cost, reImplH2Cost]
 
 
 %%
