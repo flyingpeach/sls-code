@@ -17,7 +17,7 @@ for i=1:length(slsOuts_alts)
     F  = get_F(sys, slsParams, slsOuts, Tc);
     F2 = F(:,sys.Nx+1:end);
     
-    solnSpaceSize = size(get_soln_sp(F2, tol), 2);
+    solnSpaceSize = size(get_soln_sp(F2, tol), 2) * sys.Nx;
     status        = slsOuts_alts{i}.solveStatus_;
 
     statusTxt = [statusTxt, char(10), sprintf('Tc=%d, %s, solnSpaceSize=%d', Tc, status, solnSpaceSize)];     
