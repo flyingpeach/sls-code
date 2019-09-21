@@ -235,11 +235,6 @@ if encourageLocal
         for i=1:sys.Nx
             for j=1:sys.Nx % note: this distance metric only for chain
                 objective = objective + const * exp(-t) * exp(abs(i-j))*norm(Rc{t}(i,j));
-            end
-        end
-
-        for i=1:sys.Nu
-            for j=1:sys.Nx
                 objective = objective + const * exp(-t) * exp(abs(i-j))*norm(BM(i,j));
             end
         end
