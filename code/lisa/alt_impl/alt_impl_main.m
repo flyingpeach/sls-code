@@ -70,37 +70,17 @@ end
 [infH2Cost, centH2Cost, locSLSH2Cost, reImplH2Cost]
 
 %% Internal stability
+Tcs = 2:20;
+specRadii = zeros(length(Tcs), 1);
 
-T = slsParams.tFIR_;
-
-Rc = slsOuts_alt.R_;
-Mc = slsOuts_alt.M_;
-
-for k=1:Tc-1
-    Dellc{k} = Rc{k+1} - sys.A*Rc{k} - sys.B2*Mc{k};
-end
-Dellc{Tc} = - sys.A*Rc{Tc} - sys.B2*Mc{Tc};
-
-intStabMtx = zeros(sys.Nx*(Tc+1), sys.Nx*(Tc+1));
-
-% copied from get_F
-get_range = @(idx, size) (size*(idx-1)+1:size*(idx-1)+size);
-
-for i=1:Tc
-    ix     = get_range(i, sys.Nx);
-    ixplus = get_range(i+1, sys.Nx); 
-    intStabMtx(ix, ixplus) = eye(sys.Nx);
+for i=1:length(Tcs)
+    specRadii(i) = check_int_stability(sys, Tcs(i), slsOuts_alts{i});
 end
 
-for i=2:Tc
-    ix   = get_range(i, sys.Nx);
-    endx = get_range(Tc+1, sys.Nx);
-    
-    intStabMtx(endx, ix) = Dellc{Tc+2-i};
-end
-
-sort(abs(eig(intStabMtx)))
-
+figure; hold on;
+plot(Tcs, specRadii);
+plot(Tcs, ones(length(Tcs),1), 'r');
+xlabel('T_c'); ylabel('Spectral radius');
 
 %%
 visualize_matrices(sys, slsOuts, slsOuts_alt, Tc, 'all');
