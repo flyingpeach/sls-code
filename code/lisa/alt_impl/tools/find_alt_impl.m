@@ -14,30 +14,15 @@ statusTxt = settings.sanity_check();
 statusTxt = [char(10), sprintf('Finding alt implementation, %s, Tc=%d', statusTxt, Tc)];
 disp(statusTxt);
 
-if settings.mode_ ~= AltImplMode.ImplicitOpt
-    F  = get_F(sys, slsParams, slsOuts, Tc);
-    F1 = F(:, 1:sys.Nx);
-    F2 = F(:,sys.Nx+1:end);
-end
+F  = get_F(sys, slsParams, slsOuts, Tc);
+F1 = F(:, 1:sys.Nx);
+F2 = F(:,sys.Nx+1:end);
     
 switch settings.mode_
-    case AltImplMode.ImplicitOpt
-        slsOuts_alt = fai_implicit(sys, slsParams, slsOuts, Tc);
-    case AltImplMode.ExplicitOpt
-        leaky       = false;
-        slsOuts_alt = fai_explicit(sys, Tc, F1, F2, leaky);
     case AltImplMode.NullsOpt
-        slsOuts_alt = fai_nullsopt(sys, slsParams, Tc, F1, F2, settings.tol_, settings.locality_, settings.delay_);
+        slsOuts_alt = fai_nullsopt(sys, slsParams, Tc, F1, F2);
     case AltImplMode.Analytic
         slsOuts_alt = fai_analytic(sys, Tc, F1, F2);
-    case AltImplMode.ApproxDrop
-        numDrop     = settings.relaxPct_ * size(F, 1);
-        [F1, F2]    = drop_constr(F1, F2, numDrop);
-        leaky       = false;
-        slsOuts_alt = fai_explicit(sys, Tc, F1, F2, leaky);
-    case AltImplMode.ApproxLeaky
-        leaky       = true;
-        slsOuts_alt =  fai_explicit(sys, Tc, F1, F2, leaky, settings.clDiffPen_);
 end
 end
 
@@ -66,126 +51,6 @@ end
 end
 
 
-function [F1, F2] = drop_constr(F1, F2, numDrop)
-% drop rows of F1 (and corresponding rows in F2) with lowest row norm
-F1rownorms = sqrt(sum(F1.^2, 2));
-[~, idx]   = sort(F1rownorms);
-
-keepRows   = 1:size(F1, 1); % indices of rows to keep
-
-for i=1:numDrop
-    keepRows(keepRows==idx(i)) = []; % get rid of that row
-end
-
-F1 = F1(keepRows, :);
-F2 = F2(keepRows, :);
-end
-
-
-function slsOuts_alt = fai_implicit(sys, slsParams, slsOuts, Tc)
-T = slsParams.tFIR_;
-
-cvx_begin
-cvx_solver sdpt3
-cvx_precision low
-
-variable Rcs(sys.Nx, sys.Nx, Tc)
-variable Mcs(sys.Nu, sys.Nx, Tc)
-expression Dellcs(sys.Nx, sys.Nx, Tc+1)
-expression Rsums(sys.Nx, sys.Nx, Tc+T)
-expression Msums(sys.Nu, sys.Nx, Tc+T)
-
-% populate decision variables
-objective = 0;
-for t = 1:Tc
-    Rc{t}    = Rcs(:,:,t);
-    Mc{t}    = Mcs(:,:,t);
-    Dellc{t} = Dellcs(:,:,t);
-    Rsum{t}  = Rsums(:,:,t);
-    Msum{t}  = Msums(:,:,t);
-    
-    % L1 norm to enforce sparsity
-    objective = objective + norm([Rc{t}; Mc{t}], 1);
-end
-Dellc{Tc+1} = Dellcs(:,:,Tc+1);
-for t=Tc+1:Tc+T
-    Rsum{t}  = Rsums(:,:,t);
-    Msum{t}  = Msums(:,:,t);
-end
-
-% calculate Dellc
-Dellc{1} = eye(sys.Nx); % will enforce Rc{1} == eye(sys.Nx)
-for t=2:Tc
-    Dellc{t} = Rc{t} - sys.A*Rc{t-1} - sys.B2*Mc{t-1};
-end
-Dellc{Tc+1} = -sys.A*Rc{Tc} - sys.B2*Mc{Tc};
-for t=Tc+2:Tc+T
-    Dellc{t} = zeros(sys.Nx, sys.Nx); % zero padding for ease of calculation
-end
-
-% enforce LHS = RHS constraints
-for t=1:Tc
-    for k=1:min(T, t) % convolve
-         Rsum{t} = Rsum{t} + slsOuts.R_{k} * Dellc{t-k+1};
-         Msum{t} = Msum{t} + slsOuts.M_{k} * Dellc{t-k+1};
-    end
-    Rc{t} == Rsum{t};
-    Mc{t} == Msum{t};
-end
-for t=Tc+1:Tc+T % note: in initial prototypes, dropped these constr for approximation
-    for k=1:min(T, t)
-         Rsum{t} = Rsum{t} + slsOuts.R_{k} * Dellc{t-k+1};
-         Msum{t} = Msum{t} + slsOuts.M_{k} * Dellc{t-k+1};
-    end
-        Rsum{t} == 0;
-        Msum{t} == 0;
-end
-
-minimize(objective);
-cvx_end
-
-% outputs
-slsOuts_alt.R_           = Rc;
-slsOuts_alt.M_           = Mc;
-slsOuts_alt.clnorm_      = objective;
-slsOuts_alt.solveStatus_ = cvx_status;
-end
-
-
-function slsOuts_alt = fai_explicit(sys, Tc, F1, F2, leaky, clDiffPen)
-cvx_begin
-cvx_solver sdpt3
-cvx_precision low
-
-variable Rcs(sys.Nx * (Tc-1), sys.Nx) % Rc{1} == 1 so it's not a variable
-variable Mcs(sys.Nu * Tc, sys.Nx)
-expression Delta(Tc * (sys.Nx + sys.Nu) - sys.Nx, sys.Nx) 
-    
-objective = norm([Rcs; Mcs], 1);
-
-if leaky
-    Delta = F2 * [Rcs; Mcs] + F1;    
-    clDiff = norm(Delta);
-    objective = objective + clDiffPen * clDiff;
-else % exact solution
-    F2 * [Rcs; Mcs] == -F1;
-end
-
-minimize(objective);
-cvx_end
-
-% outputs
-[slsOuts_alt.R_, slsOuts_alt.M_] = block_to_cell(Rcs, Mcs, Tc, sys);
-
-% want original L1norm
-if leaky
-    objective = objective - clDiffPen * clDiff;
-end
-slsOuts_alt.clnorm_      = objective;
-slsOuts_alt.solveStatus_ = cvx_status;
-end
-
-
 function slsOuts_alt = fai_nullsopt(sys, slsParams, Tc, F1, F2, tol, locality, delay)
 
 strictLocal    = false;
@@ -196,12 +61,14 @@ elseif strcmp(locality, 'encouraged')
     encourageLocal = true;
 end
 
-if rank(F2, tol) == rank([F1 F2], tol)
-    RMc_p     = F2 \ (-F1); % particular solution
-else
-   slsOuts_alt.solveStatus_ = 'Infeasible (analytic)';
-   return
-end
+% if rank(F2, tol) == rank([F1 F2], tol)
+%     RMc_p     = F2 \ (-F1); % particular solution
+% else
+%    slsOuts_alt.solveStatus_ = 'Infeasible (analytic)';
+%    return
+% end
+
+RMc_p     = F2 \ (-F1);
 
 nullSp        = get_soln_sp(F2, tol);
 solnSpaceSize = size(nullSp, 2);
@@ -232,6 +99,8 @@ if encourageLocal
         
         BM = sys.B2 * Mc{t};
     
+        MZeros{t} = abs(sys.B2)' * RZeros{t}
+        
         for i=1:sys.Nx
             for j=1:sys.Nx % note: this distance metric only for chain
                 objective = objective + const * exp(-t) * exp(abs(i-j))*norm(Rc{t}(i,j));
