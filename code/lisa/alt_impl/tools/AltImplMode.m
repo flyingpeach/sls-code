@@ -1,21 +1,23 @@
 classdef AltImplMode
     % Enumeration class containing alternative implementation modes
     enumeration
-      ImplicitOpt % Minimizes L1 norm of [Rc; Mc] 
-                  % with [Rc; Mc] == [R; M] * [zI-A -B] * [Rc; Mc] 
+      ExactOpt % Minimizes L1 norm of [Rc; Mc]
+               % by searching over Rc_specific + Rc_homogenous
 
-      ExplicitOpt % Minimizes L1 norm of [Rc; Mc]
-                  % with F2 * [Rc; Mc] == -F1 
-                  % where F1, F2 do not depend on [Rc, Mc]
+               % note that this is implemented in an ApproxLS way to bypass
+               % numerical issues
 
-      NullsOpt    % Minimizes L1 norm of [Rc; Mc]
-                  % by searching over Rc_specific + Rc_homogenous
+      Analytic % [Rc; Mc] = -F2 \ F1
 
-      Analytic    % [Rc; Mc] = -F2 \ F1
+      ApproxLS % ExplicitOpt with Rc_specific = LS solution and 
+               % Rc_homogenous including right singular vectors 
+               % corresponding to small nonzero singular values
 
-      ApproxDrop  % ExplicitOpt but with some dropped constraints
-
-      ApproxLeaky % Minimizes L1 norm of [Rc; Mc] + weight * norm(Delta)
-                  % where Delta = F2 * [Rc; Mc] + F1 (should be zero)
+      ApproxLeaky % ExplicitOpt with penalized leaky term
+      
+      StrictDelay % ApproxLS with strict comm delay constraints
+      
+      EncourageDelay % ExplicitOpt with optimization encouraging tolerance
+                     % for communication delays
     end
 end

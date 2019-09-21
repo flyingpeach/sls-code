@@ -17,12 +17,34 @@ disp(statusTxt);
 F  = get_F(sys, slsParams, slsOuts, Tc);
 F1 = F(:, 1:sys.Nx);
 F2 = F(:,sys.Nx+1:end);
-    
-switch settings.mode_
-    case AltImplMode.NullsOpt
-        slsOuts_alt = fai_nullsopt(sys, slsParams, Tc, F1, F2);
-    case AltImplMode.Analytic
-        slsOuts_alt = fai_analytic(sys, Tc, F1, F2);
+
+
+% these modes use the "exact" nullspace (note: it's still an approximation)
+useTol      = [AltImplMode.ExactOpt, AltImplMode.ApproxLeaky, AltImplMode.EncourageDelay];
+
+% these modes use a relaxed nullspace
+useSvThresh = [AltImplMode.ApproxLS, AltImplMode.StrictDelay];
+
+if settings.mode_ == AltImplMode.Analytic
+    slsOuts_alt = fai_analytic(sys, Tc, F1, F2);
+elseif ismember(settings.mode_, useTol)
+    tol = settings.tol_;
+    if settings.mode_ ~= AltImplMode.ApproxLeaky
+        if rank(F2, tol) ~= rank([F1 F2], tol)
+            fprintf('Solution infeasible!');
+            slsOuts_alt = 0;
+            return
+        end
+    end
+    slsOuts_alt = fai_nullsopt(sys, Tc, F1, F2, tol, settings);
+else
+    tol = settings.svThresh_;
+    if rank(F2, tol) ~= rank([F1 F2], tol)
+        fprintf('Solution infeasible!');
+        slsOuts_alt = 0;
+        return
+    end
+    slsOuts_alt = fai_nullsopt(sys, Tc, F1, F2, tol, settings);
 end
 end
 
@@ -51,25 +73,9 @@ end
 end
 
 
-function slsOuts_alt = fai_nullsopt(sys, slsParams, Tc, F1, F2, tol, locality, delay)
+function slsOuts_alt = fai_nullsopt(sys, Tc, F1, F2, tol, settings)
 
-strictLocal    = false;
-encourageLocal = false;
-if strcmp(locality, 'strict')
-    strictLocal = true;
-elseif strcmp(locality, 'encouraged')
-    encourageLocal = true;
-end
-
-% if rank(F2, tol) == rank([F1 F2], tol)
-%     RMc_p     = F2 \ (-F1); % particular solution
-% else
-%    slsOuts_alt.solveStatus_ = 'Infeasible (analytic)';
-%    return
-% end
-
-RMc_p     = F2 \ (-F1);
-
+RMc_p         = F2 \ (-F1); % particular solution
 nullSp        = get_soln_sp(F2, tol);
 solnSpaceSize = size(nullSp, 2);
 
@@ -78,49 +84,39 @@ cvx_solver sdpt3
 cvx_precision low
 
 variable coeff(solnSpaceSize, sys.Nx)
-%variable RMcSlack(size(RMc_p, 1), sys.Nx)
-    
 RMc = RMc_p + nullSp*coeff;
+objective  = norm(RMc, 1);
+    
+if settings.mode_ == AltImplMode.ApproxLeaky
+    variable RMcSlack(size(RMc_p, 1), sys.Nx)
+    RMc = RMc + RMcSlack;
+    objective = objective + settings.clDiffPen_ * norm(RMcSlack);
+end
+
 Rcs = RMc(1:sys.Nx * (Tc-1), :);
 Mcs = RMc(sys.Nx * (Tc-1) + 1:end, :);
 
-objective  = norm([Rcs; Mcs], 1);
-
 [Rc, Mc] = block_to_cell(Rcs, Mcs, Tc, sys);
 
-slsParams_alt       = copy(slsParams);
-slsParams_alt.tFIR_ = Tc;
-
-% add locality enforcement
-if encourageLocal
-    const = 1;
+if settings.mode_ == AltImplMode.StrictDelay
+    [RZeros, MZeros] = delay_constraints(sys, Tc, settings.delay_);
     for t=1:Tc
-        t
-        
-        BM = sys.B2 * Mc{t};
-    
-        MZeros{t} = abs(sys.B2)' * RZeros{t}
-        
-        for i=1:sys.Nx
-            for j=1:sys.Nx % note: this distance metric only for chain
-                objective = objective + const * exp(-t) * exp(abs(i-j))*norm(Rc{t}(i,j));
-                objective = objective + const * exp(-t) * exp(abs(i-j))*norm(BM(i,j));
-            end
-        end
+        Rc{t}(RZeros{t}) == 0;
+        Mc{t}(MZeros{t}) == 0;
     end
 end
 
-if strictLocal
-    % overwrite original constraints with M1slack
-
-    [RZeros, MZeros] = delay_constraints(sys, Tc, delay);
+if settings.mode_ == AltImplMode.EncourageDelay
     for t=1:Tc
-        Rc{t}(RZeros{t}) == 0;
-        if t==1
-            M1Pen = 1e3;
-            objective = objective + M1Pen*norm(Mc{t}(MZeros{t}));
-        else
-            Mc{t}(MZeros{t}) == 0;
+        % formulating these constraints are slow, so output progress
+        sprintf('Adding objectives for %d of %d matrices', t, Tc);
+        
+        BM = sys.B2 * Mc{t};        
+        for i=1:sys.Nx
+            for j=1:sys.Nx % note: this distance metric only for chain
+                objective = objective + settings.fastCommPen_ * exp(abs(i-j)-t)*norm(Rc{t}(i,j));
+                objective = objective + settings.fastCommPen_ * exp(abs(i-j)-t)*norm(BM(i,j));
+            end
         end
     end
 end
@@ -130,8 +126,9 @@ cvx_end
 
 [Rc, Mc] = block_to_cell(Rcs, Mcs, Tc, sys);
 
-if strictLocal % enforce locality again by just zeroing out non-local elements
-    for t=1:Tc
+if settings.mode_ == AltImplMode.StrictDelay
+    for t=1:Tc % Even though these are constrained to be 0, set to 0
+               % to avoid small numerical fluctuations
         Rc{t}(RZeros{t}) = 0;
         Mc{t}(MZeros{t}) = 0;
     end
