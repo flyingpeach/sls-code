@@ -28,6 +28,16 @@ xlabel(xLabel); ylabel('Normed difference');
 legend('||Hc-M||_2', '||HTc-M||_2');
 savefig([savepath, '\cl_diff.fig']);
 
+% check internal stability %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+figure; hold on;
+plot(xSeries, met.IntSpecRadii_c, 'o-');
+plot(xSeries, met.IntSpecRadii_Tc);
+plot(xSeries, met.IntSpecRadiusOrig * ones(length(xSeries), 1));
+title('Spectral radii of new implementation');
+xlabel(xLabel); ylabel('Spectral radius');
+legend('Rc/Mc', 'RTc/MTc', 'Original');
+savefig([savepath, '\spec_radii.fig']);
+
 % compare L1 norms %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 figure; hold on;
 plot(xSeries, met.L1Norms, 'o-');

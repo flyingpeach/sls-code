@@ -21,6 +21,7 @@ for t=1:T
     met.RNonzero = met.RNonzero + sum(abs(vec(R{t})) > met.tol);
     met.MNonzero = met.MNonzero + sum(abs(vec(M{t})) > met.tol);
 end
+met.IntSpecRadiusOrig = check_int_stability(sys, T, R, M);
 
 if strcmp(met.sweepParamName, 'Tc')
     numItems = numTcs;
@@ -35,18 +36,20 @@ for i=1:numItems
     end
     Rc = slsOuts_alts{i}.R_; Mc = slsOuts_alts{i}.M_;
 
+    met.IntSpecRadii_c(i)  = check_int_stability(sys, Tc, Rc, Mc);
+    met.IntSpecRadii_Tc(i) = check_int_stability(sys, Tc, R, M);
+    
     for t=1:Tc
         % calculate metrics for Rc, Mc %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         met.L1Norms(i) = met.L1Norms(i) + norm([Rc{t}; Mc{t}], 1);
         
         met.RcNonzeros(i) = met.RcNonzeros(i) + sum(abs(vec(Rc{t})) > met.tol);
         met.McNonzeros(i) = met.McNonzeros(i) + sum(abs(vec(Mc{t})) > met.tol);
-
+        
         % calculate metrics for RTc, MTc %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
         met.L1NormsTc(i) = met.L1NormsTc(i) + norm([R{t}; M{t}], 1);
        
         met.RTcNonzeros(i) = met.RTcNonzeros(i) + sum(abs(vec(R{t})) > met.tol);
         met.MTcNonzeros(i) = met.MTcNonzeros(i) + sum(abs(vec(M{t})) > met.tol);
-
     end
 end
