@@ -76,7 +76,7 @@ end
 function slsOuts_alt = fai_nullsopt(sys, Tc, F1, F2, tol, settings)
 
 RMc_p         = F2 \ (-F1); % particular solution
-nullSp        = get_soln_sp(F2, tol);
+nullSp        = get_nullsp(F2, tol);
 solnSpaceSize = size(nullSp, 2);
 
 cvx_begin
@@ -99,7 +99,7 @@ Mcs = RMc(sys.Nx * (Tc-1) + 1:end, :);
 [Rc, Mc] = block_to_cell(Rcs, Mcs, Tc, sys);
 
 if settings.mode_ == AltImplMode.StrictDelay
-    [RZeros, MZeros] = delay_constraints(sys, Tc, settings.delay_);
+    [RZeros, MZeros] = get_delay_constraints(sys, Tc, settings.delay_);
     for t=1:Tc
         Rc{t}(RZeros{t}) == 0;
         Mc{t}(MZeros{t}) == 0;
