@@ -11,23 +11,6 @@ else
 end
 xLabel = met.sweepParamName;
 
-% differences between the matrices %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-figure; 
-subplot(2,1,1); hold on;
-plot(xSeries, met.RDiffs, 'o-');
-plot(xSeries, met.RTcDiffs);
-title('Normed diffs between R/Rc/RTc');
-ylabel('Normed difference');
-legend('||Rc-R||_2', '||RTc-R||_2');
-
-subplot(2,1,2); hold on;
-plot(xSeries, met.MDiffs, 'o-');
-plot(xSeries, met.MTcDiffs);
-title('Normed diffs between M/Mc/MTc');
-xlabel(xLabel); ylabel('Normed difference');
-legend('||Mc-M||_2', '||MTc-M||_2');
-savefig([savepath, '\mtx_diff.fig']);
-
 % differences between CL maps %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 figure;
 subplot(2,1,1); hold on;

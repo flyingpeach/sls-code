@@ -35,37 +35,18 @@ for i=1:numItems
     end
     Rc = slsOuts_alts{i}.R_; Mc = slsOuts_alts{i}.M_;
 
-    % calculate metrics for Rc, Mc %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    TMax = max(Tc, T);
-   
-    % make Rc, R equal length for easier comparisons
-    for t=T+1:TMax % pad R, M with zeros if needed
-        R{t} = zeros(sys.Nx, sys.Nx); M{t} = zeros(sys.Nu, sys.Nx);
-    end
-    for t=Tc+1:TMax % pad Rc, Mc with zeros if needed
-        Rc{t} = zeros(sys.Nx, sys.Nx);Mc{t} = zeros(sys.Nu, sys.Nx);
-    end
-
-    for t=1:TMax
+    for t=1:Tc
+        % calculate metrics for Rc, Mc %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
         met.L1Norms(i) = met.L1Norms(i) + norm([Rc{t}; Mc{t}], 1);
         
         met.RcNonzeros(i) = met.RcNonzeros(i) + sum(abs(vec(Rc{t})) > met.tol);
         met.McNonzeros(i) = met.McNonzeros(i) + sum(abs(vec(Mc{t})) > met.tol);
 
-        met.RDiffs(i) = met.RDiffs(i) + norm(full(R{t} - Rc{t}));
-        met.MDiffs(i) = met.MDiffs(i) + norm(full(M{t} - Mc{t}));
-    end
-    
-    % calculate metrics for RTc, MTc %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-    for t=1:Tc
-       met.L1NormsTc(i) = met.L1NormsTc(i) + norm([R{t}; M{t}], 1);
+        % calculate metrics for RTc, MTc %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
+        met.L1NormsTc(i) = met.L1NormsTc(i) + norm([R{t}; M{t}], 1);
        
-       met.RTcNonzeros(i) = met.RTcNonzeros(i) + sum(abs(vec(R{t})) > met.tol);
-       met.MTcNonzeros(i) = met.MTcNonzeros(i) + sum(abs(vec(M{t})) > met.tol);
-    end
+        met.RTcNonzeros(i) = met.RTcNonzeros(i) + sum(abs(vec(R{t})) > met.tol);
+        met.MTcNonzeros(i) = met.MTcNonzeros(i) + sum(abs(vec(M{t})) > met.tol);
 
-    for t=Tc+1:T
-        met.RTcDiffs(i) = met.RTcDiffs(i) + norm(full(R{t}));
-        met.MTcDiffs(i) = met.MTcDiffs(i) + norm(full(M{t}));
     end
 end
