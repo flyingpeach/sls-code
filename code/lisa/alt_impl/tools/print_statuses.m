@@ -1,26 +1,21 @@
-function statusTxt = print_statuses(sys, slsParams, slsOuts, slsOuts_alts, tol)
+function statusTxt = print_statuses(sweepParams, slsOuts_alts)
 % Print cvx statuses for each new CL implementation found
 % Outputs
-%     statusTxt    : contains list of Tc and corresponding status
+%     statusTxt    : contains list of swept parameters and corresponding status
 % Inputs
-%     sys          : LTISystem containing system matrices
-%     slsParams    : SLSParams containing parameters
-%     slsOuts      : contains info from SLS (original R, M)
-%     slsOuts_alts : alternate CL implementations (one per different Tc)
-%     tol          : tolerance to use for rank calculation
+%     sweepParams  : list of parameters (i.e. Tc, clDiffPen) corresponding
+%                    to each slsOuts_alts{i}; should be same length as
+%                    slsOuts_alts
+%     slsOuts_alts : alternate CL implementations
 
 statusTxt = [];
 
-for i=1:length(slsOuts_alts)
-    Tc = length(slsOuts_alts{i}.R_);
 
-    F  = get_F(sys, slsParams, slsOuts, Tc);
-    F2 = F(:,sys.Nx+1:end);
-    
-    solnSpaceSize = size(get_soln_sp(F2, tol), 2) * sys.Nx;
-    status        = slsOuts_alts{i}.solveStatus_;
+for i=1:length(sweepParams)
+    param  = sweepParams(i);
+    status = slsOuts_alts{i}.solveStatus_;
 
-    statusTxt = [statusTxt, char(10), sprintf('Tc=%d, %s, solnSpaceSize=%d', Tc, status, solnSpaceSize)];     
+    statusTxt = [statusTxt, char(10), sprintf('%0.2e: %s', param, status)];
 end
     
 
