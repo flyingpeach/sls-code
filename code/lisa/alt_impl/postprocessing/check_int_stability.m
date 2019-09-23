@@ -20,7 +20,7 @@ for i=1:Tc
     ix   = get_range(i, sys.Nx);
     endx = get_range(Tc+1, sys.Nx);
     
-    intStabMtx(endx, ix) = Dellc{Tc+2-i};
+    intStabMtx(endx, ix) = Dellc{Tc+1-i};
 end
 
 spectralRadius = max(abs(eig(intStabMtx))); % biggest eigenvalue

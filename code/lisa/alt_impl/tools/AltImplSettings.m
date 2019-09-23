@@ -8,13 +8,17 @@ classdef AltImplSettings < matlab.mixin.Copyable
 
       tol_;       % tolerance used in non-relaxed rank/nullsp calculations
       
-      svThresh_;  % used in ApproxLS / StrictDelay modes
+      svThresh_;  % used in ApproxLS mode
                   % use right singular vectors corresponding to singular 
                   % values below this threshold
 
       delay_;     % used in StrictDelay mode
                   % amount of delay to enforce for strict locality
 
+      m1NonzeroPen_ % used in StrictDelay mode
+                    % Mc1 = M1 is requirement; penalize nonzero values that
+                    % violate delay constraints
+                  
       clDiffPen_; % used in ApproxLeaky mode
                   % penalize deviation from old CL map
       
@@ -62,14 +66,14 @@ classdef AltImplSettings < matlab.mixin.Copyable
                 modeStr  = 'leaky constr';
                 paramStr = sprintf(', tol=%0.2e, clDiffPen=%d', obj.clDiffPen_, obj.tol_);
             case AltImplMode.StrictDelay
-                if not(obj.svThresh_)
-                    error('[SLS ERROR] Did you forget to specify svThresh?');
+                if not(obj.m1NonzeroPen_)
+                    error('[SLS ERROR] Did you forget to specify m1NonzeroPen?');
                 end
                 if not(obj.delay_)
                     error('[SLS ERROR] Did you forget to specify delay?');
                 end
                 modeStr = 'strict delay';
-                paramStr = sprintf(', svThresh=%0.2e, delay=%0.1f', obj.svThresh_, obj.delay_);
+                paramStr = sprintf(', m1NonzeroPen=%0.2e, delay=%0.1f', obj.m1NonzeroPen_, obj.delay_);
             case AltImplMode.EncourageDelay
                 if not(obj.tol_)
                     disp('[SLS WARNING] Zero tolerance may make feasible problems seem infeasible!');

@@ -18,16 +18,9 @@ F  = get_F(sys, slsParams, slsOuts, Tc);
 F1 = F(:, 1:sys.Nx);
 F2 = F(:,sys.Nx+1:end);
 
-
-% these modes use the "exact" nullspace (note: it's still an approximation)
-useTol      = [AltImplMode.ExactOpt, AltImplMode.ApproxLeaky, AltImplMode.EncourageDelay];
-
-% these modes use a relaxed nullspace
-useSvThresh = [AltImplMode.ApproxLS, AltImplMode.StrictDelay];
-
 if settings.mode_ == AltImplMode.Analytic
-    slsOuts_alt = fai_analytic(sys, Tc, F1, F2);
-elseif ismember(settings.mode_, useTol)
+    slsOuts_alt = fai_analytic(sys, Tc, F1, F2);   
+elseif settings.mode_ ~= AltImplMode.ApproxLS
     tol = settings.tol_;
     if settings.mode_ ~= AltImplMode.ApproxLeaky
         if rank(F2, tol) ~= rank([F1 F2], tol)
@@ -39,11 +32,6 @@ elseif ismember(settings.mode_, useTol)
     slsOuts_alt = fai_nullsopt(sys, Tc, F1, F2, tol, settings);
 else
     tol = settings.svThresh_;
-    if rank(F2, tol) ~= rank([F1 F2], tol)
-        fprintf('Solution infeasible!');
-        slsOuts_alt = 0;
-        return
-    end
     slsOuts_alt = fai_nullsopt(sys, Tc, F1, F2, tol, settings);
 end
 end
@@ -102,8 +90,13 @@ if settings.mode_ == AltImplMode.StrictDelay
     [RZeros, MZeros] = get_delay_constraints(sys, Tc, settings.delay_);
     for t=1:Tc
         Rc{t}(RZeros{t}) == 0;
-        Mc{t}(MZeros{t}) == 0;
+        if t > 1
+            Mc{t}(MZeros{t}) == 0; % special case; let it leak, then zero
+                                   % otherwise commonly infeasible
+        end
     end
+    
+    objective = objective + settings.m1NonzeroPen_ * norm(Mc{1}(MZeros{1}));
 end
 
 if settings.mode_ == AltImplMode.EncourageDelay
