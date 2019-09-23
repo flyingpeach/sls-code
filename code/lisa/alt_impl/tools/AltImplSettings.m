@@ -66,6 +66,9 @@ classdef AltImplSettings < matlab.mixin.Copyable
                 modeStr  = 'leaky constr';
                 paramStr = sprintf(', tol=%0.2e, clDiffPen=%d', obj.clDiffPen_, obj.tol_);
             case AltImplMode.StrictDelay
+                if not(obj.tol_)
+                    disp('[SLS WARNING] Zero tolerance may make feasible problems seem infeasible!');
+                end                
                 if not(obj.m1NonzeroPen_)
                     error('[SLS ERROR] Did you forget to specify m1NonzeroPen?');
                 end
