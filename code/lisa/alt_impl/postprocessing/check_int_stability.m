@@ -10,13 +10,13 @@ intStabMtx = zeros(sys.Nx*(Tc+1), sys.Nx*(Tc+1));
 % copied from get_F
 get_range = @(idx, size) (size*(idx-1)+1:size*(idx-1)+size);
 
-for i=1:Tc
+for i=1:Tc-1
     ix     = get_range(i, sys.Nx);
     ixplus = get_range(i+1, sys.Nx); 
     intStabMtx(ix, ixplus) = eye(sys.Nx);
 end
 
-for i=2:Tc
+for i=1:Tc
     ix   = get_range(i, sys.Nx);
     endx = get_range(Tc+1, sys.Nx);
     
