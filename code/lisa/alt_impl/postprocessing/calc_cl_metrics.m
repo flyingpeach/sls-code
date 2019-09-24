@@ -20,6 +20,14 @@ extraT = 5;
 tTotal = tFIR + extraT;
 
 % zero pad R, M for easy comparisons
+RTotalNorms = 0;
+MTotalNorms = 0;
+
+for t=1:tFIR
+    RTotalNorms = RTotalNorms + norm(full(R{t}));
+    MTotalNorms = MTotalNorms + norm(full(M{t}));
+end
+
 for t=tFIR+1:tTotal
     R{t} = zeros(sys.Nx, sys.Nx);
     M{t} = zeros(sys.Nu, sys.Nx);
@@ -59,4 +67,11 @@ for i=1:numItems
         met.GTcDiffs(i) = met.GTcDiffs(i) + norm(full(R{t} - GTc{t}));
         met.HTcDiffs(i) = met.HTcDiffs(i) + norm(full(M{t} - HTc{t}));
     end
+    
+    met.GcDiffs(i) = met.GcDiffs(i) / RTotalNorms;
+    met.HcDiffs(i) = met.HcDiffs(i) / MTotalNorms;
+    met.GTcDiffs(i) = met.GTcDiffs(i) / RTotalNorms;
+    met.HTcDiffs(i) = met.HTcDiffs(i) / MTotalNorms;
+    
+    
 end

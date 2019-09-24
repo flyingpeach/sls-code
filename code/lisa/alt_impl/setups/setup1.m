@@ -3,9 +3,9 @@
 
 % specify system matrices
 sys    = LTISystem;
-sys.Nx = 30;
+sys.Nx = 10;
 
-alpha = 0.4; rho = 1; actDens = 0.2;
+alpha = 0.4; rho = 1; actDens = 0.3;
 generate_dbl_stoch_chain(sys, rho, actDens, alpha); % generate sys.A, sys.B2
 
 sys.B1  = eye(sys.Nx); % used in simulation
@@ -16,7 +16,7 @@ sys.D12 = [sparse(sys.Nx, sys.Nu); speye(sys.Nu)];
 slsParams       = SLSParams;
 slsParams.tFIR_ = 20;
 slsParams.obj_  = Objective.H2; % objective function
-slsParams.mode_ = SLSMode.Basic; %ApproxDLocalized;
+slsParams.mode_ = SLSMode.Basic;%ApproxDLocalized;
 slsParams.robCoeff_ = 1e3;
 
 % simulation parameters

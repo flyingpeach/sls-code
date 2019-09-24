@@ -15,7 +15,7 @@ settings.mode_ = AltImplMode.StrictLocal;
 
 % uncomment as needed
 settings.tol_          = eps.^(3/8);
-settings.locality_     = 3;
+settings.locality_     = 2;
 settings.nonzeroPen_   = 1e-3;
 % settings.svThresh_    = eps.^(1/6);
 % settings.delay_       = 1;
@@ -44,7 +44,7 @@ s_a{1} = slsOutsBaseline;
 %% calculate metrics
 zThresh = tol;
 met     = AltImplMetrics(zThresh, Tc);
-met     = calc_mtx_metrics(met, sys, slsParams, slsOuts, s_a);
+met     = calc_mtx_metrics(met, sys, slsParams, slsOuts_alt, s_a);
 met     = calc_cl_metrics(met, sys, simParams, slsParams, slsOuts, s_a);
 met
 %% visualize
