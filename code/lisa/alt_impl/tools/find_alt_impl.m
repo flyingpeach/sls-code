@@ -97,7 +97,9 @@ end
 
 if settings.mode_ == AltImplMode.StrictLocal
     % let them leak them manually remove later
-    [RZeros, MZeros] = get_locality_constraints(sys, settings.locality_);
+    [RSupp, MSupp] = get_locality_constraints(sys, Tc, settings.locality_);
+    RZeros = not(RSupp);
+    MZeros = (abs(sys.B2)' * RZeros) > 0;
     for t=1:Tc
         objective = objective + settings.nonzeroPen_ * norm(Rc{t}(RZeros));
         objective = objective + settings.nonzeroPen_ * norm(Mc{t}(MZeros));

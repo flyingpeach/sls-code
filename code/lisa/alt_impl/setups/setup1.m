@@ -3,9 +3,9 @@
 
 % specify system matrices
 sys    = LTISystem;
-sys.Nx = 31;
+sys.Nx = 30;
 
-alpha = 0.4; rho = 1; actDens = 0.3;
+alpha = 0.4; rho = 1; actDens = 0.2;
 generate_dbl_stoch_chain(sys, rho, actDens, alpha); % generate sys.A, sys.B2
 
 sys.B1  = eye(sys.Nx); % used in simulation

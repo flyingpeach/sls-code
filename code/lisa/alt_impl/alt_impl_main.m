@@ -15,8 +15,8 @@ settings.mode_ = AltImplMode.StrictLocal;
 
 % uncomment as needed
 settings.tol_          = eps.^(3/8);
-settings.locality_     = 5;
-settings.nonzeroPen_   = 1e0;
+settings.locality_     = 3;
+settings.nonzeroPen_   = 1e-3;
 % settings.svThresh_    = eps.^(1/6);
 % settings.delay_       = 1;
 % settings.clDiffPen_   = 1e3;
@@ -29,7 +29,10 @@ s_a{1}      = slsOuts_alt;
 
 %% get baseline comparison
 
-[RZeros, MZeros] = get_locality_constraints(sys, settings.locality_);
+[RSupp, MSupp] = get_locality_constraints(sys, Tc, settings.locality_);
+RZeros = not(RSupp);
+MZeros = (abs(sys.B2)' * RZeros) > 0;
+
 slsOutsBaseline = copy(slsOuts);
 
 for k=1:slsParams.tFIR_
@@ -45,7 +48,7 @@ met     = calc_mtx_metrics(met, sys, slsParams, slsOuts, s_a);
 met     = calc_cl_metrics(met, sys, simParams, slsParams, slsOuts, s_a);
 met
 %% visualize
-visualize_matrices(sys, slsOuts, slsOuts_alt, 20, 2);
+visualize_matrices(sys, slsOuts, slsOuts_alt, 20, 'all');
 
 %% calculate LQR cost
 % note: have to separately save slsOutsCent
