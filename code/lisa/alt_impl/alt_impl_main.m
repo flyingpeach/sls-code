@@ -5,16 +5,18 @@ setup1;
 % http://cvxr.com/cvx/doc/solver.html#solver-precision
 eps = 2.22e-16;
 tol = eps.^(3/8);
-close all;
+%close all;
 
 settings = AltImplSettings();
 
 %% sandbox
-% ExactOpt, Analytic, ApproxLS, ApproxLeaky, StrictDelay, EncourageDelay
-settings.mode_ = AltImplMode.ExactOpt;
+% ExactOpt, Analytic, ApproxLS, ApproxLeaky, StrictDelay, StrictLocal, EncourageDelay
+settings.mode_ = AltImplMode.StrictLocal;
 
 % uncomment as needed
-settings.tol_         = tol;
+settings.tol_          = eps.^(3/8);
+settings.locality_     = 5;
+settings.nonzeroPen_   = 1e0;
 % settings.svThresh_    = eps.^(1/6);
 % settings.delay_       = 1;
 % settings.clDiffPen_   = 1e3;
@@ -25,13 +27,25 @@ Tc = slsParams.tFIR_;
 slsOuts_alt = find_alt_impl(sys, slsParams, slsOuts, Tc, settings);
 s_a{1}      = slsOuts_alt;
 
+%% get baseline comparison
+
+[RZeros, MZeros] = get_locality_constraints(sys, settings.locality_);
+slsOutsBaseline = copy(slsOuts);
+
+for k=1:slsParams.tFIR_
+    slsOutsBaseline.R_{k}(RZeros) = 0;
+    slsOutsBaseline.M_{k}(MZeros) = 0;
+end
+s_a{1} = slsOutsBaseline;
+
+%% calculate metrics
 zThresh = tol;
 met     = AltImplMetrics(zThresh, Tc);
 met     = calc_mtx_metrics(met, sys, slsParams, slsOuts, s_a);
 met     = calc_cl_metrics(met, sys, simParams, slsParams, slsOuts, s_a);
 met
-
-visualize_matrices(sys, slsOuts, slsOuts_alt, 20, 'all');
+%% visualize
+visualize_matrices(sys, slsOuts, slsOuts_alt, 20, 2);
 
 %% calculate LQR cost
 % note: have to separately save slsOutsCent
