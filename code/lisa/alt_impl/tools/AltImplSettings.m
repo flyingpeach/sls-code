@@ -14,6 +14,9 @@ classdef AltImplSettings < matlab.mixin.Copyable
 
       delay_;     % used in StrictDelay mode
                   % amount of delay to enforce for strict locality
+                  
+      locality_; % used in StrictLocal mode
+                 % nodes only communicate within (locality) distance
 
       m1NonzeroPen_ % used in StrictDelay mode
                     % Mc1 = M1 is requirement; penalize nonzero values that
@@ -29,13 +32,14 @@ classdef AltImplSettings < matlab.mixin.Copyable
     methods
       function obj = AltImplSettings()
         % initialize to zero instead of empty array
-        obj.mode_        = 0;
-        
-        obj.tol_         = 0;
-        obj.svThresh_    = 0;
-        obj.delay_       = 0;
-        obj.clDiffPen_   = 0;
-        obj.fastCommPen_ = 0;
+        obj.mode_         = 0;
+        obj.tol_          = 0;
+        obj.svThresh_     = 0;
+        obj.delay_        = 0;
+        obj.locality_     = 0;
+        obj.m1NonzeroPen_ = 0;
+        obj.clDiffPen_    = 0;
+        obj.fastCommPen_  = 0;
       end      
       
       function statusTxt = sanity_check(obj)
@@ -65,6 +69,18 @@ classdef AltImplSettings < matlab.mixin.Copyable
                 end                
                 modeStr  = 'leaky constr';
                 paramStr = sprintf(', tol=%0.2e, clDiffPen=%d', obj.clDiffPen_, obj.tol_);
+            case AltImplMode.StrictLocal
+                if not(obj.tol_)
+                    disp('[SLS WARNING] Zero tolerance may make feasible problems seem infeasible!');
+                end                
+                if not(obj.m1NonzeroPen_)
+                    error('[SLS ERROR] Did you forget to specify m1NonzeroPen?');
+                end
+                if not(obj.locality_)
+                    error('[SLS ERROR] Did you forget to specify locality?');
+                end
+                modeStr = 'strict local';
+                paramStr = sprintf(', m1NonzeroPen=%0.2e, locality=%d', obj.m1NonzeroPen_, obj.locality_);
             case AltImplMode.StrictDelay
                 if not(obj.tol_)
                     disp('[SLS WARNING] Zero tolerance may make feasible problems seem infeasible!');

@@ -15,7 +15,9 @@ classdef AltImplMode
 
       ApproxLeaky % ExplicitOpt with penalized leaky term
       
-      StrictDelay % ApproxLS with strict comm delay constraints
+      StrictDelay % ExplicitOpt with strict comm delay constraints and M1 relaxation
+      
+      StrictLocal % ExplicitOpt with strict locality constraint and M1 relaxation
       
       EncourageDelay % ExplicitOpt with optimization encouraging tolerance
                      % for communication delays

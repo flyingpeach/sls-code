@@ -95,9 +95,19 @@ if settings.mode_ == AltImplMode.StrictDelay
                                    % otherwise commonly infeasible
         end
     end
-    
     objective = objective + settings.m1NonzeroPen_ * norm(Mc{1}(MZeros{1}));
 end
+
+if settings.mode_ == AltImplMode.StrictLocal
+    [RZeros, MZeros] = get_locality_constraints(sys, settings.locality_);
+    for t=1:Tc
+        Rc{t}(RZeros) == 0;
+        if t > 1
+            Mc{t}(MZeros) == 0; % special case; let it leak
+        end
+    end
+    objective = objective + settings.m1NonzeroPen_ * norm(Mc{1}(MZeros));
+end  
 
 if settings.mode_ == AltImplMode.EncourageDelay
     for t=1:Tc
@@ -124,6 +134,14 @@ if settings.mode_ == AltImplMode.StrictDelay
                % to avoid small numerical fluctuations
         Rc{t}(RZeros{t}) = 0;
         Mc{t}(MZeros{t}) = 0;
+    end
+end
+
+if settings.mode_ == AltImplMode.StrictLocal
+    for t=1:Tc % Even though these are constrained to be 0, set to 0
+               % to avoid small numerical fluctuations
+        Rc{t}(RZeros) = 0;
+        Mc{t}(MZeros) = 0;
     end
 end
 

@@ -12,5 +12,5 @@ for t=1:Tc
             end
         end            
     end
-    MZeros{t} = abs(sys.B2)' * RZeros{t} > 0; 
+    MZeros{t} = (abs(sys.B2)' * RZeros{t}) > 0; 
 end
