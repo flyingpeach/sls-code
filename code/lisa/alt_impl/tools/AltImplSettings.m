@@ -18,9 +18,9 @@ classdef AltImplSettings < matlab.mixin.Copyable
       locality_; % used in StrictLocal mode
                  % nodes only communicate within (locality) distance
 
-      m1NonzeroPen_ % used in StrictDelay mode
-                    % Mc1 = M1 is requirement; penalize nonzero values that
-                    % violate delay constraints
+      nonzeroPen_ % used in StrictDelay and StrictLocal modes
+                  % directly enforcing constraints often infeasible; let leak
+                  % then directly set to zero after optimization
                   
       clDiffPen_; % used in ApproxLeaky mode
                   % penalize deviation from old CL map
@@ -32,14 +32,14 @@ classdef AltImplSettings < matlab.mixin.Copyable
     methods
       function obj = AltImplSettings()
         % initialize to zero instead of empty array
-        obj.mode_         = 0;
-        obj.tol_          = 0;
-        obj.svThresh_     = 0;
-        obj.delay_        = 0;
-        obj.locality_     = 0;
-        obj.m1NonzeroPen_ = 0;
-        obj.clDiffPen_    = 0;
-        obj.fastCommPen_  = 0;
+        obj.mode_        = 0;
+        obj.tol_         = 0;
+        obj.svThresh_    = 0;
+        obj.delay_       = 0;
+        obj.locality_    = 0;
+        obj.nonzeroPen_  = 0;
+        obj.clDiffPen_   = 0;
+        obj.fastCommPen_ = 0;
       end      
       
       function statusTxt = sanity_check(obj)
@@ -73,26 +73,26 @@ classdef AltImplSettings < matlab.mixin.Copyable
                 if not(obj.tol_)
                     disp('[SLS WARNING] Zero tolerance may make feasible problems seem infeasible!');
                 end                
-                if not(obj.m1NonzeroPen_)
-                    error('[SLS ERROR] Did you forget to specify m1NonzeroPen?');
+                if not(obj.nonzeroPen_)
+                    error('[SLS ERROR] Did you forget to specify nonzeroPen?');
                 end
                 if not(obj.locality_)
                     error('[SLS ERROR] Did you forget to specify locality?');
                 end
                 modeStr = 'strict local';
-                paramStr = sprintf(', m1NonzeroPen=%0.2e, locality=%d', obj.m1NonzeroPen_, obj.locality_);
+                paramStr = sprintf(', nonzeroPen=%0.2e, locality=%d', obj.nonzeroPen_, obj.locality_);
             case AltImplMode.StrictDelay
                 if not(obj.tol_)
                     disp('[SLS WARNING] Zero tolerance may make feasible problems seem infeasible!');
                 end                
-                if not(obj.m1NonzeroPen_)
-                    error('[SLS ERROR] Did you forget to specify m1NonzeroPen?');
+                if not(obj.nonzeroPen_)
+                    error('[SLS ERROR] Did you forget to specify nonzeroPen?');
                 end
                 if not(obj.delay_)
                     error('[SLS ERROR] Did you forget to specify delay?');
                 end
                 modeStr = 'strict delay';
-                paramStr = sprintf(', m1NonzeroPen=%0.2e, delay=%0.1f', obj.m1NonzeroPen_, obj.delay_);
+                paramStr = sprintf(', nonzeroPen=%0.2e, delay=%0.1f', obj.nonzeroPen_, obj.delay_);
             case AltImplMode.EncourageDelay
                 if not(obj.tol_)
                     disp('[SLS WARNING] Zero tolerance may make feasible problems seem infeasible!');

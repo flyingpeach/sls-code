@@ -87,26 +87,21 @@ Mcs = RMc(sys.Nx * (Tc-1) + 1:end, :);
 [Rc, Mc] = block_to_cell(Rcs, Mcs, Tc, sys);
 
 if settings.mode_ == AltImplMode.StrictDelay
+    % let them leak then manually remove later
     [RZeros, MZeros] = get_delay_constraints(sys, Tc, settings.delay_);
     for t=1:Tc
-        Rc{t}(RZeros{t}) == 0;
-        if t > 1
-            Mc{t}(MZeros{t}) == 0; % special case; let it leak, then zero
-                                   % otherwise commonly infeasible
-        end
+        objective = objective + settings.nonzeroPen_ * norm(Rc{t}(RZeros{t}));
+        objective = objective + settings.nonzeroPen_ * norm(Mc{t}(MZeros{t}));        
     end
-    objective = objective + settings.m1NonzeroPen_ * norm(Mc{1}(MZeros{1}));
 end
 
 if settings.mode_ == AltImplMode.StrictLocal
+    % let them leak them manually remove later
     [RZeros, MZeros] = get_locality_constraints(sys, settings.locality_);
     for t=1:Tc
-        Rc{t}(RZeros) == 0;
-        if t > 1
-            Mc{t}(MZeros) == 0; % special case; let it leak
-        end
+        objective = objective + settings.nonzeroPen_ * norm(Rc{t}(RZeros));
+        objective = objective + settings.nonzeroPen_ * norm(Mc{t}(MZeros));
     end
-    objective = objective + settings.m1NonzeroPen_ * norm(Mc{1}(MZeros));
 end  
 
 if settings.mode_ == AltImplMode.EncourageDelay
