@@ -17,6 +17,7 @@ classdef AltImplMetrics < matlab.mixin.Copyable
       L1NormOrig;         % L1 norm of R/M
       RNonzero; MNonzero; % # nonzero entries (> zThresh) of R, M
       IntSpecRadiusOrig;   % original spectral radius of internal dynamics
+      LQRCostOrig;
       
       % properties of Rc, Mc
       L1Norms;                % L1 norms of Rc/Mc
@@ -24,13 +25,14 @@ classdef AltImplMetrics < matlab.mixin.Copyable
       GcDiffs;    HcDiffs;    % Gc/Hc are new CL maps (using Rc, Mc) from w to x/u
                               % sum over max(Tc, T) of ||Gc-R||, ||Hc-M||
       IntSpecRadii_c;         % spectral radii of internal dynamics (<1 means stable)
+      LQRCosts;               % LQR costs of new implementations
       
-      % properties of RTc, MTc (identical to R, M when Tc >= T)
-      L1NormsTc;                % L1 norms of RTc/MTc
-      RTcNonzeros; MTcNonzeros; % # nonzero entries (> zThresh) of RTc, MTc
-      GTcDiffs;    HTcDiffs;    % GTc/HTc are CL maps (using RTc, MTc) from w to x/u
-                                % sum over max(Tc, T) of ||GTc-R||, ||HTc-M||
-      IntSpecRadii_Tc;          % spectral radii of internal dynamics (<1 means stable)
+%       % properties of RTc, MTc (identical to R, M when Tc >= T)
+%       L1NormsTc;                % L1 norms of RTc/MTc
+%       RTcNonzeros; MTcNonzeros; % # nonzero entries (> zThresh) of RTc, MTc
+%       GTcDiffs;    HTcDiffs;    % GTc/HTc are CL maps (using RTc, MTc) from w to x/u
+%                                 % sum over max(Tc, T) of ||GTc-R||, ||HTc-M||
+%       IntSpecRadii_Tc;          % spectral radii of internal dynamics (<1 means stable)
     end
     
     methods
@@ -55,16 +57,18 @@ classdef AltImplMetrics < matlab.mixin.Copyable
         obj.L1NormOrig = 0;
         obj.RNonzero   = 0; obj.MNonzero = 0;
         obj.IntSpecRadiusOrig = 0;
+        obj.LQRCostOrig = 0;
         
         obj.L1Norms    = zeros(numItems,1);
         obj.RcNonzeros = zeros(numItems,1); obj.McNonzeros = zeros(numItems,1);
         obj.GcDiffs    = zeros(numItems,1); obj.HcDiffs    = zeros(numItems,1);
         obj.IntSpecRadii_c = zeros(numItems,1);
-        
-        obj.L1NormsTc   = zeros(numItems,1);
-        obj.RTcNonzeros = zeros(numItems,1); obj.MTcNonzeros = zeros(numItems,1);
-        obj.GTcDiffs    = zeros(numItems,1); obj.HTcDiffs    = zeros(numItems,1);
-        obj.IntSpecRadii_Tc = zeros(numItems,1);
+        obj.LQRCosts = zeros(numItems,1);
+%         
+%         obj.L1NormsTc   = zeros(numItems,1);
+%         obj.RTcNonzeros = zeros(numItems,1); obj.MTcNonzeros = zeros(numItems,1);
+%         obj.GTcDiffs    = zeros(numItems,1); obj.HTcDiffs    = zeros(numItems,1);
+%         obj.IntSpecRadii_Tc = zeros(numItems,1);
       end
     end
     

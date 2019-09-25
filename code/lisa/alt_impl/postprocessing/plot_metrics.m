@@ -15,54 +15,64 @@ xLabel = met.sweepParamName;
 figure;
 subplot(2,1,1); hold on;
 plot(xSeries, met.GcDiffs, 'o-');
-plot(xSeries, met.GTcDiffs);
+%plot(xSeries, met.GTcDiffs);
 title('Normed diffs between CL maps from w to x');
 ylabel('Normed difference');
-legend('||Gc-R||_2', '||GTc-R||_2');
+%legend('||Gc-R||_2', '||GTc-R||_2');
 
 subplot(2,1,2); hold on;
 plot(xSeries, met.HcDiffs, 'o-');
-plot(xSeries, met.HTcDiffs);
+%plot(xSeries, met.HTcDiffs);
 title('Normed diffs between CL maps from w to u');
 xlabel(xLabel); ylabel('Normed difference');
-legend('||Hc-M||_2', '||HTc-M||_2');
+%legend('||Hc-M||_2', '||HTc-M||_2');
 savefig([savepath, '\cl_diff.fig']);
+
+% LQRCosts %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+figure; hold on;
+plot(xSeries, met.LQRCosts, 'o-');
+%plot(xSeries, met.GTcDiffs);
+plot(xSeries, met.LQRCostOrig * ones(length(xSeries), 1));
+title('H2-LQR Costs');
+ylabel('H2-LQR Cost');
+legend('New LQR Costs', 'Original LQR Cost');
+savefig([savepath, '\lqr_costs.fig']);
 
 % check internal stability %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 figure; hold on;
 plot(xSeries, met.IntSpecRadii_c, 'o-');
-plot(xSeries, met.IntSpecRadii_Tc);
+%plot(xSeries, met.IntSpecRadii_Tc);
 plot(xSeries, met.IntSpecRadiusOrig * ones(length(xSeries), 1));
 title('Spectral radii of new implementation');
 xlabel(xLabel); ylabel('Spectral radius');
-legend('Rc/Mc', 'RTc/MTc', 'Original');
+legend('Rc/Mc', 'Original');
 savefig([savepath, '\spec_radii.fig']);
 
 % compare L1 norms %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 figure; hold on;
 plot(xSeries, met.L1Norms, 'o-');
-plot(xSeries, met.L1NormsTc);
+%plot(xSeries, met.L1NormsTc);
 plot(xSeries, met.L1NormOrig * ones(length(xSeries), 1));
 title('L1 norms of new implementation');
 xlabel(xLabel); ylabel('L1-norm');
-legend('L1 norms', 'L1 norms truncated', 'Original L1 norm');
+legend('L1 norms', 'Original L1 norm');
 savefig([savepath, '\l1_norms.fig']);
 
 % compare number of nonzero entries %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 figure;
 subplot(2,1,1); hold on;
 plot(xSeries, met.RcNonzeros, 'o-');
-plot(xSeries, met.RTcNonzeros);
+%plot(xSeries, met.RTcNonzeros);
 plot(xSeries, met.RNonzero * ones(length(xSeries), 1));
-title(sprintf('Entries of Rc/RTc/R > %0.1s', met.tol));
+title(sprintf('Entries of Rc/R > %0.1s', met.tol));
 ylabel('# Nonzero entries');
-legend('Rc', 'RTc', 'R');
+legend('Rc', 'R');
 
 subplot(2,1,2); hold on;
 plot(xSeries, met.McNonzeros, 'o-');
-plot(xSeries, met.MTcNonzeros);
+%plot(xSeries, met.MTcNonzeros);
 plot(xSeries, met.MNonzero * ones(length(xSeries), 1));
-title(sprintf('Entries of Mc/MTc/M > %0.1s', met.tol));
+title(sprintf('Entries of Mc/M > %0.1s', met.tol));
 xlabel(xLabel); ylabel('# Nonzero entries');
-legend('Mc', 'MTc', 'M');
+legend('Mc', 'M');
 savefig([savepath, '\nonzeros.fig']);

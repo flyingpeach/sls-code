@@ -34,8 +34,8 @@ end
 distH2Cost
 
 %% Reimplementation
-tTotal = slsParams.tFIR_+50;
-[G, H] = calc_cl_map(sys, slsParams, slsOuts, simParams, tTotal);
+tTotal = slsParams.tFIR_+100;
+[G, H] = calc_cl_map(sys, slsParams, slsOuts_alt, simParams, tTotal);
 reImplH2Cost = 0;
 for t=1:tTotal
     reImplH2Cost = reImplH2Cost + norm(full([G{t}; H{t}]), 'fro').^2;
@@ -43,6 +43,6 @@ end
 reImplH2Cost
 
 %% Output relative to infinite horizon
-[sprintf('Centralized: %.3f', centH2Cost / infH2Cost);
- sprintf('Distributed: %.3f', distH2Cost / infH2Cost);
- sprintf('Reimplement: %.3f', reImplH2Cost / infH2Cost);]
+[sprintf('Centralized: %.5f', centH2Cost / infH2Cost);
+ sprintf('Distributed: %.5f', distH2Cost / infH2Cost);
+ sprintf('Reimplement: %.5f', reImplH2Cost / infH2Cost);]

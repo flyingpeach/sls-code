@@ -37,7 +37,7 @@ for i=1:numItems
     Rc = slsOuts_alts{i}.R_; Mc = slsOuts_alts{i}.M_;
 
     met.IntSpecRadii_c(i)  = check_int_stability(sys, Tc, Rc, Mc);
-    met.IntSpecRadii_Tc(i) = check_int_stability(sys, Tc, R, M);
+%    met.IntSpecRadii_Tc(i) = check_int_stability(sys, Tc, R, M);
     
     for t=1:Tc
         % calculate metrics for Rc, Mc %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -46,10 +46,10 @@ for i=1:numItems
         met.RcNonzeros(i) = met.RcNonzeros(i) + sum(abs(vec(Rc{t})) > met.tol);
         met.McNonzeros(i) = met.McNonzeros(i) + sum(abs(vec(Mc{t})) > met.tol);
         
-        % calculate metrics for RTc, MTc %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
-        met.L1NormsTc(i) = met.L1NormsTc(i) + norm([R{t}; M{t}], 1);
-       
-        met.RTcNonzeros(i) = met.RTcNonzeros(i) + sum(abs(vec(R{t})) > met.tol);
-        met.MTcNonzeros(i) = met.MTcNonzeros(i) + sum(abs(vec(M{t})) > met.tol);
+%         % calculate metrics for RTc, MTc %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%    
+%         met.L1NormsTc(i) = met.L1NormsTc(i) + norm([R{t}; M{t}], 1);
+%        
+%         met.RTcNonzeros(i) = met.RTcNonzeros(i) + sum(abs(vec(R{t})) > met.tol);
+%         met.MTcNonzeros(i) = met.MTcNonzeros(i) + sum(abs(vec(M{t})) > met.tol);
     end
 end

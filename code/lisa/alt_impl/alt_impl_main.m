@@ -11,16 +11,16 @@ settings = AltImplSettings();
 
 %% sandbox
 % ExactOpt, Analytic, ApproxLS, ApproxLeaky, StrictDelay, StrictLocal, EncourageDelay
-settings.mode_ = AltImplMode.StrictLocal;
+settings.mode_ = AltImplMode.EncourageDelay;
 
 % uncomment as needed
-settings.tol_          = eps.^(3/8);
-settings.locality_     = 2;
-settings.nonzeroPen_   = 1e-3;
-% settings.svThresh_    = eps.^(1/6);
+settings.tol_          = eps.^(1/8);
+%settings.locality_     = 2;
+%settings.nonzeroPen_   = 1e-3;
+%settings.svThresh_    = 0.01;
 % settings.delay_       = 1;
 % settings.clDiffPen_   = 1e3;
-% settings.fastCommPen_ = 1e0;
+ settings.fastCommPen_ = 1e0;
 
 Tc = slsParams.tFIR_;
 
@@ -44,24 +44,14 @@ s_a{1} = slsOutsBaseline;
 %% calculate metrics
 zThresh = tol;
 met     = AltImplMetrics(zThresh, Tc);
-met     = calc_mtx_metrics(met, sys, slsParams, slsOuts_alt, s_a);
+met     = calc_mtx_metrics(met, sys, slsParams, slsOuts, s_a);
 met     = calc_cl_metrics(met, sys, simParams, slsParams, slsOuts, s_a);
 met
 %% visualize
 visualize_matrices(sys, slsOuts, slsOuts_alt, 20, 'all');
 
-%% calculate LQR cost
-% note: have to separately save slsOutsCent
-% also, we calculate the closed loop map up to T; have verified that
-% elements after that are about 0
-
-% slsParams_alt       = copy(slsParams);
-% slsParams_alt.tFIR_ = Tc;
-% [G, H] = calc_cl_map(sys, slsParams_alt, slsOuts_alt, simParams, slsParams_alt.tFIR_);
-% calc_lqr_costs(slsOutsCent, G, H)
-
 %% parameter sweep (Tc)
-Tcs    = 2:slsParams.tFIR_+5;
+Tcs    = 2:10;
 numTcs = length(Tcs);
 slsOuts_alts = cell(numTcs, 1);
 for idx=1:numTcs
@@ -86,6 +76,7 @@ end
 % we might not want to plot all of slsOuts_alts, so this is the sandbox to
 % adjust which slsOuts_alts to plot
 
+zThresh = tol;
 sweepParamName = 'Tc';
 
 if strcmp(sweepParamName, 'Tc')

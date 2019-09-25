@@ -109,13 +109,14 @@ end
 if settings.mode_ == AltImplMode.EncourageDelay
     for t=1:Tc
         % formulating these constraints are slow, so output progress
-        sprintf('Adding objectives for %d of %d matrices', t, Tc);
+        [char(10) sprintf('Adding objectives for %d of %d matrices', t, Tc)]
         
         BM = sys.B2 * Mc{t};        
         for i=1:sys.Nx
             for j=1:sys.Nx % note: this distance metric only for chain
-                objective = objective + settings.fastCommPen_ * exp(abs(i-j)-t)*norm(Rc{t}(i,j));
-                objective = objective + settings.fastCommPen_ * exp(abs(i-j)-t)*norm(BM(i,j));
+                % -t for also delay constr; rn this is encourage Local
+                objective = objective + settings.fastCommPen_ * exp(abs(i-j))*norm(Rc{t}(i,j));
+                objective = objective + settings.fastCommPen_ * exp(abs(i-j))*norm(BM(i,j));
             end
         end
     end

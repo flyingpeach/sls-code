@@ -17,7 +17,7 @@ slsParams       = SLSParams;
 slsParams.tFIR_ = 20;
 slsParams.obj_  = Objective.H2; % objective function
 slsParams.mode_ = SLSMode.Basic;%ApproxDLocalized;
-slsParams.robCoeff_ = 1e3;
+%slsParams.robCoeff_ = 1e3;
 
 % simulation parameters
 simParams           = SimParams;

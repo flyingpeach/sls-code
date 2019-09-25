@@ -15,8 +15,13 @@ numTcs = length(met.Tcs);
 tFIR = slsParams.tFIR_;
 R = slsOuts.R_; M = slsOuts.M_;
 
+% original LQR cost
+for t=1:tFIR
+    met.LQRCostOrig = met.LQRCostOrig + norm(full([R{t}; M{t}]), 'fro').^2;
+end
+
 % check CL map a few steps after tFIR; expect zeros
-extraT = 5;
+extraT = 20;
 tTotal = tFIR + extraT;
 
 % zero pad R, M for easy comparisons
@@ -35,7 +40,7 @@ end
 
 % for simulation; will use Tc instead of T
 slsParams_alt = copy(slsParams);
-slsOutsTc     = copy(slsOuts);
+%slsOutsTc     = copy(slsOuts);
 
 if strcmp(met.sweepParamName, 'Tc')
     numItems = numTcs;
@@ -53,25 +58,28 @@ for i=1:numItems
 
     % calculate CL map using Rc, Mc
     [Gc, Hc] = calc_cl_map(sys, slsParams_alt, slsOuts_alts{i}, simParams, tTotal);
-
+    for t=1:tTotal
+        met.LQRCosts(i) = met.LQRCosts(i) + norm(full([Gc{t}; Hc{t}]), 'fro').^2;
+    end   
+    
     % calculate CL map using RTc, MTc
     % note: we do this even if Tc > tFIR to check numerical precision
-    slsOutsTc.R_ = R(1:Tc);
-    slsOutsTc.M_ = M(1:Tc);
-    [GTc, HTc] = calc_cl_map(sys, slsParams_alt, slsOutsTc, simParams, tTotal);
+%     slsOutsTc.R_ = R(1:Tc);
+%     slsOutsTc.M_ = M(1:Tc);
+%     [GTc, HTc] = calc_cl_map(sys, slsParams_alt, slsOutsTc, simParams, tTotal);
 
     for t=1:tTotal % calculate differences
         met.GcDiffs(i) = met.GcDiffs(i) + norm(full(R{t} - Gc{t}));
         met.HcDiffs(i) = met.HcDiffs(i) + norm(full(M{t} - Hc{t}));
 
-        met.GTcDiffs(i) = met.GTcDiffs(i) + norm(full(R{t} - GTc{t}));
-        met.HTcDiffs(i) = met.HTcDiffs(i) + norm(full(M{t} - HTc{t}));
+%         met.GTcDiffs(i) = met.GTcDiffs(i) + norm(full(R{t} - GTc{t}));
+%         met.HTcDiffs(i) = met.HTcDiffs(i) + norm(full(M{t} - HTc{t}));
     end
     
     met.GcDiffs(i) = met.GcDiffs(i) / RTotalNorms;
     met.HcDiffs(i) = met.HcDiffs(i) / MTotalNorms;
-    met.GTcDiffs(i) = met.GTcDiffs(i) / RTotalNorms;
-    met.HTcDiffs(i) = met.HTcDiffs(i) / MTotalNorms;
+%     met.GTcDiffs(i) = met.GTcDiffs(i) / RTotalNorms;
+%     met.HTcDiffs(i) = met.HTcDiffs(i) / MTotalNorms;
     
     
 end
