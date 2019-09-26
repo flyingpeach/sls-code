@@ -16,14 +16,14 @@ sys.D12 = [sparse(sys.Nx, sys.Nu); speye(sys.Nu)];
 slsParams       = SLSParams;
 slsParams.tFIR_ = 20;
 slsParams.obj_  = Objective.H2; % objective function
-slsParams.mode_ = SLSMode.Basic;%ApproxDLocalized;
-%slsParams.robCoeff_ = 1e3;
-
+slsParams.mode_ = SLSMode.ApproxDLocalized;
+slsParams.robCoeff_ = 1e3;
+%%
 % simulation parameters
 simParams           = SimParams;
 simParams.tSim_     = 40;
 simParams.w_        = zeros(sys.Nx, simParams.tSim_); % disturbance
-simParams.w_(floor(sys.Nx/2), 1) = 10;
+simParams.w_(5, 1) = 1;
 simParams.openLoop_ = false;
 
 slsOuts = state_fdbk_sls(sys, slsParams);

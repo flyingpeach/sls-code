@@ -11,16 +11,16 @@ settings = AltImplSettings();
 
 %% sandbox
 % ExactOpt, Analytic, ApproxLS, ApproxLeaky, StrictDelay, StrictLocal, EncourageDelay
-settings.mode_ = AltImplMode.EncourageDelay;
+settings.mode_ = AltImplMode.StrictLocal;
 
 % uncomment as needed
-settings.tol_          = eps.^(1/8);
-%settings.locality_     = 2;
-%settings.nonzeroPen_   = 1e-3;
-%settings.svThresh_    = 0.01;
+settings.tol_          = eps.^(3/8);
+settings.locality_     = 2;
+settings.nonzeroPen_   = 1e-3;
+%settings.svThresh_    = 1e-2;
 % settings.delay_       = 1;
 % settings.clDiffPen_   = 1e3;
- settings.fastCommPen_ = 1e0;
+% settings.fastCommPen_ = 1e0;
 
 Tc = slsParams.tFIR_;
 
@@ -48,7 +48,7 @@ met     = calc_mtx_metrics(met, sys, slsParams, slsOuts, s_a);
 met     = calc_cl_metrics(met, sys, simParams, slsParams, slsOuts, s_a);
 met
 %% visualize
-visualize_matrices(sys, slsOuts, slsOuts_alt, 20, 'all');
+visualize_matrices(sys, slsOuts, slsOuts_alts{1}, 20, 1);
 
 %% parameter sweep (Tc)
 Tcs    = 2:10;
