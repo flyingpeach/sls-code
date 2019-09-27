@@ -16,7 +16,7 @@ sys.D12 = [sparse(sys.Nx, sys.Nu); speye(sys.Nu)];
 slsParams       = SLSParams;
 slsParams.tFIR_ = 20;
 slsParams.obj_  = Objective.H2; % objective function
-slsParams.mode_ = SLSMode.ApproxDLocalized;
+slsParams.mode_ = SLSMode.Basic;%ApproxDLocalized;
 slsParams.robCoeff_ = 1e3;
 %%
 % simulation parameters

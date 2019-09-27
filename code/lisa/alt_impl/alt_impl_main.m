@@ -11,19 +11,20 @@ settings = AltImplSettings();
 
 %% sandbox
 % ExactOpt, Analytic, ApproxLS, ApproxLeaky, StrictDelay, StrictLocal, EncourageDelay
-settings.mode_ = AltImplMode.StrictLocal;
+settings.mode_ = AltImplMode.ApproxLS;
 
 % uncomment as needed
-settings.tol_          = eps.^(3/8);
-settings.locality_     = 2;
-settings.nonzeroPen_   = 1e-3;
-%settings.svThresh_    = 1e-2;
+%settings.tol_          = tol;
+%settings.locality_     = 2;
+%settings.nonzeroPen_   = 1e-3;
+settings.svThresh_    = 1e-1; %1e-1 is good
+
 % settings.delay_       = 1;
 % settings.clDiffPen_   = 1e3;
 % settings.fastCommPen_ = 1e0;
 
 Tc = slsParams.tFIR_;
-
+%%
 slsOuts_alt = find_alt_impl(sys, slsParams, slsOuts, Tc, settings);
 s_a{1}      = slsOuts_alt;
 
@@ -51,7 +52,7 @@ met
 visualize_matrices(sys, slsOuts, slsOuts_alts{1}, 20, 1);
 
 %% parameter sweep (Tc)
-Tcs    = 2:10;
+Tcs    = 2:18;
 numTcs = length(Tcs);
 slsOuts_alts = cell(numTcs, 1);
 for idx=1:numTcs

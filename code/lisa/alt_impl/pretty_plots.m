@@ -12,6 +12,7 @@ exact_idx = 18:24;
  
 savepath = 'C:\Users\Lisa\Desktop\caltech\research\implspace\tmp\';
 
+%%
 % not used
 eps = 2.22e-16;
 tol = eps.^(3/8);
@@ -22,6 +23,49 @@ met = AltImplMetrics(zThresh, Tcs);
 met = calc_mtx_metrics(met, sys, slsParams, slsOuts, slsOuts_alts);
 % calculate closed-loop metrics and plot select heat maps
 met = calc_cl_metrics(met, sys, simParams, slsParams, slsOuts, slsOuts_alts);
+
+%% check least-squares soln / soln space
+settings = AltImplSettings();
+settings.mode_ = AltImplMode.ApproxLS;%Analytic;
+
+tol = eps.^(3/8);
+zThresh = tol;
+
+settings.svThresh_    = 1e-2;
+% settings.tol_         = tol;
+
+slsOuts_alt_LS = cell(length(Tcs), 1);
+slsOuts_alt_test = cell(length(Tcs), 1);
+
+solnSpaceSizes = zeros(length(Tcs), 1);
+for i=1:length(Tcs)   
+    Tc = Tcs(i);
+    F  = get_F(sys, slsParams, slsOuts, Tc);
+    F1 = F(:, 1:sys.Nx);
+    F2 = F(:,sys.Nx+1:end);
+
+%    slsOuts_alt_LS{i} = find_alt_impl(sys, slsParams, slsOuts, Tc, settings);
+
+    slsOuts_alts{idx} = find_alt_impl(sys, slsParams, slsOuts, Tc, settings);
+
+
+    nullSp            = get_nullsp(F2, tol);
+    solnSpaceSizes(i) = size(nullSp, 2);
+end
+
+%%
+metLS = AltImplMetrics(zThresh, Tcs);
+% calculate matrix-specific metrics
+metLS = calc_mtx_metrics(metLS, sys, slsParams, slsOuts, slsOuts_alt_LS);
+% calculate closed-loop metrics and plot select heat maps
+metLS = calc_cl_metrics(metLS, sys, simParams, slsParams, slsOuts, slsOuts_alts);
+
+figure;
+plot(Tcs, metLS.L1Norms)
+
+%plot(Tcs, metLS.IntSpecRadii_c)
+
+
 
 %%
 % differences between CL maps %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -157,7 +201,7 @@ logmin = -4; logmax = 0;
 spaces = '                                                   ';
 mySupTitle = ['Centralized' spaces 'Local' spaces 'Virtually Local'];
 st = suptitle(mySupTitle);
-set(st, 'FontSize', 11);
+set(st, 'FontSize', 13);
 set(st, 'Position', [0.52 -0.02 0]);
 
 subplot(2,6,1);
@@ -212,7 +256,7 @@ x = 100; y = 100;
 width = 980; height = 345;
 set(fig4h, 'Position', [x y width height]);
 
-set(findall(gcf,'type','text'),'FontSize', 11)
+set(findall(gcf,'type','text'),'FontSize', 12)
 
 h1=colorbar; colormap jet; 
 set(h1, 'Position', [.92 .123 .02 .293])
