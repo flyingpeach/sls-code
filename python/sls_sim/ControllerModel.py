@@ -23,7 +23,7 @@ class OpenLoopController (ControllerModel):
         self._u = np.zeros([Nu,1])
 
     def getControl(self, y):
-        return self._u
+        return self._u.copy()
 
 class SLS_State_Feedback_FIR_Controller (ControllerModel):
     '''
@@ -41,36 +41,46 @@ class SLS_State_Feedback_FIR_Controller (ControllerModel):
         self._hat_x = np.zeros([Nx,1])
 
     def initialize (self, delta0=None):
+        # empty initialization
         self._delta = []
         if delta0 is not None:
-            self._delta.append(delta0)
-        else:
-            # zero initialization
-            self._delta.append(np.zeros([self._Nx,1]))
+            if isinstance (delta0,list):
+                for delta in delta0:
+                    self.__addDeltaIfValid(delta)
+            else:
+                self.__addDeltaIfValid(delta0)
 
+        # initialize as zero
         self._hat_x = np.zeros([self._Nx,1])
+
+    def __addDeltaIfValid(self,delta=None):
+        # check if the content is valid
+        if ((delta.shape[0] == self._Nx) and
+            (delta.shape[1] == 1)):
+            self._delta.append(delta)
 
     def getControl(self, y):
         self._delta.insert(0,y - self._hat_x)
+
         # maintain delta length
         while len(self._delta) > self._FIR_horizon:
             self._delta.pop(-1)
 
-        u           = self.convolve(A=self._Phi_u, B=self._delta, lower_bound=0, upper_bound=self._FIR_horizon)
-        self._hat_x = self.convolve(A=self._Phi_x, B=self._delta, lower_bound=1, upper_bound=self._FIR_horizon)
+        u           = self.__convolve(A=self._Phi_u, B=self._delta, lower_bound=0, upper_bound=self._FIR_horizon,offset=0)
+        self._hat_x = self.__convolve(A=self._Phi_x, B=self._delta, lower_bound=1, upper_bound=self._FIR_horizon,offset=1)
 
         return u
-    
+
     @staticmethod
-    def convolve(A,B,lower_bound,upper_bound):
-        # perform sum_{tau >= lower_bound}^{upper_bound-1} A[tau]B[tau]
+    def __convolve(A,B,lower_bound,upper_bound,offset):
+        # perform sum_{tau >= lower_bound}^{upper_bound-1} A[tau]B[tau-offset]
         if (len(A) == 0) or (len(B) == 0):
             return np.empty([1,1])
 
         conv = np.zeros([A[0].shape[0],B[0].shape[1]])
 
         for tau in range(lower_bound,upper_bound):
-            if (tau < len(A)) and (tau < len(B)):
-                conv += np.dot(A[tau],B[tau])
+            if (tau < len(A)) and (tau-offset < len(B)) and (tau-offset >= 0):
+                conv += np.dot(A[tau],B[tau-offset])
 
         return conv

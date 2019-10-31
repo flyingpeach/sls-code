@@ -64,6 +64,5 @@ def state_fdbk_example():
     
     Plot_Heat_Map(x_history, Bu_history, 'Centralized')
 
-
 if __name__ == '__main__':
     state_fdbk_example()
