@@ -1,5 +1,6 @@
 function visualize_matrices(sys, slsOuts, slsOuts_alt, Tc, t)
 % Plot log magnitudes of R, M, Rc, Mc
+% Note: M, Mc are plotted as B2*M and B2*Mc to visualize actuation per node
 % Inputs
 %     slsOuts     : original closed loop system (contains R, M)
 %     slsOuts_alt : alternate CL implementations (contains Rc, Mc)
@@ -9,9 +10,7 @@ function visualize_matrices(sys, slsOuts, slsOuts_alt, Tc, t)
 
 logmin = -6; logmax = 1;
 
-%Nu      = size(slsOuts.M_{1}, 1);
-Nx      = size(slsOuts.M_{1}, 2);
-Nu = Nx;
+Nx = size(slsOuts.M_{1}, 2);
 
 % nice spacing / arrangement
 xgap    = 0.05;
@@ -19,16 +18,15 @@ yBuffer = 0.02;
 
 xfill  = 1 - 4 * xgap;
 sizeNx = xfill / 2;
-sizeNu = sizeNx * Nu / Nx;
-yspace = max(1 - sizeNx - sizeNu - yBuffer, 0);
+yspace = max(1 - 2 * sizeNx - yBuffer, 0);
 ygap   = yspace / 4;
 
 xpos1 = xgap; xpos2 = sizeNx + 3 * xgap;
-ypos1 = ygap; ypos2 = sizeNu + 3 * ygap;
+ypos1 = ygap; ypos2 = sizeNx + 3 * ygap;
 
 % [left bottom width height]
-pos11 = [xpos1 ypos1 sizeNx sizeNu];
-pos21 = [xpos2 ypos1 sizeNx sizeNu];
+pos11 = [xpos1 ypos1 sizeNx sizeNx];
+pos21 = [xpos2 ypos1 sizeNx sizeNx];
 pos12 = [xpos1 ypos2 sizeNx sizeNx];
 pos22 = [xpos2 ypos2 sizeNx sizeNx];
 
