@@ -17,7 +17,7 @@ cvx_begin quiet
 if params.mode_ ~= SLSMode.Basic
     expression Rs(sys.Nx, sys.Nx, params.tFIR_)
     expression Ms(sys.Nu, sys.Nx, params.tFIR_)
-    if params.mode_ == SLSMode.ApproxDLocalized
+    if params.mode_ == SLSMode.ApproxDAndL
         expression Delta(sys.Nx, sys.Nx * params.tFIR_)
     end
 else % basic SLS
@@ -32,21 +32,21 @@ for t = 1:params.tFIR_
     M{t} = Ms(:,:,t);
 end
 
-% locality constraints
+% delay and/or locality constraints
 % automatically enforced by limiting support of R, M
 if params.mode_ ~= SLSMode.Basic  
-    [RSupport, MSupport, count] = get_localized_supports(sys, params);
+    [RSupp, MSupp, count] = get_supports(sys, params);
     variable X(count)
 
     spot = 0;
     for t = 1:params.tFIR_
-        suppR = find(RSupport{t});
-        num = sum(sum(RSupport{t}));
+        suppR = find(RSupp{t});
+        num = sum(sum(RSupp{t}));
         R{t}(suppR) = X(spot+1:spot+num);
         spot = spot + num;
 
-        suppM = find(MSupport{t});
-        num = sum(sum(MSupport{t}));
+        suppM = find(MSupp{t});
+        num = sum(sum(MSupp{t}));
         M{t}(suppM) = X(spot+1:spot+num);
         spot = spot + num;
     end
@@ -60,7 +60,7 @@ robustStab = 0;
 R{1} == eye(sys.Nx);
 R{params.tFIR_} == zeros(sys.Nx, sys.Nx);
 
-if params.mode_ == SLSMode.ApproxDLocalized
+if params.mode_ == SLSMode.ApproxDAndL
     for t=1:params.tFIR_-1
         Delta(:,(t-1)*sys.Nx+1:t*sys.Nx) = R{t+1} - sys.A*R{t} - sys.B2*M{t};
     end
@@ -102,19 +102,6 @@ end
 
 
 % local functions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function [RSupport, MSupport, count] = get_localized_supports(sys, params)
-commsAdj  = abs(sys.A) > 0;
-localityR = commsAdj^(params.d_-1) > 0;
-
-count = 0;
-for t = 1:params.tFIR_
-    RSupport{t} = min(commsAdj^(floor(max(0, params.cSpeed_*(t-params.actDelay_)))),localityR) > 0;
-    MSupport{t} = (abs(sys.B2)'*RSupport{t}) > 0;
-    count       = count + sum(sum(RSupport{t})) + sum(sum(MSupport{t}));
-end
-end
-
-
 function actPenalty = get_act_penalty(sys, params, M)
 actPenalty = 0;
 if params.rfd_

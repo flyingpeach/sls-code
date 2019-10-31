@@ -46,7 +46,7 @@ title('Centralized RFD tradeoff curve');
 %% (2) d-localized sls with rfd
 num_acts = []; clnorms = [];
 
-slsParams.mode_      = SLSMode.DLocalized;
+slsParams.mode_      = SLSMode.DAndL;
 slsParams.actDelay_  = 1;
 slsParams.cSpeed_    = 2;
 slsParams.d_         = 3;
@@ -73,7 +73,7 @@ title('d-localized RFD tradeoff curve');
 %% (3) approximate d-localized sls with rfd
 num_acts = []; clnorms = [];
 
-slsParams.mode_      = SLSMode.ApproxDLocalized;
+slsParams.mode_      = SLSMode.ApproxDAndL;
 slsParams.robCoeff_  = 10^4;
 
 for power = -2:1:3

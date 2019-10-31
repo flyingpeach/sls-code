@@ -4,13 +4,13 @@ classdef SLSParams < matlab.mixin.Copyable
     % Inherits handle class with deep copy functionality
     
     properties  
-      mode_;     % an SLSMode (i.e. Basic, DLocalized)
+      mode_;     % an SLSMode (i.e. Basic, Localized)
       rfd_;      % whether we want rfd
       
       % used for all modes
       tFIR_;     % finite impulse response horizon
       
-      % used for DLocalized and ApproxDLocalized modes only
+      % used for DAndL and ApproxDAndL modes only
       actDelay_; % actuation delay
       cSpeed_;   % communication speed
       d_;        % d-hop locality constraint
@@ -48,16 +48,24 @@ classdef SLSParams < matlab.mixin.Copyable
         switch obj.mode_ % check mode & needed params
             case SLSMode.Basic
                 modeStr = 'basic';
-            case SLSMode.DLocalized
-                paramStr = check_d_local(obj, paramStr);
-                modeStr = 'd-localized';
-            case SLSMode.ApproxDLocalized
+            case SLSMode.Localized
+                paramStr = check_locality(obj, paramStr);
+                modeStr  = 'localized';
+            case SLSMode.Delayed
+                paramStr = check_delay(obj, paramStr);
+                modeStr  = 'delayed';
+            case SLSMode.DAndL
+                paramStr = check_locality(obj, paramStr);
+                paramStr = check_delay(obj, paramStr);
+                modeStr = 'delayed and localized';
+            case SLSMode.ApproxDAndL
                 if not(obj.robCoeff_)
-                    error('[SLS ERROR] Solving with approximate d-localized SLS but robCoeff=0. Did you forget to specify it?');
+                    error('[SLS ERROR] Solving with approximate locality and delay but robCoeff=0. Did you forget to specify it?');
                 end
-                paramStr = check_d_local(obj, paramStr);
+                paramStr = check_locality(obj, paramStr);
+                paramStr = check_delay(obj, paramStr);
                 paramStr = [paramStr, sprintf(', robCoeff=%0.2f', obj.robCoeff_)];
-                modeStr  = 'approx d-localized';
+                modeStr  = 'approx delayed and localized';
             otherwise
                 error('[SLS ERROR] SLS mode unknown or unspecified!');
         end
@@ -84,20 +92,24 @@ classdef SLSParams < matlab.mixin.Copyable
         statusTxt = [statusTxt, paramStr];
       end
 
-      function paramStr = check_d_local(obj, paramStr)
-        % ensure all the needed parameters for localized sls are specified
+      function paramStr = check_locality(obj, paramStr)
+        % ensure all needed params for locality exist
         if not(obj.d_)
             disp('[SLS WARNING] Solving with locality constraints but d=0. Did you forget to specify it?');
         end
+        paramStr = [paramStr, sprintf(', d=%d', obj.d_)];
+      end
+      
+      function paramStr = check_delay(obj, paramStr)
+        % ensure all needed params for delay exist
         if not(obj.cSpeed_)            
-            disp('[SLS WARNING] Solving with locality constraints but cSpeed=0. Did you forget to specify it?');
+            disp('[SLS WARNING] Solving with delay constraints but cSpeed=0. Did you forget to specify it?');
         end
         if not(obj.actDelay_)
-            disp('[SLS WARNING] Solving with locality constraints but actDelay=0. Did you forget to specify it?');
+            disp('[SLS WARNING] Solving with delay constraints but actDelay=0. Did you forget to specify it?');
         end
-        
-        paramStr = [paramStr, sprintf(', d=%d, cSpeed=%0.2f, actDelay=%d', ...
-                              obj.d_, obj.cSpeed_, obj.actDelay_)];
+        paramStr = [paramStr, sprintf(', cSpeed=%0.2f, actDelay=%d', ...
+                                      obj.cSpeed_, obj.actDelay_)];
       end
     end
     

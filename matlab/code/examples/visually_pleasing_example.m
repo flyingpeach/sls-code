@@ -22,7 +22,7 @@ slsParams.actDelay_ = 1;
 slsParams.cSpeed_   = 1;
 slsParams.d_        = 8;
 slsParams.robCoeff_ = 1000;
-slsParams.mode_     = SLSMode.ApproxDLocalized;
+slsParams.mode_     = SLSMode.ApproxDAndL;
 
 % simulation parameters
 simParams           = SimParams;

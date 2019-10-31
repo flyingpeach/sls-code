@@ -33,7 +33,7 @@ slsOuts1 = state_fdbk_sls(sys, slsParams);
 plot_heat_map(x1, sys.B2*u1, 'Centralized');
 
 %% (2) d-localized sls
-slsParams.mode_     = SLSMode.DLocalized;
+slsParams.mode_     = SLSMode.DAndL;
 slsParams.actDelay_ = 1;
 slsParams.cSpeed_   = 2; % communication speed must be sufficiently large
 slsParams.d_        = 3;
@@ -43,7 +43,7 @@ slsOuts2 = state_fdbk_sls(sys, slsParams);
 plot_heat_map(x2, sys.B2*u2, 'Localized');
 
 %% (3) approximate d-localized sls
-slsParams.mode_     = SLSMode.ApproxDLocalized;
+slsParams.mode_     = SLSMode.ApproxDAndL;
 slsParams.cSpeed_   = 1;
 slsParams.robCoeff_ = 10^3;
 

@@ -43,7 +43,7 @@ plot_heat_map(xCent, sys.B2*uCent, [int2str(sys.Nx), ' Node Centralized Solution
 tFIRs   = [3, 4, 5, 6, 7, 8];
 tPrints = [4, 8];
 
-slsParams.mode_     = SLSMode.DLocalized;
+slsParams.mode_     = SLSMode.DAndL;
 slsParams.actDelay_ = 1;
 slsParams.cSpeed_   = 2;
 slsParams.d_        = 6;
@@ -88,10 +88,10 @@ for i = 1:length(actDenss)
 
     if actDenss(i) == 0.2
         % in this case density is too low; use approx instead of direct
-        slsParams.mode_     = SLSMode.ApproxDLocalized;
+        slsParams.mode_     = SLSMode.ApproxDAndL;
         slsParams.robCoeff_ = 1000;
     else
-        slsParams.mode_ = SLSMode.DLocalized;
+        slsParams.mode_ = SLSMode.DAndL;
     end
 
     slsOutsAct = state_fdbk_sls(sys, slsParams);
@@ -126,10 +126,10 @@ for i=1:length(ds)
     slsParams.d_ = ds(i);
     if ds(i) == 2
         % in this case locality is too strict; use approx instead of direct
-        slsParams.mode_     = SLSMode.ApproxDLocalized;
+        slsParams.mode_     = SLSMode.ApproxDAndL;
         slsParams.robCoeff_ = 1000;
     else
-        slsParams.mode_ = SLSMode.DLocalized;
+        slsParams.mode_ = SLSMode.DAndL;
     end
 
     slsOutsD   = state_fdbk_sls(sys, slsParams);
@@ -159,10 +159,10 @@ for i=1:length(cSpeeds)
     
     if cSpeeds(i) == 1
         % in this case comm speed too slow; use approx instead of direct
-        slsParams.mode_     = SLSMode.ApproxDLocalized;
+        slsParams.mode_     = SLSMode.ApproxDAndL;
         slsParams.robCoeff_ = 1000;
     else
-        slsParams.mode_ = SLSMode.DLocalized;
+        slsParams.mode_ = SLSMode.DAndL;
     end
         
     slsOutsC        = state_fdbk_sls(sys, slsParams);
@@ -184,7 +184,7 @@ xlabel('\alpha'); ylabel('Localized H_2-Norm Cost');
 alphas   = linspace(0, 0.8, 10);
 printIdx = [1 5 10];
 
-slsParams.mode_   = SLSMode.DLocalized;
+slsParams.mode_   = SLSMode.DAndL;
 slsParams.d_      = 6;
 slsParams.cSpeed_ = 2;
 clnorms           = zeros(length(alphas), 1);
