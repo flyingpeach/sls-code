@@ -31,12 +31,19 @@ class SLS (SynthesisAlgorithm):
         HInf = 2
         L1 = 3
 
-    def __init__(self,system_model=None,FIR_horizon=1,state_feedback=True,obj_type=Objective.ZERO):
-        self.setSystemModel(system_model=system_model)
-        self._FIR_horizon = FIR_horizon
-        self._state_feedback = state_feedback
+    def __init__(self,base=None,system_model=None,FIR_horizon=1,state_feedback=True,obj_type=Objective.ZERO):
+        if isinstance(base,SLS):
+            self.setSystemModel(system_model=base._system_model)
+            self._FIR_horizon = base._FIR_horizon
+            self._state_feedback = base._state_feedback
+            self.setObjectiveType(base._obj_type)
+        else:
+            self.setSystemModel(system_model=system_model)
+            self._FIR_horizon = FIR_horizon
+            self._state_feedback = state_feedback
+            self.setObjectiveType(obj_type)
+
         self._optimal_objective_value = float('inf')
-        self.setObjectiveType(obj_type)
     
     def setObjectiveType(self,obj_type=Objective.ZERO):
         if isinstance(obj_type,self.Objective):
@@ -45,7 +52,7 @@ class SLS (SynthesisAlgorithm):
             self._obj_type=Objective.ZERO
     
     def getOptimalObjectiveValue (self):
-        return self._optimal_objective_value
+        return self._optimal_objective_value.copy()
 
     def sanityCheck (self):
         # TODO: we can extend the algorithm to work for non-state-feedback SLS
@@ -85,8 +92,8 @@ class SLS (SynthesisAlgorithm):
                 Phi_u.append(cp.Variable(shape=(Nu,Nx)))
 
             # objective
-            objective = self.__getObjective(Phi_x=Phi_x,Phi_u=Phi_u)
-            if objective is None:
+            objective_value = self.__getObjectiveValue(Phi_x=Phi_x,Phi_u=Phi_u)
+            if objective_value is None:
                 self.errorMessage('Objective generation fails.')
                 return None
 
@@ -100,8 +107,16 @@ class SLS (SynthesisAlgorithm):
                     )
                 ]
 
+            # additional constraints
+            self._additionalObjectiveOrConstraints(
+                Phi_x=Phi_x,
+                Phi_u=Phi_u,
+                objective_value=objective_value,
+                constraints=constraints
+            )
+
             # obtain results and put into controller
-            sls_problem = cp.Problem(objective,constraints)
+            sls_problem = cp.Problem(cp.Minimize(objective_value),constraints)
             sls_problem.solve()
 
             if sls_problem.status is "infeasible":
@@ -125,7 +140,7 @@ class SLS (SynthesisAlgorithm):
             self.errorMessage('Not yet support the output-feedback case.')
             return None
     
-    def __getObjective(self,Phi_x,Phi_u):
+    def __getObjectiveValue(self,Phi_x,Phi_u):
         objective_value = None
 
         if self._obj_type != SLS.Objective.ZERO:
@@ -152,4 +167,60 @@ class SLS (SynthesisAlgorithm):
             objective_value = 0
         
         # we can extend the function here to include some penalty function
-        return cp.Minimize(objective_value)
+        return objective_value
+    
+    def _additionalObjectiveOrConstraints(self,Phi_x=[],Phi_u=[],objective_value=None, constraints=None):
+        # for inherited classes to introduce additional terms
+        pass
+
+class dLocalizedSLS(SLS):
+    def __init__(self,
+        base=None,
+        system_model=None,FIR_horizon=1,state_feedback=True,obj_type=SLS.Objective.ZERO,
+        actDelay=0, cSpeed=1, d=1
+    ):
+        SLS.__init__(
+            self,
+            base=base,
+            system_model=system_model,
+            FIR_horizon=FIR_horizon,
+            state_feedback=state_feedback,
+            obj_type=obj_type
+        )
+        self._actDelay = actDelay
+        self._cSpeed = cSpeed
+        self._d = d
+    
+    def _additionalObjectiveOrConstraints(self,Phi_x=[],Phi_u=[],objective_value=None, constraints=None):
+        # localized constraints
+        # get localized supports
+        XSupport = []
+        USupport = []
+
+        commsAdj = np.absolute(self._system_model._A) > 0
+        localityR = np.linalg.matrix_power(commsAdj, self._d - 1) > 0
+
+        # adjacency matrix for available information 
+        infoAdj = np.eye(self._system_model._Nx) > 0
+        transmission_time = -self._actDelay
+        for t in range(self._FIR_horizon):
+            transmission_time += self._cSpeed
+            while transmission_time >= 1:
+                transmission_time -= 1
+                infoAdj = np.dot(infoAdj,commsAdj)
+
+            support_x = np.logical_and(infoAdj, localityR)
+            XSupport.append(support_x)
+
+            support_u = np.dot(self._system_model._B2.T,support_x.astype(int)) > 0
+            USupport.append(support_u)
+
+        # shutdown those not in the support
+        for t in range(1,self._FIR_horizon-1):
+            for ix,iy in np.ndindex(XSupport[t].shape):
+                if XSupport[t][ix,iy] == False:
+                    constraints += [ Phi_x[t][ix,iy] == 0 ]
+        for t in range(self._FIR_horizon):
+            for ix,iy in np.ndindex(USupport[t].shape):
+                if USupport[t][ix,iy] == False:
+                    constraints += [ Phi_u[t][ix,iy] == 0 ]
