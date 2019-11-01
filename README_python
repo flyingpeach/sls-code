@@ -1,0 +1,10 @@
+To get the source code of the submodule, do
+
+    git submodule update 
+
+inside the folder of 'python'.
+
+To enable automatic update of the submodule, set
+
+    git config --global submodule.recurse true
+
