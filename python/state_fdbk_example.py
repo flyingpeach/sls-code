@@ -1,6 +1,8 @@
 from sls_sim.SystemModel import LTISystem
 from sls_sim.Simulator import Simulator
 from sls_sim.SynthesisAlgorithm import *
+from sls_sim.SLSObjective import *
+from sls_sim.SLSConstraint import *
 from sls_sim.NoiseModel import *
 from sls_sim.PlantGenerator import *
 from sls_sim.VisualizationTools import *
@@ -41,10 +43,8 @@ def state_fdbk_example():
 
     ## (1) basic sls (centralized controller)
     # use SLS controller synthesis algorithm
-    synthesizer = SLS (
-        FIR_horizon = 20,
-        obj_type = SLS.Objective.H2
-    )
+    synthesizer = SLS (FIR_horizon = 20)
+    synthesizer += SLSObj_H2()
     synthesizer.setSystemModel (sys)
 
     # synthesize controller (the generated controller is actually initialized)
@@ -66,13 +66,13 @@ def state_fdbk_example():
 
 
     ## (2) d-localized sls
-    dlocalized_synthesizer = dLocalizedSLS (
-        base = synthesizer,
+    synthesizer += SLSCons_dLocalized (
         actDelay = 1,
         cSpeed = 2,
         d = 3
     )
-    controller = dlocalized_synthesizer.synthesizeControllerModel ()
+
+    controller = synthesizer.synthesizeControllerModel ()
     simulator.setController (controller=controller)
 
     # reuse the predefined initialization
@@ -87,13 +87,16 @@ def state_fdbk_example():
 
 
     ## (3) approximate d-localized sls
-    approx_dlocalized_synthesizer = ApproxdLocalizedSLS (
-        base = dlocalized_synthesizer,
+    approx_dlocalized = SLSCons_ApproxdLocalized (
+        base = dlocalized,
         robCoeff = 10e3
     )
-    approx_dlocalized_synthesizer._cSpeed = 1
+    approx_dlocalized._cSpeed = 1
 
-    controller = approx_dlocalized_synthesizer.synthesizeControllerModel ()
+    # set the constriant
+    synthesizer.setObjOrCons(approx_dlocalized)
+
+    controller = synthesizer.synthesizeControllerModel ()
     simulator.setController (controller=controller)
 
     # reuse the predefined initialization

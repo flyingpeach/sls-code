@@ -1,7 +1,7 @@
 # Python-based Simulation Framework for System Level Synthesis
 
 ## Synopsis
-sim_sls provides a Python-based framework to simulate model-based control systems, especially for system level synthesis (SLS) methods.
+*sls_sim* provides a Python-based framework to simulate model-based control systems, especially for system level synthesis (SLS) methods.
 
 ## System Requirement
 * Python 2.7 or higher
