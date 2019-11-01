@@ -37,6 +37,7 @@ def state_fdbk_example():
 
     sys.useNoiseModel (noise_model = noise)
 
+
     ## (1) basic sls (centralized controller)
     # use SLS controller synthesis algorithm
     synthesizer = SLS (
@@ -82,6 +83,27 @@ def state_fdbk_example():
 
     Bu_history = Matrix_List_Multiplication(sys._B2,u_history)
     Plot_Heat_Map(x_history, Bu_history, 'Localized')
+
+
+    ## (3) approximate d-localized sls
+    approx_dlocalized_synthesizer = ApproxdLocalizedSLS (
+        base = dlocalized_synthesizer,
+        robCoeff = 10e3
+    )
+    approx_dlocalized_synthesizer._cSpeed = 1
+
+    controller = approx_dlocalized_synthesizer.synthesizeControllerModel ()
+    simulator.setController (controller=controller)
+
+    # reuse the predefined initialization
+    sys.initialize ()
+    controller.initialize ()
+    noise.startAtTime(0)
+
+    x_history, y_history, z_history, u_history = simulator.run ()
+
+    Bu_history = Matrix_List_Multiplication(sys._B2,u_history)
+    Plot_Heat_Map(x_history, Bu_history, 'Approximately Localized')
 
 
 if __name__ == '__main__':
