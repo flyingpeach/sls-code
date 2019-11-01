@@ -115,7 +115,7 @@ class SLS (SynthesisAlgorithm):
                 ]
 
             # additional constraints
-            self._additionalObjectiveOrConstraints(
+            objective_value, constraints = self._additionalObjectiveOrConstraints(
                 Phi_x=Phi_x,
                 Phi_u=Phi_u,
                 objective_value=objective_value,
@@ -178,7 +178,7 @@ class SLS (SynthesisAlgorithm):
     
     def _additionalObjectiveOrConstraints(self,Phi_x=[],Phi_u=[],objective_value=None, constraints=None):
         # for inherited classes to introduce additional terms
-        pass
+        return objective_value, constraints
 
 class dLocalizedSLS (SLS):
     def __init__(self,
@@ -218,7 +218,7 @@ class dLocalizedSLS (SLS):
             support_x = np.logical_and(infoAdj, localityR)
             XSupport.append(support_x)
 
-            support_u = np.dot(self._system_model._B2.T,support_x.astype(int)) > 0
+            support_u = np.dot(np.absolute(self._system_model._B2).T,support_x.astype(int)) > 0
             USupport.append(support_u)
 
         # shutdown those not in the support
@@ -230,6 +230,8 @@ class dLocalizedSLS (SLS):
             for ix,iy in np.ndindex(USupport[t].shape):
                 if USupport[t][ix,iy] == False:
                     constraints += [ Phi_u[t][ix,iy] == 0 ]
+
+        return objective_value, constraints
 
 class ApproxdLocalizedSLS (dLocalizedSLS):
     def __init__(self,
@@ -266,9 +268,11 @@ class ApproxdLocalizedSLS (dLocalizedSLS):
                     Phi_x[t+1]
                     - self._system_model._A  * Phi_x[t]
                     - self._system_model._B2 * Phi_u[t]
-                ) 
+                )
             ]
             pos += Nx
 
         robustStab = cp.norm(Delta, 'inf')  # < 1 means we can guarantee stability
         objective_value += self._robCoeff * robustStab
+
+        return objective_value, constraints
