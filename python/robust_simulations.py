@@ -76,7 +76,8 @@ def robust_simulations():
         list_y=clnorms,
         title='%d Node Chain' % sys._Nx,
         xlabel='Comm Speed',
-        ylabel='Localized H_2-Norm Cost'
+        ylabel='Localized H_2-Norm Cost',
+        invert_xaxis=True
     )
 
     plot_line_chart(
@@ -84,7 +85,8 @@ def robust_simulations():
         list_y=robustStabs,
         title='%d Node Chain' % sys._Nx,
         xlabel='Comm Speed',
-        ylabel='Stability Margin'
+        ylabel='Stability Margin',
+        invert_xaxis=True
     )
 
 if __name__ == '__main__':
