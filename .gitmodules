@@ -1,0 +1,3 @@
+[submodule "SLSpy"]
+	path = SLSpy
+	url = git@github.com:shih-hao-tseng/SLSpy.git
