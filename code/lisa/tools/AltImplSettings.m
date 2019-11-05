@@ -4,110 +4,90 @@ classdef AltImplSettings < matlab.mixin.Copyable
     % Inherits handle class with deep copy functionality
     
     properties  
-      mode_;      % AltImplMode (i.e. ExactOpt, Analytic)
+      mode_;       % AltImplMode (i.e. OptL1, OptL1DelayLocal)
+      eps_nullsp_; % "nullspace" used in optimization consists of right
+                   % singular vectors corresponding to singular values 
+                   % below eps_nullsp_
 
-      tol_;       % tolerance used in non-relaxed rank/nullsp calculations
+      % used for OptL1DelayLocal mode only
+      actDelay_; % actuation delay
+      cSpeed_;   % communication speed
+      d_;        % d-hop locality constraint
       
-      svThresh_;  % used in ApproxLS mode
-                  % use right singular vectors corresponding to singular 
-                  % values below this threshold
-
-      delay_;     % used in StrictDelay mode
-                  % amount of delay to enforce for strict locality
-                  
-      locality_; % used in StrictLocal mode
-                 % nodes only communicate within (locality) distance
-
-      nonzeroPen_ % used in StrictDelay and StrictLocal modes
-                  % directly enforcing constraints often infeasible; let leak
-                  % then directly set to zero after optimization
-                  
-      clDiffPen_; % used in ApproxLeaky mode
-                  % penalize deviation from old CL map
+      % used for EncourageDelay mode only
+      fastCommPen_; % penalize Rc/Mc that would require fast communication
       
-      fastCommPen_; % used in EncourageDelay mode
-                    % penalize Rc/Mc that would require fast communication
+      % used for EncourageLocal mode only
+      nonLocalPen_; % penalize Rc/Mc with nonlocal behaviour
     end
-    
+
     methods
       function obj = AltImplSettings()
         % initialize to zero instead of empty array
         obj.mode_        = 0;
-        obj.tol_         = 0;
-        obj.svThresh_    = 0;
-        obj.delay_       = 0;
-        obj.locality_    = 0;
-        obj.nonzeroPen_  = 0;
-        obj.clDiffPen_   = 0;
+        obj.eps_nullsp_  = 0;
+        obj.actDelay_    = 0;
+        obj.cSpeed_      = 0;
+        obj.d_           = 0;
         obj.fastCommPen_ = 0;
+        obj.nonLocalPen_ = 0;
       end      
       
       function statusTxt = sanity_check(obj)
-        paramStr = '';
-     
+        paramStr = sprintf(', eps_nullsp=%0.2e', obj.eps_nullsp_);
+        if not(obj.eps_nullsp_)
+            disp('[SLS WARNING] eps_nullsp_=0 causes optimization space to be tiny!');
+        end
+        
         switch obj.mode_ % check mode & needed params
-            case AltImplMode.ExactOpt
-                if not(obj.tol_)
-                    disp('[SLS WARNING] Zero tolerance may make feasible problems seem infeasible!');
-                end                
-                modeStr = 'exact constraints';
-                paramStr = sprintf(', tol=%0.2e', obj.tol_);
-            case AltImplMode.Analytic
-                modeStr  = 'analytic';
-            case AltImplMode.ApproxLS
-                if not(obj.svThresh_)
-                    error('[SLS ERROR] Did you forget to specify svThresh?');
-                end
-                modeStr = 'relaxed nullspace';
-                paramStr = sprintf(', svThresh=%0.2e', obj.svThresh_);
-            case AltImplMode.ApproxLeaky
-                if not(obj.clDiffPen_)
-                    error('[SLS ERROR] Did you forget to specify clDiffPen?');
-                end
-                if not(obj.tol_)
-                    disp('[SLS WARNING] Zero tolerance may make feasible problems seem infeasible!');
-                end                
-                modeStr  = 'leaky constr';
-                paramStr = sprintf(', tol=%0.2e, clDiffPen=%d', obj.clDiffPen_, obj.tol_);
-            case AltImplMode.StrictLocal
-                if not(obj.tol_)
-                    disp('[SLS WARNING] Zero tolerance may make feasible problems seem infeasible!');
-                end                
-                if not(obj.nonzeroPen_)
-                    error('[SLS ERROR] Did you forget to specify nonzeroPen?');
-                end
-                if not(obj.locality_)
-                    error('[SLS ERROR] Did you forget to specify locality?');
-                end
-                modeStr = 'strict local';
-                paramStr = sprintf(', nonzeroPen=%0.2e, locality=%d', obj.nonzeroPen_, obj.locality_);
-            case AltImplMode.StrictDelay
-                if not(obj.tol_)
-                    disp('[SLS WARNING] Zero tolerance may make feasible problems seem infeasible!');
-                end                
-                if not(obj.nonzeroPen_)
-                    error('[SLS ERROR] Did you forget to specify nonzeroPen?');
-                end
-                if not(obj.delay_)
-                    error('[SLS ERROR] Did you forget to specify delay?');
-                end
-                modeStr = 'strict delay';
-                paramStr = sprintf(', nonzeroPen=%0.2e, delay=%0.1f', obj.nonzeroPen_, obj.delay_);
+            case AltImplMode.OptL1 
+                modeStr = 'centralized';            
+            case AltImplMode.OptL1Delayed
+                paramStr = check_delay(obj, paramStr);
+                modeStr  = 'localized';
+            case AltImplMode.OptL1Localized
+                paramStr = check_locality(obj, paramStr);
+                modeStr  = 'delayed';
+            case AltImplMode.OptL1DAndL
+                paramStr = check_delay(obj, paramStr);
+                paramStr = check_locality(obj, paramStr);
+                modeStr = 'delayed and localized';
             case AltImplMode.EncourageDelay
-                if not(obj.tol_)
-                    disp('[SLS WARNING] Zero tolerance may make feasible problems seem infeasible!');
-                end                
                 if not(obj.fastCommPen_)
                     error('[SLS ERROR] Did you forget to specify fastCommPen?');
                 end
                 modeStr  = 'encourage delay';
-                paramStr = sprintf(', tol=%0.2e, fastCommPen=%d', obj.clDiffPen_, obj.fastCommPen_);
-            
+                paramStr = [paramStr, sprintf(', fastCommPen=%d', obj.fastCommPen_)];
+            case AltImplMode.EncourageLocal
+                if not(obj.nonLocalPen_)
+                    error('[SLS ERROR] Did you forget to specify nonLocalPen?');
+                end
+                modeStr  = 'encourage locality';
+                paramStr = [paramStr, sprintf(', nonLocalPen=%d', obj.nonLocalPen_)];
             otherwise
-                error('[SLS ERROR] Finding alt implementation but mode unknown or unspecified!');
+                error('[SLS ERROR] Finding (Rc, Mc) but mode unknown or unspecified!');
         end
-               
         statusTxt = [modeStr, paramStr];
-      end    
+      end
+        
+      function paramStr = check_locality(obj, paramStr)
+        % ensure all needed params for locality exist
+        if not(obj.d_)
+            disp('[SLS WARNING] Solving with locality constraints but d=0. Did you forget to specify it?');
+        end
+        paramStr = [paramStr, sprintf(', d=%d', obj.d_)];
+      end
+      
+      function paramStr = check_delay(obj, paramStr)
+        % ensure all needed params for delay exist
+        if not(obj.cSpeed_)            
+            disp('[SLS WARNING] Solving with delay constraints but cSpeed=0. Did you forget to specify it?');
+        end
+        if not(obj.actDelay_)
+            disp('[SLS WARNING] Solving with delay constraints but actDelay=0. Did you forget to specify it?');
+        end
+        paramStr = [paramStr, sprintf(', cSpeed=%0.2f, actDelay=%d', ...
+                                      obj.cSpeed_, obj.actDelay_)];
+      end
     end
 end
