@@ -48,22 +48,22 @@ classdef SLSParams < matlab.mixin.Copyable
         switch obj.mode_ % check mode & needed params
             case SLSMode.Basic
                 modeStr = 'basic';
-            case SLSMode.Localized
-                paramStr = check_locality(obj, paramStr);
-                modeStr  = 'localized';
             case SLSMode.Delayed
                 paramStr = check_delay(obj, paramStr);
                 modeStr  = 'delayed';
-            case SLSMode.DAndL
+            case SLSMode.Localized
                 paramStr = check_locality(obj, paramStr);
+                modeStr  = 'localized';
+            case SLSMode.DAndL
                 paramStr = check_delay(obj, paramStr);
+                paramStr = check_locality(obj, paramStr);
                 modeStr = 'delayed and localized';
             case SLSMode.ApproxDAndL
                 if not(obj.robCoeff_)
                     error('[SLS ERROR] Solving with approximate locality and delay but robCoeff=0. Did you forget to specify it?');
                 end
-                paramStr = check_locality(obj, paramStr);
                 paramStr = check_delay(obj, paramStr);
+                paramStr = check_locality(obj, paramStr);
                 paramStr = [paramStr, sprintf(', robCoeff=%0.2f', obj.robCoeff_)];
                 modeStr  = 'approx delayed and localized';
             otherwise
@@ -91,14 +91,6 @@ classdef SLSParams < matlab.mixin.Copyable
         end
         statusTxt = [statusTxt, paramStr];
       end
-
-      function paramStr = check_locality(obj, paramStr)
-        % ensure all needed params for locality exist
-        if not(obj.d_)
-            disp('[SLS WARNING] Solving with locality constraints but d=0. Did you forget to specify it?');
-        end
-        paramStr = [paramStr, sprintf(', d=%d', obj.d_)];
-      end
       
       function paramStr = check_delay(obj, paramStr)
         % ensure all needed params for delay exist
@@ -111,6 +103,15 @@ classdef SLSParams < matlab.mixin.Copyable
         paramStr = [paramStr, sprintf(', cSpeed=%0.2f, actDelay=%d', ...
                                       obj.cSpeed_, obj.actDelay_)];
       end
+      
+      function paramStr = check_locality(obj, paramStr)
+        % ensure all needed params for locality exist
+        if not(obj.d_)
+            disp('[SLS WARNING] Solving with locality constraints but d=0. Did you forget to specify it?');
+        end
+        paramStr = [paramStr, sprintf(', d=%d', obj.d_)];
+      end
+  
     end
     
 end
