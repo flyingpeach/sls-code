@@ -14,9 +14,12 @@ classdef CtrllerParams < matlab.mixin.Copyable
       tc_;         % number of spectral components for Rc, Mc
                    
       % used for Delayed / Localized / DAndL / ApproxDAndL modes
-      actDelay_; % actuation delay
-      cSpeed_;   % communication speed
-      d_;        % d-hop locality constraint
+      actDelay_;    % actuation delay
+      cSpeed_;      % communication speed
+      d_;           % d-hop locality constraint
+      CLDiffPen_;   % penalty for (heuristic) CL map difference
+                    % likely need to deviate from exact solution if
+                    % enforcing support constraints on Rc/Mc
       
       % used for EncourageDelay mode only
       fastCommPen_; % penalize Rc/Mc that would require fast communication
@@ -34,6 +37,7 @@ classdef CtrllerParams < matlab.mixin.Copyable
         obj.actDelay_    = 0;
         obj.cSpeed_      = 0;
         obj.d_           = 0;
+        obj.CLDiffPen_   = 0;
         obj.fastCommPen_ = 0;
         obj.nonLocalPen_ = 0;
       end      
@@ -45,7 +49,13 @@ classdef CtrllerParams < matlab.mixin.Copyable
         if not(obj.eps_nullsp_)
             disp('[SLS WARNING] eps_nullsp=0 causes optimization space to be tiny!');
         end
-        paramStr = [char(10), char(9), sprintf(', tc=%d, eps_nullsp=%0.2e', obj.tc_, obj.eps_nullsp_)];
+        paramStr = [char(10), char(9), sprintf('tc=%d, eps_nullsp=%0.2e', obj.tc_, obj.eps_nullsp_)];
+        
+        if ismember(obj.mode_, [SLSMode.Delayed, SLSMode.Localized, SLSMode.DAndL])
+            if not(obj.CLDiffPen_)
+                error('[SLS ERROR] Did you forget to specify CLDiffPen_?');
+            end
+        end
         
         switch obj.mode_ % check mode & needed params
             case SLSMode.Basic 

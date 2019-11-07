@@ -23,8 +23,8 @@ cvx_begin
 cvx_solver sdpt3
 cvx_precision low
 
-variable alpha(solnSpaceSize, sys.Nx)
-RMc_free = RMc_p + nullSp*alpha; % Rc and Mc without constraints
+variable nullCoeff(solnSpaceSize, sys.Nx)
+RMc_free = RMc_p + nullsp*nullCoeff; % Rc and Mc without constraints
 
 % modes that have no constraints (other than basic Rc/Mc constr)
 freeModes   = [SLSMode.Basic, SLSMode.EncourageDelay, SLSMode.EncourageLocal];
@@ -35,7 +35,7 @@ constrModes = [SLSMode.Delayed, SLSMode.Localized, SLSMode.DAndL];
 if ismember(cParams.mode_, freeModes)
     objective = norm(RMc_free, 1); % L1 norm minimization
     
-    [Rc, Mc] = block_to_cell(RMc_free, cParams.cParams.tc_, sys);
+    [Rc, Mc] = block_to_cell(RMc_free, cParams, sys);
     if cParams.mode_ == SLSMode.EncourageDelay
         for t=1:cParams.tc_
             % formulating these constraints are slow, so output progress
@@ -66,7 +66,7 @@ if ismember(cParams.mode_, freeModes)
 elseif ismember(cParams.mode_, constrModes)
     expression RMc_constr((cParams.tc_-1)*sys.Nx + cParams.tc_*sys.Nu, sys.Nx)
 
-    [Rc, Mc] = block_to_cell(RMc_constr, cParams.cParams.tc_, sys);
+    [Rc, Mc] = block_to_cell(RMc_constr, cParams, sys);
     [RSupp, MSupp, count] = get_supports(sys, cParams);  
 
     % TODO: copied from state_fdbk_sls.m
@@ -105,7 +105,7 @@ range = size*(idx-1)+1:size*(idx-1)+size;
 end 
 
 
-function [Rc, Mc] = block_to_cell(RMc, cParams.tc_, sys)
+function [Rc, Mc] = block_to_cell(RMc, cParams, sys)
 % Rc, Mc are cell structure (i.e. Rc{t})
 % RMc is one stacked matrix (Rc first, then Mc)
 Rcs = RMc(1:sys.Nx * (cParams.tc_-1), :);

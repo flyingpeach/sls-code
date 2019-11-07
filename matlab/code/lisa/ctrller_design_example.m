@@ -3,44 +3,32 @@ setup1;
 
 % for rank/zero conditions, try to match the precision of cvx_precision low
 % http://cvxr.com/cvx/doc/solver.html#solver-precision
-eps = 2.22e-16;
-tol = eps.^(3/8);
-%close all;
-
-settings = AltImplSettings();
+eps_rank    = 2.22e-16;
+eps_nullsp_ = eps_rank.^(3/8);
 
 %% sandbox
-% ExactOpt, Analytic, ApproxLS, ApproxLeaky, StrictDelay, StrictLocal, EncourageDelay
-settings.mode_ = AltImplMode.ApproxLS;
+cParams = CtrllerParams();
+
+% Basic, EncourageDelay, EncouargeLocal
+% Delayed, Localized, DAndL
+cParams.mode_ = SLSMode.Basic;
+
+cParams.eps_nullsp_ = eps_nullsp_;
+cParams.tc_         = slsParams.tFIR_;
 
 % uncomment as needed
-%settings.tol_          = tol;
-%settings.locality_     = 2;
-%settings.nonzeroPen_   = 1e-3;
-settings.svThresh_    = 1e-1; %1e-1 is good
+% cParams.actDelay_    = 0;
+% cParams.cSpeed_      = 0;
+% cParams.d_           = 0;
+% cParams.CLDiffPen_   = 0;
+% cParams.fastCommPen_ = 0;
+% cParams.nonLocalPen_ = 0;
 
-% settings.delay_       = 1;
-% settings.clDiffPen_   = 1e3;
-% settings.fastCommPen_ = 1e0;
+ctrller = find_ctrller(sys, slsParams, slsOuts, cParams);
 
-Tc = slsParams.tFIR_;
-%%
-slsOuts_alt = find_alt_impl(sys, slsParams, slsOuts, Tc, settings);
-s_a{1}      = slsOuts_alt;
 
-%% get baseline comparison
 
-[RSupp, MSupp] = get_locality_constraints(sys, Tc, settings.locality_);
-RZeros = not(RSupp);
-MZeros = (abs(sys.B2)' * RZeros) > 0;
 
-slsOutsBaseline = copy(slsOuts);
-
-for k=1:slsParams.tFIR_
-    slsOutsBaseline.R_{k}(RZeros) = 0;
-    slsOutsBaseline.M_{k}(MZeros) = 0;
-end
-s_a{1} = slsOutsBaseline;
 
 %% calculate metrics
 zThresh = tol;
