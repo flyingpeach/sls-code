@@ -1,10 +1,10 @@
-classdef AltImplSettings < matlab.mixin.Copyable
+classdef CtrllerSettings < matlab.mixin.Copyable
     % Contains settings for alternate implementation finder
     % Note that depending on the mode specified not all params may be used
     % Inherits handle class with deep copy functionality
     
     properties  
-      mode_;       % AltImplMode (i.e. OptL1, OptL1DelayLocal)
+      mode_;       % CtrllerMode (i.e. OptL1, OptL1DelayLocal)
       eps_nullsp_; % "nullspace" used in optimization consists of right
                    % singular vectors corresponding to singular values 
                    % below eps_nullsp_
@@ -22,7 +22,7 @@ classdef AltImplSettings < matlab.mixin.Copyable
     end
 
     methods
-      function obj = AltImplSettings()
+      function obj = CtrllerSettings()
         % initialize to zero instead of empty array
         obj.mode_        = 0;
         obj.eps_nullsp_  = 0;
@@ -40,25 +40,25 @@ classdef AltImplSettings < matlab.mixin.Copyable
         end
         
         switch obj.mode_ % check mode & needed params
-            case AltImplMode.OptL1 
+            case CtrllerMode.OptL1 
                 modeStr = 'centralized';            
-            case AltImplMode.OptL1Delayed
+            case CtrllerMode.OptL1Delayed
                 paramStr = check_delay(obj, paramStr);
                 modeStr  = 'localized';
-            case AltImplMode.OptL1Localized
+            case CtrllerMode.OptL1Localized
                 paramStr = check_locality(obj, paramStr);
                 modeStr  = 'delayed';
-            case AltImplMode.OptL1DAndL
+            case CtrllerMode.OptL1DAndL
                 paramStr = check_delay(obj, paramStr);
                 paramStr = check_locality(obj, paramStr);
                 modeStr = 'delayed and localized';
-            case AltImplMode.EncourageDelay
+            case CtrllerMode.EncourageDelay
                 if not(obj.fastCommPen_)
                     error('[SLS ERROR] Did you forget to specify fastCommPen?');
                 end
                 modeStr  = 'encourage delay';
                 paramStr = [paramStr, sprintf(', fastCommPen=%d', obj.fastCommPen_)];
-            case AltImplMode.EncourageLocal
+            case CtrllerMode.EncourageLocal
                 if not(obj.nonLocalPen_)
                     error('[SLS ERROR] Did you forget to specify nonLocalPen?');
                 end

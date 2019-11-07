@@ -1,4 +1,4 @@
-classdef AltImplMode
+classdef CtrllerMode
     % Enumeration class containing alternative implementation modes
     enumeration
       OptL1 % Minimizes L1 norm of [Rc; Mc] 
