@@ -26,6 +26,8 @@ cParams.tc_         = slsParams.tFIR_;
 
 ctrller = find_ctrller(sys, slsParams, slsOuts, cParams);
 
+%% visualize
+visualize_RM_RMc(sys, slsOuts, ctrller, 'all');
 
 
 
@@ -36,8 +38,6 @@ met     = AltImplMetrics(zThresh, Tc);
 met     = calc_mtx_metrics(met, sys, slsParams, slsOuts, s_a);
 met     = calc_cl_metrics(met, sys, simParams, slsParams, slsOuts, s_a);
 met
-%% visualize
-visualize_matrices(sys, slsOuts, slsOuts_alts{1}, 20, 1);
 
 %% parameter sweep (Tc)
 Tcs    = 2:18;
@@ -108,26 +108,3 @@ plot_metrics(met, savepath);
 
 disp(['Statuses:', print_statuses(xSeries, slsOuts_alts)]); 
 
-%% check comm delay constraint violations (optional)
-% useful to check when we have encouraged delay tolerance
-
-delay = 1; % can adjust
-
-[RZeros, MZeros] = get_delay_constraints(sys, Tc, delay);
-Rc = slsOuts_alt.R_;
-Mc = slsOuts_alt.M_;
-
-RZeroViolations = 0;
-MZeroViolations = 0;
-totRZeroConstr  = 0;
-totMZeroConstr  = 0;
-
-for t=1:Tc
-    RZeroViolations = RZeroViolations + sum(abs(Rc{t}(RZeros{t})) > tol);
-    totRZeroConstr  = totRZeroConstr + sum(vec(RZeros{t} > 0)); 
-    MZeroViolations = MZeroViolations + sum(abs(Mc{t}(MZeros{t})) > tol);
-    totMZeroConstr  = totMZeroConstr + sum(vec(MZeros{t} > 0)); 
-end
-
-fprintf('%d of %d comm violations in R', RZeroViolations, totRZeroConstr);
-fprintf('%d of %d comm violations in M', MZeroViolations, totMZeroConstr);

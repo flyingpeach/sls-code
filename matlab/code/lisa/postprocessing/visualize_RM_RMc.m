@@ -1,16 +1,14 @@
-function visualize_matrices(sys, slsOuts, slsOuts_alt, Tc, t)
+function visualize_RM_RMc(sys, slsOuts, ctrller, t)
 % Plot log magnitudes of R, M, Rc, Mc
 % Note: M, Mc are plotted as B2*M and B2*Mc to visualize actuation per node
 % Inputs
-%     slsOuts     : original closed loop system (contains R, M)
-%     slsOuts_alt : alternate CL implementations (contains Rc, Mc)
-%     Tc          : the Tc for which slsOuts_alt was calculated
-%     t           : which timestep to plot R/M/Rc/Mc for
-%                   set 'all' if you want an animated scroll-through
+%     sys     : LTISystem containing system matrices
+%     slsOuts : SLSOutputs containing R, M
+%     ctrller : Ctrller containing Rc, Mc
+%     t       : which timestep to plot R/M/Rc/Mc for
+%               set 'all' if you want an animated scroll-through
 
 logmin = -6; logmax = 1;
-
-Nx = size(slsOuts.M_{1}, 2);
 
 % nice spacing / arrangement
 xgap    = 0.05;
@@ -31,7 +29,9 @@ pos12 = [xpos1 ypos2 sizeNx sizeNx];
 pos22 = [xpos2 ypos2 sizeNx sizeNx];
 
 if strcmp(t, 'all')
-    T = length(slsOuts.R_);
+    T  = length(slsOuts.R_);
+    Tc = length(ctrller.Rc_);
+
     ts = 1:min(T, Tc);
     statusTxt = sprintf('T=%d, Tc=%d; animating for %d timesteps', T, Tc, min(T, Tc));
     disp(statusTxt);
@@ -46,7 +46,7 @@ for t_=ts % either a single value or array
     set(st, 'FontSize', 12);
     
     subplot('position', pos12);
-    imagesc(log10(abs(slsOuts_alt.R_{t_}))); 
+    imagesc(log10(abs(ctrller.Rc_{t_}))); 
     colorbar; colormap jet; axis equal; axis tight;
     title('Rc'); caxis([logmin logmax]);
 
@@ -56,7 +56,7 @@ for t_=ts % either a single value or array
     title('R'); caxis([logmin logmax]);
 
     subplot('position', pos11);
-    imagesc(log10(abs(sys.B2*slsOuts_alt.M_{t_}))); 
+    imagesc(log10(abs(sys.B2*ctrller.Mc_{t_}))); 
     colorbar; colormap jet; axis equal; axis tight;
     title('B*Mc'); caxis([logmin logmax]);
 
