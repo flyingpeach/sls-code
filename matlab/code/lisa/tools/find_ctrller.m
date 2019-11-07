@@ -1,23 +1,22 @@
-function optCtrller = find_ctrller(sys, slsParams, slsOuts, Tc, settings)
+function ctrller = find_ctrller(sys, slsParams, slsOuts, cParams)
 % Find alternate implementation, returned in slsOuts_alt
-%    optCtrller : contains (Rc, Mc) (controller implementation matrices)
+%    ctrller   : Ctrller containing (Rc, Mc)
 % Inputs
-%    sys        : LTISystem containing system matrices
-%    slsParams  : SLSParams containing parameters
-%    slsOuts    : contains info from SLS (original R, M)
-%    Tc         : desired time horizon length of the approximate solution
-%    settings   : AltImplSettings containing info on how to solve for alt impl
+%    sys       : LTISystem containing system matrices
+%    slsParams : SLSParams containing parameters
+%    slsOuts   : contains info from SLS (original R, M)
+%    cParams   : CtrllerParams containing info on how to solve for alt impl
 
-statusTxt = settings.sanity_check();
-statusTxt = [char(10), sprintf('Finding alt implementation, %s, Tc=%d', statusTxt, Tc)];
+statusTxt = cParams.sanity_check();
+statusTxt = [char(10), sprintf('Finding a controller, %s', statusTxt)];
 disp(statusTxt);
 
-F  = get_F(sys, slsParams, slsOuts, Tc);
+F  = get_F(sys, slsParams, slsOuts, cParams.tc_);
 F1 = F(:, 1:sys.Nx);
 F2 = F(:,sys.Nx+1:end);
 
 RMc_p         = F2 \ (-F1);
-nullsp        = get_nullsp(F2, settings.eps_nullsp_);
+nullsp        = get_nullsp(F2, cParams.eps_nullsp_);
 solnSpaceSize = size(nullsp, 2);
 
 cvx_begin
@@ -25,25 +24,76 @@ cvx_solver sdpt3
 cvx_precision low
 
 variable alpha(solnSpaceSize, sys.Nx)
-RMc       = RMc_p + nullSp*alpha;
-objective = norm(RMc, 1); % L1 norm minimization
+RMc_free = RMc_p + nullSp*alpha; % Rc and Mc without constraints
 
-[Rc, Mc] = block_to_cell(RMc, Tc, sys);
+% modes that have no constraints (other than basic Rc/Mc constr)
+freeModes   = [SLSMode.Basic, SLSMode.EncourageDelay, SLSMode.EncourageLocal];
 
-switch settings.mode_
-    case OptL1Delayed
-    % todo
+% modes that have locality / delay constraints
+constrModes = [SLSMode.Delayed, SLSMode.Localized, SLSMode.DAndL];
+
+if ismember(cParams.mode_, freeModes)
+    objective = norm(RMc_free, 1); % L1 norm minimization
     
+    [Rc, Mc] = block_to_cell(RMc_free, cParams.cParams.tc_, sys);
+    if cParams.mode_ == SLSMode.EncourageDelay
+        for t=1:cParams.tc_
+            % formulating these constraints are slow, so output progress
+            [char(10), sprintf('Adding objectives for %d of %d matrices', t, cParams.tc_)]
+        
+            BM = sys.B2 * Mc{t};
+            for i=1:sys.Nx
+                for j=1:sys.Nx % note: this distance metric only for chain
+                    objective = objective + cParams.fascParams.tc_ommPen_ * exp(abs(i-j)-t)*norm(Rc{t}(i,j));
+                    objective = objective + cParams.fascParams.tc_ommPen_ * exp(abs(i-j)-t)*norm(BM(i,j));
+                end
+            end
+        end
+    elseif cParams.mode_ == SLSMode.EncourageLocal
+        for t=1:cParams.tc_
+            % formulating these constraints are slow, so output progress
+            [char(10), sprintf('Adding objectives for %d of %d matrices', t, cParams.tc_)]
+        
+            BM = sys.B2 * Mc{t};
+            for i=1:sys.Nx
+                for j=1:sys.Nx % note: this distance metric only for chain
+                    objective = objective + cParams.nonLocalPen_ * exp(abs(i-j))*norm(Rc{t}(i,j));
+                    objective = objective + cParams.nonLocalPen_ * exp(abs(i-j))*norm(BM(i,j));
+                end
+            end
+        end
+    end
+elseif ismember(cParams.mode_, constrModes)
+    expression RMc_constr((cParams.tc_-1)*sys.Nx + cParams.tc_*sys.Nu, sys.Nx)
 
+    [Rc, Mc] = block_to_cell(RMc_constr, cParams.cParams.tc_, sys);
+    [RSupp, MSupp, count] = get_supports(sys, cParams);  
 
+    % TODO: copied from state_fdbk_sls.m
+    variable RMSupp(count)
+    spot = 0;
+    for t = 1:params.tFIR_
+        suppR = find(RSupp{t});
+        num = sum(sum(RSupp{t}));
+        Rc{t}(suppR) = RMSupp(spot+1:spot+num);
+        spot = spot + num;
 
-%       OptL1 % Minimizes L1 norm of [Rc; Mc] 
-%       OptL1Delayed   % OptL1 with delay constraints only
-%       OptL1Localized % OptL1 with locality constraints only
-%       OptL1DAndL     % OptL1 with delay and locality constraints
-%       EncourageDelay % OptL1 that encourages tolerance for communication delay
-%       EncourageLocal % OptL1 that encourages tolerance for locality
+        suppM = find(MSupp{t});
+        num = sum(sum(MSupp{t}));
+        Mc{t}(suppM) = RMSupp(spot+1:spot+num);
+        spot = spot + num;
+    end
 
+    % heuristic distance from CL map plus L1 objective
+    objective = norm(RMc_free - RMc_constr, 2) + norm(RMc_constr, 1); 
+end
+
+minimize(objective);
+cvx_end
+
+ctrller = Ctrller(); % output
+ctrller.Rc_ = Rc;
+ctrller.Mc_ = Mc;
 end
 
 
@@ -55,13 +105,13 @@ range = size*(idx-1)+1:size*(idx-1)+size;
 end 
 
 
-function [Rc, Mc] = block_to_cell(RMc, Tc, sys)
+function [Rc, Mc] = block_to_cell(RMc, cParams.tc_, sys)
 % Rc, Mc are cell structure (i.e. Rc{t})
 % RMc is one stacked matrix (Rc first, then Mc)
-Rcs = RMc(1:sys.Nx * (Tc-1), :);
-Mcs = RMc(sys.Nx * (Tc-1) + 1:end, :);
+Rcs = RMc(1:sys.Nx * (cParams.tc_-1), :);
+Mcs = RMc(sys.Nx * (cParams.tc_-1) + 1:end, :);
 
-for t = 1:Tc
+for t = 1:cParams.tc_
     tx    = get_range(t-1, sys.Nx);
     tu    = get_range(t, sys.Nu);
     Mc{t} = Mcs(tu,:);

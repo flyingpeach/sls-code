@@ -10,7 +10,7 @@ classdef SLSParams < matlab.mixin.Copyable
       % used for all modes
       tFIR_;     % finite impulse response horizon
       
-      % used for DAndL and ApproxDAndL modes only
+      % used for Delayed / Localized / DAndL / ApproxDAndL modes
       actDelay_; % actuation delay
       cSpeed_;   % communication speed
       d_;        % d-hop locality constraint
@@ -67,7 +67,9 @@ classdef SLSParams < matlab.mixin.Copyable
                 paramStr = [paramStr, sprintf(', robCoeff=%0.2f', obj.robCoeff_)];
                 modeStr  = 'approx delayed and localized';
             otherwise
-                error('[SLS ERROR] SLS mode unknown or unspecified!');
+                errStr = ['An invalid SLSMode was chosen for SLSParams!', char(10), ...
+                          'Options: Basic, Delayed, Localized, DAndL, ApproxDAndL'];
+                error(errStr);
         end
 
         switch obj.obj_ % check objective & needed params

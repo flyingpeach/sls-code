@@ -1,5 +1,6 @@
 function [RSupp, MSupp, count] = get_supports(sys, params)
 % Gets supports on R, M based on specified delay and/or localization
+% Expects that it's only called if mode involves delay and/or localization
 
 if params.mode_ == SLSMode.Delayed % i.e. no locality constraint
     d = sys.Nx+1; % "locality" is entire graph; used to simplify code
