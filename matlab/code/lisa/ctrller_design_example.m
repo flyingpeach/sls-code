@@ -30,10 +30,9 @@ ctrller = find_ctrller(sys, slsParams, slsOuts, cParams);
 visualize_RM_RMc(sys, slsOuts, ctrller, 'all');
 
 %% calculate metrics
-zThresh = tol;
-met     = AltImplMetrics(zThresh, Tc);
-met     = calc_mtx_metrics(met, sys, slsParams, slsOuts, s_a);
-met     = calc_cl_metrics(met, sys, simParams, slsParams, slsOuts, s_a);
+met   = AltImplMetrics(eps_rank, cParams.tFIR_);
+cs{1} = ctrller;
+met   = get_metrics(met, sys, simParams, slsParams, slsOuts, cs);
 met
 
 %% parameter sweep (Tc)
