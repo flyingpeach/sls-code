@@ -29,11 +29,13 @@ ctrller = find_ctrller(sys, slsParams, slsOuts, cParams);
 %% visualize
 visualize_RM_RMc(sys, slsOuts, ctrller, 'all');
 
-%% calculate metrics
-met   = AltImplMetrics(eps_rank, cParams.tFIR_);
+%% calculate stats for new controller
+met   = CtrllerStats(eps_rank, cParams.tFIR_);
 cs{1} = ctrller;
 met   = get_metrics(met, sys, simParams, slsParams, slsOuts, cs);
 met
+
+
 
 %% parameter sweep (Tc)
 Tcs    = 2:18;

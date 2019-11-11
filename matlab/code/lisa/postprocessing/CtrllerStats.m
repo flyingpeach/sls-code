@@ -1,5 +1,5 @@
-classdef AltImplMetrics < matlab.mixin.Copyable
-    % Contains metrics for alternative implementations Rc, Mc
+classdef CtrllerStats < matlab.mixin.Copyable
+    % Contains stats for controller matrices Rc, Mc
     % Inherits handle class with deep copy functionality
     
     % R/M are original CL responses
@@ -29,7 +29,7 @@ classdef AltImplMetrics < matlab.mixin.Copyable
     end
     
     methods
-      function obj = AltImplMetrics(tol, Tcs, sweepParamName, sweepParams) 
+      function obj = CtrllerStats(tol, Tcs, sweepParamName, sweepParams) 
         % initializer
         if nargin == 2
             obj.sweepParamName = 'Tc';

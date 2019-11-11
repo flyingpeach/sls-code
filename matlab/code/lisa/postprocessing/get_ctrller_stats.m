@@ -1,6 +1,6 @@
-function met = get_metrics(met, sys, simParams, slsParams, slsOuts, ctrllers)
-% Calculate metrics for Rc, Mc and original R, M
-%     met       : initialized AltImplMetrics that will be updated
+function met = get_ctrller_stats(met, sys, simParams, slsParams, slsOuts, ctrllers)
+% Calculate stats for Rc, Mc and original R, M
+%     met       : initialized CtrllerStats that will be updated
 % Inputs
 %     sys       : LTISystem containing system matrices
 %     simParams : SimParams; parameters for the simulation
