@@ -41,29 +41,26 @@ end
 
 figure; 
 
-for t_=ts % either a single value or array 
-    st = suptitle(sprintf('log10(|val|) @ t=%d, Tc=%d', t_, Tc));
-    set(st, 'FontSize', 12);
-    
-    subplot('position', pos12);
+for t_=ts % either a single value or array
+    subplot('position', pos11);
     imagesc(log10(abs(ctrller.Rc_{t_}))); 
     colorbar; colormap jet; axis equal; axis tight;
-    title('Rc'); caxis([logmin logmax]);
+    title(sprintf('log10(|Rc|) k=%d', t_)); caxis([logmin logmax]);
 
-    subplot('position', pos22);
+    subplot('position', pos12);
     imagesc(log10(abs(slsOuts.R_{t_}))); 
     colorbar; colormap jet; axis equal; axis tight;
-    title('R'); caxis([logmin logmax]);
-
-    subplot('position', pos11);
-    imagesc(log10(abs(sys.B2*ctrller.Mc_{t_}))); 
-    colorbar; colormap jet; axis equal; axis tight;
-    title('B*Mc'); caxis([logmin logmax]);
+    title(sprintf('log10(|R|) k=%d', t_)); caxis([logmin logmax]);
 
     subplot('position', pos21);
+    imagesc(log10(abs(sys.B2*ctrller.Mc_{t_}))); 
+    colorbar; colormap jet; axis equal; axis tight;
+    title(sprintf('log10(|B*Mc|) k=%d', t_)); caxis([logmin logmax]);
+
+    subplot('position', pos22);
     imagesc(log10(abs(sys.B2*slsOuts.M_{t_}))); 
     colorbar; colormap jet; axis equal; axis tight;
-    title('B*M'); caxis([logmin logmax]);
+    title(sprintf('log10(|B*M|) k=%d', t_)); caxis([logmin logmax]);
 
     pause(0.7);
 end
