@@ -1,5 +1,5 @@
 % setup1 (basic / centralized)
-%clear; close all; clc; 
+clear; close all; clc; 
 
 % specify system matrices
 sys    = LTISystem;
