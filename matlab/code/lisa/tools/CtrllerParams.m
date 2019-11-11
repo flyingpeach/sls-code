@@ -11,7 +11,8 @@ classdef CtrllerParams < matlab.mixin.Copyable
                    % singular vectors corresponding to singular values 
                    % below eps_nullsp_
 
-      tc_;         % number of spectral components for Rc, Mc
+      tFIR_;       % TODO: it's a misnomer
+                   % number of spectral components for Rc, Mc
                    
       % used for Delayed / Localized / DAndL / ApproxDAndL modes
       actDelay_;    % actuation delay
@@ -33,7 +34,7 @@ classdef CtrllerParams < matlab.mixin.Copyable
         % initialize to zero instead of empty array
         obj.mode_        = 0;
         obj.eps_nullsp_  = 0;
-        obj.tc_          = 0;
+        obj.tFIR_          = 0;
         obj.actDelay_    = 0;
         obj.cSpeed_      = 0;
         obj.d_           = 0;
@@ -43,13 +44,13 @@ classdef CtrllerParams < matlab.mixin.Copyable
       end      
       
       function statusTxt = sanity_check(obj)
-        if not(obj.tc_)
+        if not(obj.tFIR_)
             error('[SLS ERROR] tc=0. Did you forget to specify it?');
         end
         if not(obj.eps_nullsp_)
             disp('[SLS WARNING] eps_nullsp=0 causes optimization space to be tiny!');
         end
-        paramStr = [char(10), char(9), sprintf('tc=%d, eps_nullsp=%0.2e', obj.tc_, obj.eps_nullsp_)];
+        paramStr = [char(10), char(9), sprintf('tc=%d, eps_nullsp=%0.2e', obj.tFIR_, obj.eps_nullsp_)];
         
         if ismember(obj.mode_, [SLSMode.Delayed, SLSMode.Localized, SLSMode.DAndL])
             if not(obj.CLDiffPen_)
