@@ -11,7 +11,7 @@ statusTxt = cParams.sanity_check();
 statusTxt = [char(10), sprintf('Finding a controller, %s', statusTxt)];
 disp(statusTxt);
 
-F  = get_F(sys, slsParams, slsOuts, cParams.tc_);
+F  = get_F(sys, slsParams, slsOuts, cParams.tFIR_);
 F1 = F(:, 1:sys.Nx);
 F2 = F(:,sys.Nx+1:end);
 
@@ -37,23 +37,23 @@ if ismember(cParams.mode_, freeModes)
     
     [Rc, Mc] = block_to_cell(RMc_free, cParams, sys);
     if cParams.mode_ == SLSMode.EncourageDelay
-        for t=1:cParams.tc_
+        for t=1:cParams.tFIR_
             % formulating these constraints are slow, so output progress
-            [char(10), sprintf('Adding objectives for %d of %d matrices', t, cParams.tc_)]
+            disp(sprintf('Adding objectives for %d of %d matrices', t, cParams.tFIR_));
         
             BM = sys.B2 * Mc{t};
             for i=1:sys.Nx
                 for j=1:sys.Nx % note: this distance metric only for chain
-                    objective = objective + cParams.fascParams.tc_ommPen_ * exp(abs(i-j)-t)*norm(Rc{t}(i,j));
-                    objective = objective + cParams.fascParams.tc_ommPen_ * exp(abs(i-j)-t)*norm(BM(i,j));
+                    objective = objective + cParams.fastCommPen_ * exp(abs(i-j)-t)*norm(Rc{t}(i,j));
+                    objective = objective + cParams.fastCommPen_ * exp(abs(i-j)-t)*norm(BM(i,j));
                 end
             end
         end
     elseif cParams.mode_ == SLSMode.EncourageLocal
-        for t=1:cParams.tc_
+        for t=1:cParams.tFIR_
             % formulating these constraints are slow, so output progress
-            [char(10), sprintf('Adding objectives for %d of %d matrices', t, cParams.tc_)]
-        
+            disp(sprintf('Adding objectives for %d of %d matrices', t, cParams.tFIR_));
+
             BM = sys.B2 * Mc{t};
             for i=1:sys.Nx
                 for j=1:sys.Nx % note: this distance metric only for chain
@@ -64,28 +64,31 @@ if ismember(cParams.mode_, freeModes)
         end
     end
 elseif ismember(cParams.mode_, constrModes)
-    expression RMc_constr((cParams.tc_-1)*sys.Nx + cParams.tc_*sys.Nu, sys.Nx)
-
-    [Rc, Mc] = block_to_cell(RMc_constr, cParams, sys);
     [RSupp, MSupp, count] = get_supports(sys, cParams);  
-
-    % TODO: copied from state_fdbk_sls.m
+    nRowsRMc = sys.Nx*(cParams.tFIR_-1) + sys.Nu*cParams.tFIR_;
+    expression RMc_constr(nRowsRMc, sys.Nx)
     variable RMSupp(count)
-    spot = 0;
-    for t = 1:params.tFIR_
-        suppR = find(RSupp{t});
-        num = sum(sum(RSupp{t}));
-        Rc{t}(suppR) = RMSupp(spot+1:spot+num);
-        spot = spot + num;
 
-        suppM = find(MSupp{t});
-        num = sum(sum(MSupp{t}));
-        Mc{t}(suppM) = RMSupp(spot+1:spot+num);
+    spot = 0;
+    for t=1:cParams.tFIR_
+        if t > 1
+            [is, js] = find(RSupp{t}); % rows, cols of support
+            num      = length(is);     % # nonzero elements
+            is       = sys.Nx * (t-2) + is; % shift row
+            RMc_constr(is + (js-1)*nRowsRMc) = RMSupp(spot+1:spot+num);
+            spot = spot + num;
+        end
+        [is, js] = find(MSupp{t});
+        num      = length(is);
+        is       = sys.Nx * (cParams.tFIR_-1) + sys.Nu * (t-1) + is;
+        RMc_constr(is + (js-1)*nRowsRMc) = RMSupp(spot+1:spot+num);
         spot = spot + num;
     end
+    
+    % heuristic weighted distance from CL map plus L1 objective
+    objective = cParams.CLDiffPen_*norm(RMc_free - RMc_constr, 2) + norm(RMc_constr, 1); 
 
-    % heuristic distance from CL map plus L1 objective
-    objective = norm(RMc_free - RMc_constr, 2) + norm(RMc_constr, 1); 
+    [Rc, Mc] = block_to_cell(RMc_constr, cParams, sys);
 end
 
 minimize(objective);
@@ -108,10 +111,10 @@ end
 function [Rc, Mc] = block_to_cell(RMc, cParams, sys)
 % Rc, Mc are cell structure (i.e. Rc{t})
 % RMc is one stacked matrix (Rc first, then Mc)
-Rcs = RMc(1:sys.Nx * (cParams.tc_-1), :);
-Mcs = RMc(sys.Nx * (cParams.tc_-1) + 1:end, :);
+Rcs = RMc(1:sys.Nx * (cParams.tFIR_-1), :);
+Mcs = RMc(sys.Nx * (cParams.tFIR_-1) + 1:end, :);
 
-for t = 1:cParams.tc_
+for t = 1:cParams.tFIR_
     tx    = get_range(t-1, sys.Nx);
     tu    = get_range(t, sys.Nu);
     Mc{t} = Mcs(tu,:);

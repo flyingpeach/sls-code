@@ -11,26 +11,23 @@ cParams = CtrllerParams();
 
 % Basic, EncourageDelay, EncouargeLocal
 % Delayed, Localized, DAndL
-cParams.mode_ = SLSMode.Basic;
+cParams.mode_ = SLSMode.Delayed;
 
 cParams.eps_nullsp_ = eps_nullsp_;
-cParams.tc_         = slsParams.tFIR_;
+cParams.tFIR_       = slsParams.tFIR_;
 
 % uncomment as needed
-% cParams.actDelay_    = 0;
-% cParams.cSpeed_      = 0;
-% cParams.d_           = 0;
-% cParams.CLDiffPen_   = 0;
-% cParams.fastCommPen_ = 0;
-% cParams.nonLocalPen_ = 0;
+%cParams.actDelay_    = 0;
+%cParams.cSpeed_      = 2;
+cParams.d_           = 4;
+cParams.CLDiffPen_   = 1e2;
+%cParams.fastCommPen_ = 1e2;
+%cParams.nonLocalPen_ = 1e2;
 
 ctrller = find_ctrller(sys, slsParams, slsOuts, cParams);
 
 %% visualize
 visualize_RM_RMc(sys, slsOuts, ctrller, 'all');
-
-
-
 
 %% calculate metrics
 zThresh = tol;
