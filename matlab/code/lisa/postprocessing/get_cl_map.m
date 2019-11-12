@@ -1,5 +1,7 @@
-function [G, H] = get_cl_map(sys, slsParams_alt, ctrller, simParams, tTotal)
-simParams.tSim_ = tTotal + 1; % reactions to disturbance will start @ t=2
+function [G, H] = get_cl_map(sys, slsParams_alt, ctrller, tTotal)
+simParams           = SimParams();
+simParams.tSim_     = tTotal + 1; % reactions to disturbance will start @ t=2
+simParams.openLoop_ = false;
 
 for t=1:tTotal
     G{t} = zeros(sys.Nx, sys.Nx); % CL map from w to x

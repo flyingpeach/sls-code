@@ -1,9 +1,8 @@
-function met = get_ctrller_stats(met, sys, simParams, slsParams, slsOuts, ctrllers)
+function met = get_ctrller_stats(met, sys, slsParams, slsOuts, ctrllers)
 % Calculate stats for Rc, Mc and original R, M
 %     met       : initialized CtrllerStats that will be updated
 % Inputs
 %     sys       : LTISystem containing system matrices
-%     simParams : SimParams; parameters for the simulation
 %     slsParams : SLSParams containing parameters for original CL
 %     slsOuts   : SLSOutputs of original closed loop system
 %     ctrllers  : array of Ctrller (one per value of swept parameter)
@@ -69,7 +68,7 @@ for i=1:numItems
     end
     
     % get CL map of Rc, Mc
-    [Gc, Hc] = get_cl_map(sys, slsParams_alt, ctrllers{i}, simParams, tTotal);
+    [Gc, Hc] = get_cl_map(sys, slsParams_alt, ctrllers{i}, tTotal);
     
     for t=1:tTotal
         met.LQRCosts(i) = met.LQRCosts(i) + norm(full([Gc{t}; Hc{t}]), 'fro').^2;

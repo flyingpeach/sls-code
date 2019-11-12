@@ -1,5 +1,5 @@
-%% choose the system you want to work with
-setup1;
+%% solve for R, M first
+setup;
 
 % for rank/zero conditions, try to match the precision of cvx_precision low
 % http://cvxr.com/cvx/doc/solver.html#solver-precision
@@ -32,7 +32,7 @@ visualize_RM_RMc(sys, slsOuts, ctrller, 'all');
 %% calculate stats for new controller
 cStats = CtrllerStats(eps_rank, cParams.tFIR_);
 cs{1}  = ctrller;
-cStats = get_ctrller_stats(cStats, sys, simParams, slsParams, slsOuts, cs);
+cStats = get_ctrller_stats(cStats, sys, slsParams, slsOuts, cs);
 cStats
 
 %% parameter sweep (Tc)
@@ -96,7 +96,7 @@ else
     cStats = CtrllerStats(eps_rank, cParams.tFIR_, sweepParamName, xPlot);
 end
 
-cStats = get_ctrller_stats(cStats, sys, simParams, slsParams, slsOuts, csSweepPlot);
+cStats = get_ctrller_stats(cStats, sys, slsParams, slsOuts, csSweepPlot);
 
 % plot metrics and save to file
 savepath = 'C:\Users\flyin\Desktop\caltech\research\sls controller design';
