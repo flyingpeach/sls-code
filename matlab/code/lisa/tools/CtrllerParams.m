@@ -63,10 +63,10 @@ classdef CtrllerParams < matlab.mixin.Copyable
                 modeStr = 'centralized';            
             case SLSMode.Delayed
                 paramStr = check_delay(obj, paramStr);
-                modeStr  = 'localized';
+                modeStr  = 'delayed';
             case SLSMode.Localized
                 paramStr = check_locality(obj, paramStr);
-                modeStr  = 'delayed';
+                modeStr  = 'localized';
             case SLSMode.DAndL
                 paramStr = check_delay(obj, paramStr);
                 paramStr = check_locality(obj, paramStr);

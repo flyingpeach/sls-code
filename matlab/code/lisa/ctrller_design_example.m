@@ -11,7 +11,7 @@ cParams = CtrllerParams();
 
 % Basic, EncourageDelay, EncouargeLocal
 % Delayed, Localized, DAndL
-cParams.mode_ = SLSMode.Delayed;
+cParams.mode_ = SLSMode.Basic;
 
 cParams.eps_nullsp_ = eps_nullsp_;
 cParams.tFIR_       = slsParams.tFIR_;
@@ -19,8 +19,8 @@ cParams.tFIR_       = slsParams.tFIR_;
 % uncomment as needed
 %cParams.actDelay_    = 0;
 %cParams.cSpeed_      = 2;
-cParams.d_           = 4;
-cParams.CLDiffPen_   = 1e2;
+%cParams.d_           = 4;
+%cParams.CLDiffPen_   = 1e2;
 %cParams.fastCommPen_ = 1e2;
 %cParams.nonLocalPen_ = 1e2;
 
@@ -30,79 +30,74 @@ ctrller = find_ctrller(sys, slsParams, slsOuts, cParams);
 visualize_RM_RMc(sys, slsOuts, ctrller, 'all');
 
 %% calculate stats for new controller
-met   = CtrllerStats(eps_rank, cParams.tFIR_);
-cs{1} = ctrller;
-met   = get_metrics(met, sys, simParams, slsParams, slsOuts, cs);
-met
-
-
+cStats = CtrllerStats(eps_rank, cParams.tFIR_);
+cs{1}  = ctrller;
+cStats = get_ctrller_stats(cStats, sys, simParams, slsParams, slsOuts, cs);
+cStats
 
 %% parameter sweep (Tc)
-Tcs    = 2:18;
-numTcs = length(Tcs);
-slsOuts_alts = cell(numTcs, 1);
+cParams.mode_ = SLSMode.Basic;
+
+Tcs      = 17:22;
+numTcs   = length(Tcs);
+csSweep = cell(numTcs, 1);
 for idx=1:numTcs
-    Tc = Tcs(idx);
-    slsOuts_alts{idx} = find_alt_impl(sys, slsParams, slsOuts, Tc, settings);
+    cParams.tFIR_ = Tcs(idx);
+    csSweep{idx}  = find_ctrller(sys, slsParams, slsOuts, cParams);
 end
 
-%% parameter sweep (others)
-Tc = round(slsParams.tFIR_/2);
+%% parameter sweep (non-Tc)
+cParams.tFIR_ = slsParams.tFIR_;
+cParams.mode_ = SLSMode.Localized;
 
-settings.mode_ = AltImplMode.ApproxLS;
-params       = [1/12, 1/8, 1/6, 1/4];
-numParams    = length(params);
-slsOuts_alts = cell(numParams, 1);
+cParams.CLDiffPen_ = 1e2;
 
-for i=1:numParams
-    settings.svThresh_ = eps.^(params(i));
-    slsOuts_alts{i}  = find_alt_impl(sys, slsParams, slsOuts, Tc, settings);
+params    = 4:10;
+numParams = length(params);
+csSweep   = cell(numParams, 1);
+
+for idx=1:numParams
+    cParams.d_   = params(idx);
+    csSweep{idx} = find_ctrller(sys, slsParams, slsOuts, cParams);
 end
 
-%% plot stuff
-% we might not want to plot all of slsOuts_alts, so this is the sandbox to
-% adjust which slsOuts_alts to plot
+%% plotter for parameter sweep
+% we might not want to plot all resultant ctrllers; can adjust below
 
-zThresh = tol;
-sweepParamName = 'Tc';
+% user input %%%%%%%%%%%%%%%%%%%%%%% 
+sweepParamName = 'd-locality';
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 if strcmp(sweepParamName, 'Tc')
-    xSeries = Tcs;
-    xSize   = numTcs;
+    xSeries = Tcs; xSize = numTcs;
 else
-    xSeries = params;
-    xSize   = numParams;    
+    xSeries = params; xSize = numParams;    
 end
 
-% can specify which x to plot
+% user input %%%%%%%%%%%%%%%%%%%%%%% 
 xWanted = xSeries;
-myIdx   = [];
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+myIdx   = [];
 for i=1:xSize
     x = xSeries(i);
-    if find(abs(xWanted-x)<eps) % ismember doesn't work well with floats
+    % ismember doesn't work well with floats    
+    if find(abs(xWanted-x) < eps_rank) 
         myIdx = [myIdx, i];
     end
 end
 
-xPlot            = xSeries(myIdx);
-slsOuts_altsPlot = slsOuts_alts(myIdx);
+xPlot       = xSeries(myIdx);
+csSweepPlot = csSweep(myIdx);
 
 if strcmp(sweepParamName, 'Tc')
-    met = AltImplMetrics(zThresh, xPlot);
+    cStats = CtrllerStats(eps_rank, xPlot);
 else
-    met = AltImplMetrics(zThresh, Tc, sweepParamName, xPlot);
+    cStats = CtrllerStats(eps_rank, cParams.tFIR_, sweepParamName, xPlot);
 end
 
-% calculate matrix-specific metrics
-met = calc_mtx_metrics(met, sys, slsParams, slsOuts, slsOuts_altsPlot);
-
-% calculate closed-loop metrics and plot select heat maps
-met = calc_cl_metrics(met, sys, simParams, slsParams, slsOuts, slsOuts_altsPlot);
+cStats = get_ctrller_stats(cStats, sys, simParams, slsParams, slsOuts, csSweepPlot);
 
 % plot metrics and save to file
-savepath = 'C:\Users\Lisa\Desktop\caltech\research\implspace\tmp\';
-plot_metrics(met, savepath);
-
-disp(['Statuses:', print_statuses(xSeries, slsOuts_alts)]); 
-
+savepath = 'C:\Users\flyin\Desktop\caltech\research\sls controller design';
+plot_ctrller_stats(cStats, savepath);
