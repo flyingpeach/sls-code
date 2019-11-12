@@ -1,5 +1,5 @@
 %% solve for R, M first
-setup;
+acc_setup;
 
 % for rank/zero conditions, try to match the precision of cvx_precision low
 % http://cvxr.com/cvx/doc/solver.html#solver-precision
