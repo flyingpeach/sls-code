@@ -5,12 +5,11 @@ function solnSpaceSize = check_soln_space_size(sys, slsOuts, Tc, tol)
 %    solnSpaceSize : size of the solution space
 % Inputs
 %    sys           : LTISystem containing system matrices
-%    slsParams     : SLSParams containing parameters
 %    slsOuts       : contains info from SLS (original R, M)
 %    Tc            : length of the approximate solution
 %    tol           : tolerance to use for rank / nullspace calculations
 
-F  = get_F(sys, slsOuts, Tc);
+F  = get_ctrller_constraint(sys, slsOuts, Tc);
 F2 = F(:,sys.Nx+1:end);
 
 solnSpaceSize = 0;

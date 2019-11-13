@@ -15,7 +15,7 @@ sys.D12 = [sparse(sys.Nx, sys.Nu); speye(sys.Nu)];
 
 % sls parameters
 slsParams       = SLSParams();
-slsParams.tFIR_ = 20;
+slsParams.T_    = 20;
 slsParams.obj_  = Objective.H2; % objective function
 
 % simulation parameters
@@ -29,7 +29,7 @@ simParams.openLoop_ = false;
 slsParams.mode_ = SLSMode.Basic;
 
 slsOuts1 = state_fdbk_sls(sys, slsParams);
-[x1, u1] = simulate_system(sys, slsParams, slsOuts1, simParams);
+[x1, u1] = simulate_system(sys, simParams, slsOuts1.R_, slsOuts1.M_);
 plot_heat_map(x1, sys.B2*u1, 'Centralized');
 
 %% (2) d-localized sls
@@ -39,7 +39,7 @@ slsParams.cSpeed_   = 2; % communication speed must be sufficiently large
 slsParams.d_        = 3;
 
 slsOuts2 = state_fdbk_sls(sys, slsParams);
-[x2, u2] = simulate_system(sys, slsParams, slsOuts2, simParams);
+[x2, u2] = simulate_system(sys, simParams, slsOuts2.R_, slsOuts2.M_);
 plot_heat_map(x2, sys.B2*u2, 'Localized');
 
 %% (3) approximate d-localized sls
@@ -49,5 +49,5 @@ slsParams.cSpeed_   = 1;
 slsParams.robCoeff_ = 10^3;
 
 slsOuts3 = state_fdbk_sls(sys, slsParams);
-[x3, u3] = simulate_system(sys, slsParams, slsOuts3, simParams);
+[x3, u3] = simulate_system(sys, simParams, slsOuts3.R_, slsOuts3.M_);
 plot_heat_map(x3, sys.B2*u3, 'Approximately Localized');

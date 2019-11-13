@@ -10,7 +10,7 @@ statusTxt = cParams.sanity_check();
 statusTxt = [char(10), sprintf('Finding a controller, %s', statusTxt)];
 disp(statusTxt);
 
-F  = get_F(sys, slsOuts, cParams.tFIR_);
+F  = get_ctrller_constraint(sys, slsOuts, cParams.T_);
 F1 = F(:, 1:sys.Nx);
 F2 = F(:,sys.Nx+1:end);
 
@@ -36,9 +36,9 @@ if ismember(cParams.mode_, freeModes)
     
     [Rc, Mc] = block_to_cell(RMc_free, cParams, sys);
     if cParams.mode_ == SLSMode.EncourageDelay
-        for t=1:cParams.tFIR_
+        for t=1:cParams.T_
             % formulating these constraints are slow, so output progress
-            disp(sprintf('Adding objectives for %d of %d matrices', t, cParams.tFIR_));
+            disp(sprintf('Adding objectives for %d of %d matrices', t, cParams.T_));
         
             BM = sys.B2 * Mc{t};
             for i=1:sys.Nx
@@ -49,9 +49,9 @@ if ismember(cParams.mode_, freeModes)
             end
         end
     elseif cParams.mode_ == SLSMode.EncourageLocal
-        for t=1:cParams.tFIR_
+        for t=1:cParams.T_
             % formulating these constraints are slow, so output progress
-            disp(sprintf('Adding objectives for %d of %d matrices', t, cParams.tFIR_));
+            disp(sprintf('Adding objectives for %d of %d matrices', t, cParams.T_));
 
             BM = sys.B2 * Mc{t};
             for i=1:sys.Nx
@@ -64,12 +64,12 @@ if ismember(cParams.mode_, freeModes)
     end
 elseif ismember(cParams.mode_, constrModes)
     [RSupp, MSupp, count] = get_supports(sys, cParams);  
-    nRowsRMc = sys.Nx*(cParams.tFIR_-1) + sys.Nu*cParams.tFIR_;
+    nRowsRMc = sys.Nx*(cParams.T_-1) + sys.Nu*cParams.T_;
     expression RMc_constr(nRowsRMc, sys.Nx)
     variable RMSupp(count)
 
     spot = 0;
-    for t=1:cParams.tFIR_
+    for t=1:cParams.T_
         if t > 1
             [is, js] = find(RSupp{t}); % rows, cols of support
             num      = length(is);     % # nonzero elements
@@ -79,7 +79,7 @@ elseif ismember(cParams.mode_, constrModes)
         end
         [is, js] = find(MSupp{t});
         num      = length(is);
-        is       = sys.Nx * (cParams.tFIR_-1) + sys.Nu * (t-1) + is;
+        is       = sys.Nx * (cParams.T_-1) + sys.Nu * (t-1) + is;
         RMc_constr(is + (js-1)*nRowsRMc) = RMSupp(spot+1:spot+num);
         spot = spot + num;
     end
@@ -110,10 +110,10 @@ end
 function [Rc, Mc] = block_to_cell(RMc, cParams, sys)
 % Rc, Mc are cell structure (i.e. Rc{t})
 % RMc is one stacked matrix (Rc first, then Mc)
-Rcs = RMc(1:sys.Nx * (cParams.tFIR_-1), :);
-Mcs = RMc(sys.Nx * (cParams.tFIR_-1) + 1:end, :);
+Rcs = RMc(1:sys.Nx * (cParams.T_-1), :);
+Mcs = RMc(sys.Nx * (cParams.T_-1) + 1:end, :);
 
-for t = 1:cParams.tFIR_
+for t = 1:cParams.T_
     tx    = get_range(t-1, sys.Nx);
     tu    = get_range(t, sys.Nu);
     Mc{t} = Mcs(tu,:);

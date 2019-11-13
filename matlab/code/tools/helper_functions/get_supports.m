@@ -13,7 +13,7 @@ commsAdj = abs(sys.A) > 0;
 localRSupp = commsAdj^(d-1) > 0;
 
 count = 0;
-for t = 1:params.tFIR_
+for t = 1:params.T_
     if params.mode_ == SLSMode.Localized % locality constraint only
         RSupp{t} = localRSupp > 0;
     else % include delay constraint as well

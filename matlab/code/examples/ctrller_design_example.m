@@ -14,7 +14,7 @@ sys.D12 = [sparse(sys.Nx, sys.Nu); speye(sys.Nu)];
 
 % sls parameters
 slsParams           = SLSParams();
-slsParams.tFIR_     = 20;
+slsParams.T_        = 20;
 slsParams.obj_      = Objective.H2; % objective function
 slsParams.mode_     = SLSMode.Basic;
 slsParams.robCoeff_ = 1e3;
@@ -34,7 +34,7 @@ cParams = CtrllerParams();
 cParams.mode_ = SLSMode.Basic;
 
 cParams.eps_nullsp_ = eps_nullsp;
-cParams.tFIR_       = slsParams.tFIR_;
+cParams.T_          = slsParams.T_;
 
 % uncomment as needed
 %cParams.actDelay_    = 0;
@@ -44,30 +44,30 @@ cParams.tFIR_       = slsParams.tFIR_;
 %cParams.fastCommPen_ = 1e2;
 %cParams.nonLocalPen_ = 1e2;
 
-ctrller = find_ctrller(sys, slsParams, slsOuts, cParams);
+ctrller = find_ctrller(sys, slsOuts, cParams);
 
 %% visualize
-visualize_RM_RMc(sys, slsOuts, ctrller, 'all');
+plot_ctrller_matrices(sys, slsOuts, ctrller, 'all');
 
 %% calculate stats for new controller
-cStats = CtrllerStats(eps_nullsp, cParams.tFIR_);
+cStats = CtrllerStats(eps_nullsp, cParams.T_);
 cs{1}  = ctrller;
-cStats = get_ctrller_stats(cStats, sys, slsParams, slsOuts, cs);
+cStats = get_ctrller_stats(cStats, sys, slsOuts, cs);
 cStats
 
 %% parameter sweep (Tc)
 cParams.mode_ = SLSMode.Basic;
 
-Tcs      = 17:22;
+Tcs      = 17:20;
 numTcs   = length(Tcs);
 csSweep = cell(numTcs, 1);
 for idx=1:numTcs
-    cParams.tFIR_ = Tcs(idx);
-    csSweep{idx}  = find_ctrller(sys, slsParams, slsOuts, cParams);
+    cParams.T_ = Tcs(idx);
+    csSweep{idx}  = find_ctrller(sys, slsOuts, cParams);
 end
 
 %% parameter sweep (non-Tc)
-cParams.tFIR_ = slsParams.tFIR_;
+cParams.T_    = slsParams.T_;
 cParams.mode_ = SLSMode.Localized;
 
 cParams.CLDiffPen_ = 1e2;
@@ -78,14 +78,14 @@ csSweep   = cell(numParams, 1);
 
 for idx=1:numParams
     cParams.d_   = params(idx);
-    csSweep{idx} = find_ctrller(sys, slsParams, slsOuts, cParams);
+    csSweep{idx} = find_ctrller(sys, slsOuts, cParams);
 end
 
 %% plotter for parameter sweep
 % we might not want to plot all resultant ctrllers; can adjust below
 
 % user input %%%%%%%%%%%%%%%%%%%%%%% 
-sweepParamName = 'd-locality';
+sweepParamName = 'Tc';
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 if strcmp(sweepParamName, 'Tc')
@@ -113,10 +113,10 @@ csSweepPlot = csSweep(myIdx);
 if strcmp(sweepParamName, 'Tc')
     cStats = CtrllerStats(eps_nullsp, xPlot);
 else
-    cStats = CtrllerStats(eps_nullsp, cParams.tFIR_, sweepParamName, xPlot);
+    cStats = CtrllerStats(eps_nullsp, cParams.T_, sweepParamName, xPlot);
 end
 
-cStats = get_ctrller_stats(cStats, sys, slsParams, slsOuts, csSweepPlot);
+cStats = get_ctrller_stats(cStats, sys, slsOuts, csSweepPlot);
 
 % plot metrics and save to file
 savepath = 'C:\Users\flyin\Desktop\caltech\research\sls controller design';

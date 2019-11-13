@@ -15,9 +15,9 @@ sys.C1  = [speye(sys.Nx); sparse(sys.Nu, sys.Nx)]; % used in H2/HInf ctrl
 sys.D12 = [sparse(sys.Nx, sys.Nu); speye(sys.Nu)];
 
 % sls parameters
-slsParams       = SLSParams();
-slsParams.tFIR_ = 15;
-slsParams.obj_  = Objective.H2; % objective function
+slsParams      = SLSParams();
+slsParams.T_   = 15;
+slsParams.obj_ = Objective.H2; % objective function
 
 %% (1) basic sls (centralized controller) with rfd
 num_acts = []; clnorms = [];

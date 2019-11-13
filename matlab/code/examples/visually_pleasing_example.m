@@ -17,7 +17,7 @@ sys.D12 = [sparse(sys.Nx, sys.Nu); speye(sys.Nu)];
 % sls parameters
 slsParams           = SLSParams();
 slsParams.obj_      = Objective.H2;
-slsParams.tFIR_     = 10;
+slsParams.T_        = 10;
 slsParams.actDelay_ = 1;
 slsParams.cSpeed_   = 1;
 slsParams.d_        = 8;
@@ -33,7 +33,7 @@ simParams.w_        = zeros(sys.Nx, 100);
 simParams.w_(floor(sys.Nx/2), 1) = 10;
 
 slsOuts = state_fdbk_sls(sys, slsParams);
-[x, u]  = simulate_system(sys, slsParams, slsOuts, simParams);
+[x, u]  = simulate_system(sys, simParams, slsOuts.R_, slsOuts.M_);
 
 nodeCoords = [1:1:sys.Nx;
               zeros(1, sys.Nx)]';

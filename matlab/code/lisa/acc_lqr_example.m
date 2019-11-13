@@ -1,7 +1,7 @@
 %% generate stats for table
 clear; close all; clc; 
 
-% set up system
+% set up system / parameters
 sys    = LTISystem();
 sys.Nx = 10;
 
@@ -12,13 +12,13 @@ sys.B1  = eye(sys.Nx);
 sys.C1  = [speye(sys.Nx); sparse(sys.Nu, sys.Nx)];
 sys.D12 = [sparse(sys.Nx, sys.Nu); speye(sys.Nu)];
 
-% sls parameters
-slsParams           = SLSParams();
-slsParams.tFIR_     = 20;
-slsParams.obj_      = Objective.H2;
-slsParams.mode_     = SLSMode.Basic;
+slsParams       = SLSParams();
+slsParams.T_    = 20;
+slsParams.obj_  = Objective.H2;
 
-slsOutsCent = state_fdbk_sls(sys, slsParams);
+% centralized SLS
+slsParams.mode_ = SLSMode.Basic;
+slsOutsCent     = state_fdbk_sls(sys, slsParams);
 
 % infinite horizon
 [P,L,K] = dare(full(sys.A), full(sys.B2), eye(sys.Nx), eye(sys.Nu));
@@ -35,13 +35,7 @@ slsParams.mode_     = SLSMode.Localized;
 slsParams.d_        = 3;
 slsParams.robCoeff_ = 1e3;
 slsParams.approx_   = true;
-
-tTotal = slsParams.tFIR_+100;
-
 slsOutsVirtLoc      = state_fdbk_sls(sys, slsParams);
-ctrllerVirtLoc      = Ctrller();
-ctrllerVirtLoc.Rc_  = slsOutsVirtLoc.R_;
-ctrllerVirtLoc.Mc_  = slsOutsVirtLoc.M_;
 
 % our method for d-localized SLS
 eps_base   = 2.22e-16;
@@ -50,19 +44,19 @@ eps_nullsp = eps_base.^(3/8);
 cParams             = CtrllerParams();
 cParams.mode_       = SLSMode.Localized;
 cParams.eps_nullsp_ = eps_nullsp;
-cParams.tFIR_       = slsParams.tFIR_;
+cParams.T_          = slsParams.T_;
 cParams.d_          = slsParams.d_;
 cParams.CLDiffPen_  = 1e2;
 
-ctrllerOurs = find_ctrller(sys, slsParams, slsOutsCent, cParams);
+ctrllerOurs = find_ctrller(sys, slsOutsCent, cParams);
 
-cStatsALoc = CtrllerStats(eps_nullsp, cParams.tFIR_);
-csALoc{1}  = ctrllerVirtLoc;
-cStatsALoc = get_ctrller_stats(cStatsALoc, sys, slsParams, slsOutsCent, csALoc);
+cStatsOurs  = CtrllerStats(eps_nullsp, cParams.T_);
+csOurs{1}   = ctrllerOurs;
+cStatsOurs  = get_ctrller_stats(cStatsOurs, sys, slsOutsCent, csOurs);
 
-cStatsOurs = CtrllerStats(eps_nullsp, cParams.tFIR_);
-csOurs{1}  = ctrllerOurs;
-cStatsOurs = get_ctrller_stats(cStatsOurs, sys, slsParams, slsOutsCent, csOurs);
+% slightly hacky: use virtually local as "original"
+cStats2     = CtrllerStats(eps_nullsp, cParams.T_);
+cStats2     = get_ctrller_stats(cStats2, sys, slsOutsVirtLoc, csOurs);
 
 disp(sprintf('Centralized : cost=%.3f, rad=%.3f, l1norm=%.3f', ...
              cStatsOurs.LQRCostOrig / infH2Cost, ...
@@ -70,9 +64,9 @@ disp(sprintf('Centralized : cost=%.3f, rad=%.3f, l1norm=%.3f', ...
              cStatsOurs.L1NormOrig))
 
 disp(sprintf('Approx Loc. : cost=%.3f, rad=%.3f, l1norm=%.3f', ...
-             cStatsALoc.LQRCosts / infH2Cost, ...
-             cStatsALoc.IntSpecRadii_c, ...
-             cStatsALoc.L1Norms))
+             cStats2.LQRCostOrig / infH2Cost, ...
+             cStats2.IntSpecRadiusOrig, ...
+             cStats2.L1NormOrig))
 
 disp(sprintf('Our method  : cost=%.3f, rad=%.3f, l1norm=%.3f', ...
              cStatsOurs.LQRCosts / infH2Cost, ...
@@ -80,11 +74,6 @@ disp(sprintf('Our method  : cost=%.3f, rad=%.3f, l1norm=%.3f', ...
              cStatsOurs.L1Norms))
 
 %% plot closed-loop behaviour
-% TODO: hacky
-slsOutsOurs    = SLSOutputs();
-slsOutsOurs.R_ = ctrllerOurs.Rc_;
-slsOutsOurs.M_ = ctrllerOurs.Mc_;
-
 simParams           = SimParams();
 simParams.w_        = zeros(sys.Nx, 60);
 simParams.openLoop_ = false;
@@ -93,17 +82,17 @@ simParams.tSim_     = 60;
 % simulate with disturbance @ node 1
 simParams.w_(1, 1) = 1;
 
-[xcent1, ucent1] = simulate_system(sys, slsParams, slsOutsCent, simParams);
-[xvirt1, uvirt1] = simulate_system(sys, slsParams, slsOutsVirtLoc, simParams);
-[xours1, uours1] = simulate_system(sys, slsParams, slsOutsOurs, simParams);
+[xcent1, ucent1] = simulate_system(sys, simParams, slsOutsCent.R_, slsOutsCent.M_);
+[xvirt1, uvirt1] = simulate_system(sys, simParams, slsOutsVirtLoc.R_, slsOutsVirtLoc.M_);
+[xours1, uours1] = simulate_system(sys, simParams, ctrllerOurs.Rc_, ctrllerOurs.Mc_);
 
 % simulate with disturbance @ node 5
 simParams.w_(1, 1) = 0;
 simParams.w_(5, 1) = 1;
 
-[xcent5, ucent5] = simulate_system(sys, slsParams, slsOutsCent, simParams);
-[xvirt5, uvirt5] = simulate_system(sys, slsParams, slsOutsVirtLoc, simParams);
-[xours5, uours5] = simulate_system(sys, slsParams, slsOutsOurs, simParams);
+[xcent5, ucent5] = simulate_system(sys, simParams, slsOutsCent.R_, slsOutsCent.M_);
+[xvirt5, uvirt5] = simulate_system(sys, simParams, slsOutsVirtLoc.R_, slsOutsVirtLoc.M_);
+[xours5, uours5] = simulate_system(sys, simParams, ctrllerOurs.Rc_, ctrllerOurs.Mc_);
 
 fig4h = figure(4);
 logmin = -4; logmax = 0;

@@ -10,10 +10,10 @@ sys.C1  = [speye(sys.Nx); sparse(sys.Nu, sys.Nx)];
 sys.D12 = [sparse(sys.Nx, sys.Nu); speye(sys.Nu)];
 
 % sls paracStatsers
-slsParams           = SLSParams();
-slsParams.tFIR_     = 20;
-slsParams.obj_      = Objective.H2;
-slsParams.mode_     = SLSMode.Basic;
+slsParams       = SLSParams();
+slsParams.T_    = 20;
+slsParams.obj_  = Objective.H2;
+slsParams.mode_ = SLSMode.Basic;
 
 slsOutsCent = state_fdbk_sls(sys, slsParams);
 eps_nullsp  = 1e-2;
@@ -24,7 +24,7 @@ numTcs = length(Tcs);
 tol    = eps_nullsp;
 
 for idx=1:numTcs
-    solnSpaceSize = check_soln_space_size(sys, slsParams, slsOutsCent, Tcs(idx), tol);
+    solnSpaceSize = check_soln_space_size(sys, slsOutsCent, Tcs(idx), tol);
     disp([Tcs(idx), solnSpaceSize])
 end
 
@@ -32,17 +32,17 @@ end
 cParams             = CtrllerParams();
 cParams.mode_       = SLSMode.Basic;
 cParams.eps_nullsp_ = eps_nullsp;
-cParams.tFIR_       = slsParams.tFIR_;
+cParams.T_          = slsParams.T_;
 
 csSweep  = cell(numTcs, 1);
 for idx=1:numTcs
-    cParams.tFIR_ = Tcs(idx);
-    csSweep{idx}  = find_ctrller(sys, slsParams, slsOutsCent, cParams);
+    cParams.T_ = Tcs(idx);
+    csSweep{idx}  = find_ctrller(sys, slsOutsCent, cParams);
 end
 
 %% plot sweep over Tcs
 cStats = CtrllerStats(eps_nullsp, Tcs);
-cStats = get_ctrller_stats(cStats, sys, slsParams, slsOutsCent, csSweep);
+cStats = get_ctrller_stats(cStats, sys, slsOutsCent, csSweep);
 
 fig1h  = figure(1);
 

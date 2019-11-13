@@ -14,9 +14,9 @@ sys.C1  = [speye(sys.Nx); sparse(sys.Nu, sys.Nx)]; % used in H2/HInf ctrl
 sys.D12 = [sparse(sys.Nx, sys.Nu); speye(sys.Nu)];
 
 % sls parameters
-slsParams           = SLSParams();
-slsParams.obj_      = Objective.H2;
-slsParams.tFIR_     = 10;
+slsParams      = SLSParams();
+slsParams.obj_ = Objective.H2;
+slsParams.T_   = 10;
 
 % simulation parameters
 simParams           = SimParams;
@@ -30,17 +30,17 @@ slsOutsCent     = state_fdbk_sls(sys, slsParams);
 % simulate open and closed loop
 simParams.openLoop_ = true; 
 simParams.tSim_ = 90;
-[xOpen, uOpen]  = simulate_system(sys, slsParams, slsOutsCent, simParams);
+[xOpen, uOpen]  = simulate_system(sys, simParams, slsOutsCent.R_, slsOutsCent.M_);
 
 simParams.openLoop_ = false; 
 simParams.tSim_ = 25;
-[xCent, uCent]  = simulate_system(sys, slsParams, slsOutsCent, simParams);
+[xCent, uCent]  = simulate_system(sys, simParams, slsOutsCent.R_, slsOutsCent.M_);
 
 plot_heat_map(xOpen, sys.B2*uOpen, 'Open loop');
 plot_heat_map(xCent, sys.B2*uCent, [int2str(sys.Nx), ' Node Centralized Solution']);
 
-%% varying horizon lengths (tFIR)
-tFIRs   = [3, 4, 5, 6, 7, 8];
+%% varying horizon lengths (T)
+Ts   = [3, 4, 5, 6, 7, 8];
 tPrints = [4, 8];
 
 slsParams.mode_     = SLSMode.DAndL;
@@ -48,20 +48,20 @@ slsParams.actDelay_ = 1;
 slsParams.cSpeed_   = 2;
 slsParams.d_        = 6;
 simParams.tSim_     = 16;
-clnorms             = zeros(length(tFIRs), 1);
-for i=1:length(tFIRs)
-    slsParams.tFIR_ = tFIRs(i);
-    slsOutsT        = state_fdbk_sls(sys, slsParams);
-    clnorms(i)      = slsOutsT.clnorm_;
+clnorms             = zeros(length(Ts), 1);
+for i=1:length(Ts)
+    slsParams.T_ = Ts(i);
+    slsOutsT     = state_fdbk_sls(sys, slsParams);
+    clnorms(i)   = slsOutsT.clnorm_;
     
-    if ismember(tFIRs(i), tPrints)   
-        [xT, uT] = simulate_system(sys, slsParams, slsOutsT, simParams);
-        plot_heat_map(xT, sys.B2*uT, ['tFIR = ', int2str(tFIRs(i))]);
+    if ismember(Ts(i), tPrints)   
+        [xT, uT] = simulate_system(sys, simParams, slsOutsT.R_, slsOutsT.M_);
+        plot_heat_map(xT, sys.B2*uT, ['T = ', int2str(Ts(i))]);
     end
 end
 
 figure;
-p1=plot(tFIRs, clnorms, 'o-');
+p1=plot(Ts, clnorms, 'o-');
 set(gca, 'xdir', 'reverse');
 title([int2str(sys.Nx), ' Node Chain']);
 xlabel('FIR Horizon T'); ylabel('Localized H_2-Norm Cost');
@@ -77,7 +77,7 @@ xlabel('FIR Horizon T'); ylabel('Localized H_2-Norm Cost');
 actDenss  = [0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1];
 actPrints = [0.2, 0.3, 0.7, 1];
 
-slsParams.tFIR_ = 15;    
+slsParams.T_    = 15;    
 simParams.tSim_ = 45;
 clnorms         = zeros(length(actDenss), 1);
 
@@ -101,7 +101,7 @@ for i = 1:length(actDenss)
     clnorms(i) = slsOutsAct.clnorm_;
     
     if ismember(actDenss(i), actPrints)
-        [xAct, uAct] = simulate_system(sys, slsParams, slsOutsAct, simParams);
+        [xAct, uAct] = simulate_system(sys, simParams, slsOutsAct.R_, slsOutsAct.M_);
         plot_heat_map(xAct, sys.B2*uAct, ['Actuation = ', num2str(actDenss(i))]);
     end
 end
@@ -122,7 +122,7 @@ generate_dbl_stoch_chain(sys, rho, actDens, alpha);
 sys.C1  = [speye(sys.Nx); sparse(sys.Nu, sys.Nx)];
 sys.D12 = [sparse(sys.Nx, sys.Nu); speye(sys.Nu)];
 
-slsParams.tFIR_ = 10;
+slsParams.T_    = 10;
 simParams.tSim_ = 16;
 clnorms         = zeros(length(ds), 1);
 
@@ -142,7 +142,7 @@ for i=1:length(ds)
     clnorms(i) = slsOutsD.clnorm_;
     
     if ismember(ds(i), dPrints)
-        [xD, uD] = simulate_system(sys, slsParams, slsOutsD, simParams);
+        [xD, uD] = simulate_system(sys, simParams, slsOutsD.R_, slsOutsD.M_);
         plot_heat_map(xD, sys.B2*uD, ['Locality = ', int2str(ds(i))]);
     end   
 end
@@ -178,7 +178,7 @@ for i=1:length(cSpeeds)
     clnorms(i)      = slsOutsC.clnorm_;
     
     if ismember(cSpeeds(i), cPrints)   
-        [xC, uC] = simulate_system(sys, slsParams, slsOutsC, simParams);
+        [xC, uC] = simulate_system(sys, simParams, slsOutsC.R_, slsOutsC.M_);
         plot_heat_map(xC, sys.B2*uC, ['Comm Speed = ', num2str(cSpeeds(i))]);
     end
 end
@@ -209,7 +209,7 @@ for i=1:length(alphas)
     specRadii(i) = max(abs(eig(full(sys.A))));
 
     if ismember(i, printIdx)
-        [xAlpha, uAlpha] = simulate_system(sys, slsParams, slsOutsAlpha, simParams);
+        [xAlpha, uAlpha] = simulate_system(sys, simParams, slsOutsAlpha.R_, slsOutsAlpha.M_);
         plot_heat_map(xAlpha, sys.B2*uAlpha, ['\alpha = ', num2str(alphas(i))])
     end
 end

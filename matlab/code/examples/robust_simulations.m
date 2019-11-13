@@ -15,7 +15,7 @@ sys.D12 = [sparse(sys.Nx, sys.Nu); speye(sys.Nu)];
 slsParams           = SLSParams;
 slsParams.obj_      = Objective.H2;
 slsParams.mode_     = SLSMode.DAndL;
-slsParams.tFIR_     = 10;
+slsParams.T_        = 10;
 slsParams.actDelay_ = 1;
 slsParams.d_        = 6;
 slsParams.robCoeff_ = 1000;
@@ -40,7 +40,7 @@ for i=1:length(cSpeeds)
     robustStabs(i)    = slsOuts.robustStab_;   
 
     if ismember(cSpeeds(i), cPrints)
-        [x, u] = simulate_system(sys, slsParams, slsOuts, simParams);
+        [x, u] = simulate_system(sys, simParams, slsOuts.R_, slsOuts.M_);
         plot_heat_map(x, sys.B2*u, ['Comms = ',num2str(cSpeeds(i))]);
     end
 end
