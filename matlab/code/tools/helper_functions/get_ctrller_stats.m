@@ -10,17 +10,17 @@ numTcs = length(met.Tcs);
 
 % original values
 R = slsOuts.R_; M = slsOuts.M_;
-tFIR = length(R);
+T = length(R);
 
 % calculate metrics for original R, M %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-for t=1:tFIR  
+for t=1:T  
     met.L1NormOrig = met.L1NormOrig + norm([R{t}; M{t}], 1);
     met.RNonzero   = met.RNonzero + sum(abs(vec(R{t})) > met.tol);
     met.MNonzero   = met.MNonzero + sum(abs(vec(M{t})) > met.tol);
 end
 met.IntSpecRadiusOrig = check_int_stability(sys, R, M);
 
-for t=1:tFIR
+for t=1:T
     met.LQRCostOrig = met.LQRCostOrig + norm(full([R{t}; M{t}]), 'fro').^2;
 end
 
@@ -34,17 +34,17 @@ end
 
 % check CL map for extra time steps (expect zero)
 extraT = 100;
-tTotal = tFIR + extraT;
+tTotal = T + extraT;
 
 % total CL norms (for normalization)
 RTotalNorms = 0; MTotalNorms = 0;
-for t=1:tFIR
+for t=1:T
     RTotalNorms = RTotalNorms + norm(full(R{t}));
     MTotalNorms = MTotalNorms + norm(full(M{t}));
 end
 
 % zero pad R, M for easy comparison with CL
-for t=tFIR+1:tTotal
+for t=T+1:tTotal
     R{t} = zeros(sys.Nx, sys.Nx);
     M{t} = zeros(sys.Nu, sys.Nx);
 end
