@@ -14,7 +14,7 @@ sys.C1  = [speye(sys.Nx); sparse(sys.Nu, sys.Nx)]; % used in H2/HInf ctrl
 sys.D12 = [sparse(sys.Nx, sys.Nu); speye(sys.Nu)];
 
 % sls parameters
-slsParams       = SLSParams;
+slsParams       = SLSParams();
 slsParams.tFIR_ = 20;
 slsParams.obj_  = Objective.H2; % objective function
 
@@ -43,7 +43,8 @@ slsOuts2 = state_fdbk_sls(sys, slsParams);
 plot_heat_map(x2, sys.B2*u2, 'Localized');
 
 %% (3) approximate d-localized sls
-slsParams.mode_     = SLSMode.ApproxDAndL;
+slsParams.mode_     = SLSMode.DAndL;
+slsParams.approx_   = true;
 slsParams.cSpeed_   = 1;
 slsParams.robCoeff_ = 10^3;
 

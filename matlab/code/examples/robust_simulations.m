@@ -14,11 +14,12 @@ sys.D12 = [sparse(sys.Nx, sys.Nu); speye(sys.Nu)];
 % sls parameters
 slsParams           = SLSParams;
 slsParams.obj_      = Objective.H2;
-slsParams.mode_     = SLSMode.ApproxDAndL;
+slsParams.mode_     = SLSMode.DAndL;
 slsParams.tFIR_     = 10;
 slsParams.actDelay_ = 1;
 slsParams.d_        = 6;
 slsParams.robCoeff_ = 1000;
+slsParams.approx_   = true;
 
 % simulation parameters
 simParams           = SimParams;

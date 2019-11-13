@@ -17,7 +17,7 @@ cvx_begin quiet
 if params.mode_ ~= SLSMode.Basic
     expression Rs(sys.Nx, sys.Nx, params.tFIR_)
     expression Ms(sys.Nu, sys.Nx, params.tFIR_)
-    if params.mode_ == SLSMode.ApproxDAndL
+    if params.approx_
         expression Delta(sys.Nx, sys.Nx * params.tFIR_)
     end
 else % basic SLS
@@ -60,7 +60,7 @@ robustStab = 0;
 R{1} == eye(sys.Nx);
 R{params.tFIR_} == zeros(sys.Nx, sys.Nx);
 
-if params.mode_ == SLSMode.ApproxDAndL
+if params.approx_
     for t=1:params.tFIR_-1
         Delta(:,(t-1)*sys.Nx+1:t*sys.Nx) = R{t+1} - sys.A*R{t} - sys.B2*M{t};
     end

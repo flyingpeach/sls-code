@@ -5,6 +5,7 @@ classdef SLSParams < matlab.mixin.Copyable
     
     properties  
       mode_;     % an SLSMode (i.e. Basic, Localized)
+      approx_;   % whether to use approximate formulation
       rfd_;      % whether we want rfd
       
       % used for all modes
@@ -24,7 +25,8 @@ classdef SLSParams < matlab.mixin.Copyable
     methods
       function obj = SLSParams()
         % initialize to zero instead of empty array
-        obj.mode_     = 0; 
+        obj.mode_     = 0;
+        obj.approx_   = 0;
         obj.rfd_      = 0;
         
         obj.tFIR_     = 0;        
@@ -58,17 +60,9 @@ classdef SLSParams < matlab.mixin.Copyable
                 paramStr = check_delay(obj, paramStr);
                 paramStr = check_locality(obj, paramStr);
                 modeStr = 'delayed and localized';
-            case SLSMode.ApproxDAndL
-                if not(obj.robCoeff_)
-                    error('[SLS ERROR] Solving with approximate locality and delay but robCoeff=0. Did you forget to specify it?');
-                end
-                paramStr = check_delay(obj, paramStr);
-                paramStr = check_locality(obj, paramStr);
-                paramStr = [paramStr, sprintf(', robCoeff=%0.2f', obj.robCoeff_)];
-                modeStr  = 'approx delayed and localized';
             otherwise
                 errStr = ['An invalid SLSMode was chosen for SLSParams!', char(10), ...
-                          'Options: Basic, Delayed, Localized, DAndL, ApproxDAndL'];
+                          'Options: Basic, Delayed, Localized, DAndL'];
                 error(errStr);
         end
 
@@ -85,13 +79,21 @@ classdef SLSParams < matlab.mixin.Copyable
         
         statusTxt = [modeStr, ' SLS with ', objStr, ' objective'];
 
+        if obj.approx_ == true
+            if not(obj.robCoeff_)
+                error('[SLS ERROR] Solving in approximate mode but robCoeff=0. Did you forget to specify it?');
+            end
+            statusTxt = [statusTxt, ' approximate, ', sprintf(', robCoeff=%0.2f', obj.robCoeff_)];
+        end
+        
         if obj.rfd_ == true
             if not(obj.rfdCoeff_)
                 disp('[SLS WARNING] Solving with RFD but rfdCoeff=0. Did you forget to specify it?');
             end
             statusTxt = [statusTxt, ' and RFD, ', sprintf('rfdCoeff=%0.2f', obj.rfdCoeff_)];
         end
-        statusTxt = [statusTxt, paramStr];
+        
+      statusTxt = [statusTxt, paramStr];
       end
       
       function paramStr = check_delay(obj, paramStr)

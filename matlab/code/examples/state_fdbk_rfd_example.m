@@ -15,7 +15,7 @@ sys.C1  = [speye(sys.Nx); sparse(sys.Nu, sys.Nx)]; % used in H2/HInf ctrl
 sys.D12 = [sparse(sys.Nx, sys.Nu); speye(sys.Nu)];
 
 % sls parameters
-slsParams       = SLSParams;
+slsParams       = SLSParams();
 slsParams.tFIR_ = 15;
 slsParams.obj_  = Objective.H2; % objective function
 
@@ -73,7 +73,8 @@ title('d-localized RFD tradeoff curve');
 %% (3) approximate d-localized sls with rfd
 num_acts = []; clnorms = [];
 
-slsParams.mode_      = SLSMode.ApproxDAndL;
+slsParams.mode_      = SLSMode.DAndL;
+slsParams.approx_    = true;
 slsParams.robCoeff_  = 10^4;
 
 for power = -2:1:3

@@ -14,7 +14,7 @@ sys.C1  = [speye(sys.Nx); sparse(sys.Nu, sys.Nx)]; % used in H2/HInf ctrl
 sys.D12 = [sparse(sys.Nx, sys.Nu); speye(sys.Nu)];
 
 % sls parameters
-slsParams           = SLSParams;
+slsParams           = SLSParams();
 slsParams.obj_      = Objective.H2;
 slsParams.tFIR_     = 10;
 
@@ -80,6 +80,9 @@ actPrints = [0.2, 0.3, 0.7, 1];
 slsParams.tFIR_ = 15;    
 simParams.tSim_ = 45;
 clnorms         = zeros(length(actDenss), 1);
+
+slsParams.mode_ = SLSMode.DAndL;
+
 for i = 1:length(actDenss)
     generate_dbl_stoch_chain(sys, rho, actDenss(i), alpha); % update A, B2
     % Nu changed, so have to change these as well
@@ -88,10 +91,10 @@ for i = 1:length(actDenss)
 
     if actDenss(i) == 0.2
         % in this case density is too low; use approx instead of direct
-        slsParams.mode_     = SLSMode.ApproxDAndL;
+        slsParams.approx_   = true;
         slsParams.robCoeff_ = 1000;
     else
-        slsParams.mode_ = SLSMode.DAndL;
+        slsParams.approx_   = false;
     end
 
     slsOutsAct = state_fdbk_sls(sys, slsParams);
@@ -122,14 +125,17 @@ sys.D12 = [sparse(sys.Nx, sys.Nu); speye(sys.Nu)];
 slsParams.tFIR_ = 10;
 simParams.tSim_ = 16;
 clnorms         = zeros(length(ds), 1);
+
+slsParams.mode_ = SLSMode.DAndL;
+
 for i=1:length(ds)
     slsParams.d_ = ds(i);
     if ds(i) == 2
         % in this case locality is too strict; use approx instead of direct
-        slsParams.mode_     = SLSMode.ApproxDAndL;
+        slsParams.approx_   = true;
         slsParams.robCoeff_ = 1000;
     else
-        slsParams.mode_ = SLSMode.DAndL;
+        slsParams.approx_   = false;
     end
 
     slsOutsD   = state_fdbk_sls(sys, slsParams);
@@ -154,15 +160,18 @@ cPrints = [1, 1.75, 4];
 slsParams.d_    = 8;
 simParams.tSim_ = 25;
 clnorms         = zeros(length(cSpeeds), 1);
+
+slsParams.mode_ = SLSMode.DAndL;
+
 for i=1:length(cSpeeds)
     slsParams.cSpeed_ = cSpeeds(i);
     
     if cSpeeds(i) == 1
         % in this case comm speed too slow; use approx instead of direct
-        slsParams.mode_     = SLSMode.ApproxDAndL;
+        slsParams.approx_   = true;
         slsParams.robCoeff_ = 1000;
     else
-        slsParams.mode_ = SLSMode.DAndL;
+        slsParams.approx_   = false;
     end
         
     slsOutsC        = state_fdbk_sls(sys, slsParams);

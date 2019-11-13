@@ -2,10 +2,7 @@ classdef SLSMode
     % Enumeration class containing options for sls closed-loop map 
     % design OR ctrller design (or joint design)
 
-    enumeration
-      % Applicable only to joint closed-loop map / ctrller design
-      ApproxDAndL
-      
+    enumeration     
       % Applicable to closed-loop map design OR ctrller design step      
       Basic % in ctrller design step, = minimize L1 norm of Rc/Mc
       Delayed
