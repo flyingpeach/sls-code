@@ -43,12 +43,12 @@ ctrllerALoc.Rc_  = slsOutsApproxLoc.R_;
 ctrllerALoc.Mc_  = slsOutsApproxLoc.M_;
 
 % our method for d-localized SLS
-eps_rank    = 2.22e-16;
-eps_nullsp_ = eps_rank.^(3/8);
+eps_rank   = 2.22e-16;
+eps_nullsp = eps_rank.^(3/8);
 
 cParams             = CtrllerParams();
 cParams.mode_       = SLSMode.Localized;
-cParams.eps_nullsp_ = eps_nullsp_;
+cParams.eps_nullsp_ = eps_nullsp;
 cParams.tFIR_       = slsParams.tFIR_;
 cParams.d_          = slsParams.d_;
 cParams.CLDiffPen_  = 1e2;

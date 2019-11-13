@@ -23,8 +23,8 @@ slsOuts = state_fdbk_sls(sys, slsParams);
 
 % for rank/zero conditions, try to match the precision of cvx_precision low
 % http://cvxr.com/cvx/doc/solver.html#solver-precision
-eps_rank    = 2.22e-16;
-eps_nullsp_ = eps_rank.^(3/8);
+eps_rank   = 2.22e-16;
+eps_nullsp = eps_rank.^(3/8);
 
 %% sandbox
 cParams = CtrllerParams();
@@ -33,7 +33,7 @@ cParams = CtrllerParams();
 % Delayed, Localized, DAndL
 cParams.mode_ = SLSMode.Basic;
 
-cParams.eps_nullsp_ = eps_nullsp_;
+cParams.eps_nullsp_ = eps_nullsp;
 cParams.tFIR_       = slsParams.tFIR_;
 
 % uncomment as needed
