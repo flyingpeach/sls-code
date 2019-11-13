@@ -43,8 +43,8 @@ ctrllerALoc.Rc_  = slsOutsApproxLoc.R_;
 ctrllerALoc.Mc_  = slsOutsApproxLoc.M_;
 
 % our method for d-localized SLS
-eps_rank   = 2.22e-16;
-eps_nullsp = eps_rank.^(3/8);
+eps_base   = 2.22e-16;
+eps_nullsp = eps_base.^(3/8);
 
 cParams             = CtrllerParams();
 cParams.mode_       = SLSMode.Localized;
@@ -55,11 +55,11 @@ cParams.CLDiffPen_  = 1e2;
 
 ctrllerOurs = find_ctrller(sys, slsParams, slsOutsCent, cParams);
 
-cStatsALoc = CtrllerStats(eps_rank, cParams.tFIR_);
+cStatsALoc = CtrllerStats(eps_nullsp, cParams.tFIR_);
 csALoc{1}  = ctrllerALoc;
 cStatsALoc = get_ctrller_stats(cStatsALoc, sys, slsParams, slsOutsCent, csALoc);
 
-cStatsOurs = CtrllerStats(eps_rank, cParams.tFIR_);
+cStatsOurs = CtrllerStats(eps_nullsp, cParams.tFIR_);
 csOurs{1}  = ctrllerOurs;
 cStatsOurs = get_ctrller_stats(cStatsOurs, sys, slsParams, slsOutsCent, csOurs);
 

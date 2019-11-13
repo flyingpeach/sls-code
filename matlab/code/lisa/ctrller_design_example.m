@@ -23,8 +23,8 @@ slsOuts = state_fdbk_sls(sys, slsParams);
 
 % for rank/zero conditions, try to match the precision of cvx_precision low
 % http://cvxr.com/cvx/doc/solver.html#solver-precision
-eps_rank   = 2.22e-16;
-eps_nullsp = eps_rank.^(3/8);
+eps_base   = 2.22e-16;
+eps_nullsp = eps_base.^(3/8);
 
 %% sandbox
 cParams = CtrllerParams();
@@ -50,7 +50,7 @@ ctrller = find_ctrller(sys, slsParams, slsOuts, cParams);
 visualize_RM_RMc(sys, slsOuts, ctrller, 'all');
 
 %% calculate stats for new controller
-cStats = CtrllerStats(eps_rank, cParams.tFIR_);
+cStats = CtrllerStats(eps_nullsp, cParams.tFIR_);
 cs{1}  = ctrller;
 cStats = get_ctrller_stats(cStats, sys, slsParams, slsOuts, cs);
 cStats
@@ -102,7 +102,7 @@ myIdx   = [];
 for i=1:xSize
     x = xSeries(i);
     % ismember doesn't work well with floats    
-    if find(abs(xWanted-x) < eps_rank) 
+    if find(abs(xWanted-x) < eps_base) 
         myIdx = [myIdx, i];
     end
 end
@@ -111,9 +111,9 @@ xPlot       = xSeries(myIdx);
 csSweepPlot = csSweep(myIdx);
 
 if strcmp(sweepParamName, 'Tc')
-    cStats = CtrllerStats(eps_rank, xPlot);
+    cStats = CtrllerStats(eps_nullsp, xPlot);
 else
-    cStats = CtrllerStats(eps_rank, cParams.tFIR_, sweepParamName, xPlot);
+    cStats = CtrllerStats(eps_nullsp, cParams.tFIR_, sweepParamName, xPlot);
 end
 
 cStats = get_ctrller_stats(cStats, sys, slsParams, slsOuts, csSweepPlot);
