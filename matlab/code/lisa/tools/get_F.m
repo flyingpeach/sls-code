@@ -1,15 +1,14 @@
-function F = get_F(sys, slsParams, slsOuts, Tc)
+function F = get_F(sys, slsOuts, Tc)
 % Returns the matrix F = [F1, F2] where F1 are the first Nx columns
 % This will provide the constraint F2[Rc; Mc] = -F1
 % Outputs
 %    F         : constraint matrix
 % Inputs
 %    sys       : LTISystem containing system matrices
-%    slsParams : SLSParams containing parameters
 %    slsOuts   : contains info from SLS (original R, M)
 %    Tc        : length of the approximate solution
 
-T      = slsParams.tFIR_;
+T      = length(slsOuts.R_);
 Rblock = cell(T+Tc, Tc+1);
 Mblock = cell(T+Tc, Tc+1);
 

@@ -81,7 +81,7 @@ minimize(objective);
 cvx_end
 
 % outputs
-slsOuts              = SLSOutputs;
+slsOuts              = SLSOutputs();
 slsOuts.acts_        = get_acts_rfd(sys, params, M); % rfd actuator selection
 slsOuts.R_           = R;
 slsOuts.M_           = M;

@@ -1,17 +1,16 @@
-function met = get_ctrller_stats(met, sys, slsParams, slsOuts, ctrllers)
+function met = get_ctrller_stats(met, sys, slsOuts, ctrllers)
 % Calculate stats for Rc, Mc and original R, M
 %     met       : initialized CtrllerStats that will be updated
 % Inputs
 %     sys       : LTISystem containing system matrices
-%     slsParams : SLSParams containing parameters for original CL
 %     slsOuts   : SLSOutputs of original closed loop system
 %     ctrllers  : array of Ctrller (one per value of swept parameter)
 
 numTcs = length(met.Tcs);
 
 % original values
-tFIR = slsParams.tFIR_;
 R = slsOuts.R_; M = slsOuts.M_;
+tFIR = length(R);
 
 % calculate metrics for original R, M %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 for t=1:tFIR  
@@ -19,21 +18,18 @@ for t=1:tFIR
     met.RNonzero   = met.RNonzero + sum(abs(vec(R{t})) > met.tol);
     met.MNonzero   = met.MNonzero + sum(abs(vec(M{t})) > met.tol);
 end
-met.IntSpecRadiusOrig = check_int_stability(sys, tFIR, R, M);
+met.IntSpecRadiusOrig = check_int_stability(sys, R, M);
 
 for t=1:tFIR
     met.LQRCostOrig = met.LQRCostOrig + norm(full([R{t}; M{t}]), 'fro').^2;
 end
 
 % calculate metrics Rc, Mc %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-slsParams_alt = copy(slsParams); % for simulation; will use Tc instead of T
-
 if strcmp(met.sweepParamName, 'Tc')
     numItems = numTcs;
 else
     numItems            = length(met.sweepParams);
     Tc                  = met.Tcs;
-    slsParams_alt.tFIR_ = Tc;
 end
 
 % check CL map for extra time steps (expect zero)
@@ -56,10 +52,9 @@ end
 for i=1:numItems
     if strcmp(met.sweepParamName, 'Tc')
         Tc                  = met.Tcs(i);
-        slsParams_alt.tFIR_ = Tc;
     end
     Rc = ctrllers{i}.Rc_; Mc = ctrllers{i}.Mc_;
-    met.IntSpecRadii_c(i)  = check_int_stability(sys, Tc, Rc, Mc);
+    met.IntSpecRadii_c(i)  = check_int_stability(sys, Rc, Mc);
 
     for t=1:Tc
         met.L1Norms(i)    = met.L1Norms(i) + norm([Rc{t}; Mc{t}], 1);        
@@ -68,7 +63,7 @@ for i=1:numItems
     end
     
     % get CL map of Rc, Mc
-    [Gc, Hc] = get_cl_map(sys, slsParams_alt, ctrllers{i}, tTotal);
+    [Gc, Hc] = get_cl_map(sys, ctrllers{i}, tTotal);
     
     for t=1:tTotal
         met.LQRCosts(i) = met.LQRCosts(i) + norm(full([Gc{t}; Hc{t}]), 'fro').^2;

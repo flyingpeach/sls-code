@@ -1,4 +1,4 @@
-function [G, H] = get_cl_map(sys, slsParams_alt, ctrller, tTotal)
+function [G, H] = get_cl_map(sys, ctrller, tTotal)
 simParams           = SimParams();
 simParams.tSim_     = tTotal + 1; % reactions to disturbance will start @ t=2
 simParams.openLoop_ = false;
@@ -16,7 +16,7 @@ for i=1:sys.Nx
     slsOut_c.R_ = ctrller.Rc_;
     slsOut_c.M_ = ctrller.Mc_;
     
-    [x, u]  = simulate_system(sys, slsParams_alt, slsOut_c, simParams);
+    [x, u]  = simulate_system(sys, slsOut_c, simParams);
 
     for t=1:tTotal
         G{t}(:,i) = x(:,t+1);

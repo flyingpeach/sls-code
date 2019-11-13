@@ -1,9 +1,8 @@
-function ctrller = find_ctrller(sys, slsParams, slsOuts, cParams)
+function ctrller = find_ctrller(sys, slsOuts, cParams)
 % Find alternate implementation, returned in slsOuts_alt
 %    ctrller   : Ctrller containing (Rc, Mc)
 % Inputs
 %    sys       : LTISystem containing system matrices
-%    slsParams : SLSParams containing parameters
 %    slsOuts   : contains info from SLS (original R, M)
 %    cParams   : CtrllerParams containing info on how to solve for alt impl
 
@@ -11,7 +10,7 @@ statusTxt = cParams.sanity_check();
 statusTxt = [char(10), sprintf('Finding a controller, %s', statusTxt)];
 disp(statusTxt);
 
-F  = get_F(sys, slsParams, slsOuts, cParams.tFIR_);
+F  = get_F(sys, slsOuts, cParams.tFIR_);
 F1 = F(:, 1:sys.Nx);
 F2 = F(:,sys.Nx+1:end);
 

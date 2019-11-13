@@ -1,4 +1,6 @@
-function spectralRadius = check_int_stability(sys, Tc, Rc, Mc)
+function spectralRadius = check_int_stability(sys, Rc, Mc)
+
+Tc = length(Rc);
 
 for k=1:Tc-1
     Dellc{k} = Rc{k+1} - sys.A*Rc{k} - sys.B2*Mc{k};

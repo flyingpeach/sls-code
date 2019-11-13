@@ -1,4 +1,4 @@
-function solnSpaceSize = check_soln_space_size(sys, slsParams, slsOuts, Tc, tol)
+function solnSpaceSize = check_soln_space_size(sys, slsOuts, Tc, tol)
 % Returns the size of the solution space to F2[Rc; Mc] = -F1
 % If no solution, return 0
 % Outputs
@@ -10,7 +10,7 @@ function solnSpaceSize = check_soln_space_size(sys, slsParams, slsOuts, Tc, tol)
 %    Tc            : length of the approximate solution
 %    tol           : tolerance to use for rank / nullspace calculations
 
-F  = get_F(sys, slsParams, slsOuts, Tc);
+F  = get_F(sys, slsOuts, Tc);
 F2 = F(:,sys.Nx+1:end);
 
 solnSpaceSize = 0;
