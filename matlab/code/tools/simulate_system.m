@@ -1,10 +1,10 @@
-function [x, u] = simulate_system(sys, slsOuts, simParams)
+function [x, u] = simulate_system(sys, ctrller, simParams)
 % Simulate system as per equation (2.8)
 % Returns 
 %    x, u      : state and actuation values
 % Inputs
 %    sys       : LTISystem containing system matrices
-%    slsOuts   : SLSOutputs containing system responses and other info
+%    ctrller   : Ctrller with implementation matrices
 %    simParams : SimParams; parameters for the simulation
 
 simParams.sanity_check();
@@ -14,16 +14,16 @@ u     = zeros(sys.Nu, simParams.tSim_);
 x_hat = zeros(sys.Nx, simParams.tSim_); 
 w_hat = zeros(sys.Nx, simParams.tSim_);
 
-T = length(slsOuts.R_);
+T = length(ctrller.Rc_);
 
 for t=1:1:simParams.tSim_-1
     if (simParams.openLoop_ ~= 1) % closed loop simulation
         for tau=1:1:min(t-1, T)
-           u(:,t) = u(:,t) + slsOuts.M_{tau}*w_hat(:,t-tau);
+           u(:,t) = u(:,t) + ctrller.Mc_{tau}*w_hat(:,t-tau);
         end
 
         for tau=1:1:min(t-1, T-1)
-           x_hat(:,t+1) = x_hat(:,t+1) + slsOuts.R_{tau+1}*w_hat(:,t-tau);       
+           x_hat(:,t+1) = x_hat(:,t+1) + ctrller.Rc_{tau+1}*w_hat(:,t-tau);       
         end 
     end
     
