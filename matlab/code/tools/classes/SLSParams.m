@@ -9,7 +9,7 @@ classdef SLSParams < matlab.mixin.Copyable
       rfd_;      % whether we want rfd
       
       % used for all modes
-      tFIR_;     % finite impulse response horizon
+      T_;        % finite impulse response horizon
       
       % used for Delayed / Localized / DAndL / ApproxDAndL modes
       actDelay_; % actuation delay
@@ -29,7 +29,7 @@ classdef SLSParams < matlab.mixin.Copyable
         obj.approx_   = 0;
         obj.rfd_      = 0;
         
-        obj.tFIR_     = 0;        
+        obj.T_     = 0;        
         obj.actDelay_ = 0;
         obj.cSpeed_   = 0;
         obj.d_        = 0;
@@ -41,11 +41,11 @@ classdef SLSParams < matlab.mixin.Copyable
       end
       
       function statusTxt = sanity_check(obj)
-        if not(obj.tFIR_)
-            error('[SLS ERROR] tFIR=0. Did you forget to specify it?');
+        if not(obj.T_)
+            error('[SLS ERROR] T=0. Did you forget to specify it?');
         end
 
-        paramStr = [char(10), char(9), sprintf('tFIR=%d', obj.tFIR_)];
+        paramStr = [char(10), char(9), sprintf('T=%d', obj.T_)];
         
         switch obj.mode_ % check mode & needed params
             case SLSMode.Basic

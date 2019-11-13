@@ -3,8 +3,8 @@ classdef Ctrller < matlab.mixin.Copyable
     % Inherits handle class with deep copy functionality
     
     properties
-      Rc_; % dx to x transfer matrix (phi_xx)
-      Mc_; % dx to u transfer matrix (phi_ux)
+      Rc_;
+      Mc_;
     end
     
     methods

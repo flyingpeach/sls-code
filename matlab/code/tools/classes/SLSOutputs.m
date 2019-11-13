@@ -1,5 +1,5 @@
 classdef SLSOutputs < matlab.mixin.Copyable
-    % Contains outputs of SLS 
+    % Contains outputs of SLS
     % Depending on the solver / mode called, not all outputs are set 
     % Inherits handle class with deep copy functionality
     
