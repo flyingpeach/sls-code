@@ -50,12 +50,12 @@ cParams.CLDiffPen_  = 1e2;
 
 ctrllerOurs = find_ctrller(sys, slsOutsCent, cParams);
 
-cStatsOurs  = CtrllerStats(eps_nullsp, cParams.T_);
+cStatsOurs  = CtrllerStats(eps_nullsp);
 csOurs{1}   = ctrllerOurs;
 cStatsOurs  = get_ctrller_stats(cStatsOurs, sys, slsOutsCent, csOurs);
 
 % slightly hacky: use virtually local as "original"
-cStats2     = CtrllerStats(eps_nullsp, cParams.T_);
+cStats2     = CtrllerStats(eps_nullsp);
 cStats2     = get_ctrller_stats(cStats2, sys, slsOutsVirtLoc, csOurs);
 
 disp(sprintf('Centralized : cost=%.3f, rad=%.3f, l1norm=%.3f', ...

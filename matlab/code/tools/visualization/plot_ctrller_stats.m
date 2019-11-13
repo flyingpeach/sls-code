@@ -4,12 +4,8 @@ function plot_ctrller_stats(cstats, savepath)
 %     met       : AltImplMetrics containing calculated metrics
 %     savepath  : where to save figures
 
-if strcmp(cstats.sweepParamName, 'Tc')
-    xSeries = cstats.Tcs;
-else
-    xSeries = cstats.sweepParams;
-end
-xLabel = cstats.sweepParamName;
+xSeries = cstats.sweepParams;
+xLabel  = cstats.sweepParamName;
 
 % differences between CL maps %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 figure; hold on;

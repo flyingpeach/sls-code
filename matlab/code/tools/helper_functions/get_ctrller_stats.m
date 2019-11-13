@@ -1,12 +1,10 @@
-function met = get_ctrller_stats(met, sys, slsOuts, ctrllers)
+function cStats = get_ctrller_stats(cStats, sys, slsOuts, ctrllers)
 % Calculate stats for Rc, Mc and original R, M
-%     met       : initialized CtrllerStats that will be updated
+%     cStats    : initialized CtrllerStats that will be updated
 % Inputs
 %     sys       : LTISystem containing system matrices
 %     slsOuts   : SLSOutputs of original closed loop system
 %     ctrllers  : array of Ctrller (one per value of swept parameter)
-
-numTcs = length(met.Tcs);
 
 % original values
 R = slsOuts.R_; M = slsOuts.M_;
@@ -14,23 +12,18 @@ T = length(R);
 
 % calculate metrics for original R, M %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 for t=1:T  
-    met.L1NormOrig = met.L1NormOrig + norm([R{t}; M{t}], 1);
-    met.RNonzero   = met.RNonzero + sum(abs(vec(R{t})) > met.tol);
-    met.MNonzero   = met.MNonzero + sum(abs(vec(M{t})) > met.tol);
+    cStats.L1NormOrig = cStats.L1NormOrig + norm([R{t}; M{t}], 1);
+    cStats.RNonzero   = cStats.RNonzero + sum(abs(vec(R{t})) > cStats.tol);
+    cStats.MNonzero   = cStats.MNonzero + sum(abs(vec(M{t})) > cStats.tol);
 end
-met.IntSpecRadiusOrig = check_int_stability(sys, R, M);
+cStats.IntSpecRadiusOrig = check_int_stability(sys, R, M);
 
 for t=1:T
-    met.LQRCostOrig = met.LQRCostOrig + norm(full([R{t}; M{t}]), 'fro').^2;
+    cStats.LQRCostOrig = cStats.LQRCostOrig + norm(full([R{t}; M{t}]), 'fro').^2;
 end
 
 % calculate metrics Rc, Mc %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-if strcmp(met.sweepParamName, 'Tc')
-    numItems = numTcs;
-else
-    numItems            = length(met.sweepParams);
-    Tc                  = met.Tcs;
-end
+numItems = length(cStats.sweepParams);
 
 % check CL map for extra time steps (expect zero)
 extraT = 100;
@@ -50,30 +43,27 @@ for t=T+1:tTotal
 end
 
 for i=1:numItems
-    if strcmp(met.sweepParamName, 'Tc')
-        Tc                  = met.Tcs(i);
-    end
-    Rc = ctrllers{i}.Rc_; Mc = ctrllers{i}.Mc_;
-    met.IntSpecRadii_c(i)  = check_int_stability(sys, Rc, Mc);
+    Rc = ctrllers{i}.Rc_; Mc = ctrllers{i}.Mc_; Tc = length(Rc);
+    cStats.IntSpecRadii_c(i)  = check_int_stability(sys, Rc, Mc);
 
     for t=1:Tc
-        met.L1Norms(i)    = met.L1Norms(i) + norm([Rc{t}; Mc{t}], 1);        
-        met.RcNonzeros(i) = met.RcNonzeros(i) + sum(abs(vec(Rc{t})) > met.tol);
-        met.McNonzeros(i) = met.McNonzeros(i) + sum(abs(vec(Mc{t})) > met.tol);        
+        cStats.L1Norms(i)    = cStats.L1Norms(i) + norm([Rc{t}; Mc{t}], 1);        
+        cStats.RcNonzeros(i) = cStats.RcNonzeros(i) + sum(abs(vec(Rc{t})) > cStats.tol);
+        cStats.McNonzeros(i) = cStats.McNonzeros(i) + sum(abs(vec(Mc{t})) > cStats.tol);        
     end
     
     % get CL map of Rc, Mc
     [Gc, Hc] = get_cl_map(sys, ctrllers{i}, tTotal);
     
     for t=1:tTotal
-        met.LQRCosts(i) = met.LQRCosts(i) + norm(full([Gc{t}; Hc{t}]), 'fro').^2;
+        cStats.LQRCosts(i) = cStats.LQRCosts(i) + norm(full([Gc{t}; Hc{t}]), 'fro').^2;
     end
     
     for t=1:tTotal % calculate differences
-        met.GcDiffs(i) = met.GcDiffs(i) + norm(full(R{t} - Gc{t}));
-        met.HcDiffs(i) = met.HcDiffs(i) + norm(full(M{t} - Hc{t}));
+        cStats.GcDiffs(i) = cStats.GcDiffs(i) + norm(full(R{t} - Gc{t}));
+        cStats.HcDiffs(i) = cStats.HcDiffs(i) + norm(full(M{t} - Hc{t}));
     end
     
-    met.GcDiffs(i) = met.GcDiffs(i) / RTotalNorms;
-    met.HcDiffs(i) = met.HcDiffs(i) / MTotalNorms; 
+    cStats.GcDiffs(i) = cStats.GcDiffs(i) / RTotalNorms;
+    cStats.HcDiffs(i) = cStats.HcDiffs(i) / MTotalNorms; 
 end

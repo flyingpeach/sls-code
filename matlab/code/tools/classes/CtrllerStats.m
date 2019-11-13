@@ -7,9 +7,8 @@ classdef CtrllerStats < matlab.mixin.Copyable
     % RTc/MTc are original CL responses clipped to be Tc long (if Tc<T)
 
     properties
-      Tcs;              % list of Tcs (if sweeping over Tcs) or a single Tc
-      sweepParams;      % if not sweeping over Tcs, the other things we sweep over
-      sweepParamName;   % name of the sweep parameter (i.e. 'Tc')   
+      sweepParams;      % list of parameter values (optional)
+      sweepParamName;   % name of the sweep parameter (i.e. 'delay')   
             
       tol; % tolerance used for nonzero / rank calculations
 
@@ -29,24 +28,20 @@ classdef CtrllerStats < matlab.mixin.Copyable
     end
     
     methods
-      function obj = CtrllerStats(tol, Tcs, sweepParamName, sweepParams) 
+      function obj = CtrllerStats(tol, sweepParamName, sweepParams) 
         % initializer
-        if nargin == 2
-            obj.sweepParamName = 'Tc';
-        else
+        if nargin == 3
             obj.sweepParamName = sweepParamName;
             obj.sweepParams    = sweepParams;
-        end
-        
-        obj.tol = tol;        
-        obj.Tcs            = Tcs;
-        
-        if strcmp(obj.sweepParamName, 'Tc')
-            numItems = length(Tcs);
+            numItems           = length(sweepParams);
         else
-            numItems = length(sweepParams);
+            obj.sweepParamName = 0;
+            obj.sweepParams    = 0;
+            numItems           = 1;
         end
         
+        obj.tol = tol;
+
         obj.L1NormOrig = 0;
         obj.RNonzero   = 0; obj.MNonzero = 0;
         obj.IntSpecRadiusOrig = 0;

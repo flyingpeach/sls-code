@@ -41,7 +41,7 @@ for idx=1:numTcs
 end
 
 %% plot sweep over Tcs
-cStats = CtrllerStats(eps_nullsp, Tcs);
+cStats = CtrllerStats(eps_nullsp, 'Tc', Tcs);
 cStats = get_ctrller_stats(cStats, sys, slsOutsCent, csSweep);
 
 fig1h  = figure(1);

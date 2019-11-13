@@ -50,34 +50,18 @@ ctrller = find_ctrller(sys, slsOuts, cParams);
 plot_ctrller_matrices(sys, slsOuts, ctrller, 'all');
 
 %% calculate stats for new controller
-cStats = CtrllerStats(eps_nullsp, cParams.T_);
+cStats = CtrllerStats(eps_nullsp);
 cs{1}  = ctrller;
 cStats = get_ctrller_stats(cStats, sys, slsOuts, cs);
 cStats
 
-%% parameter sweep (Tc)
-cParams.mode_ = SLSMode.Basic;
-
-Tcs      = 17:20;
-numTcs   = length(Tcs);
-csSweep = cell(numTcs, 1);
-for idx=1:numTcs
-    cParams.T_ = Tcs(idx);
-    csSweep{idx}  = find_ctrller(sys, slsOuts, cParams);
-end
-
-%% parameter sweep (non-Tc)
-cParams.T_    = slsParams.T_;
-cParams.mode_ = SLSMode.Localized;
-
-cParams.CLDiffPen_ = 1e2;
-
-params    = 4:10;
+%% parameter sweep
+params    = 19:21;
 numParams = length(params);
 csSweep   = cell(numParams, 1);
 
 for idx=1:numParams
-    cParams.d_   = params(idx);
+    cParams.T_   = params(idx);
     csSweep{idx} = find_ctrller(sys, slsOuts, cParams);
 end
 
@@ -88,11 +72,8 @@ end
 sweepParamName = 'Tc';
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-if strcmp(sweepParamName, 'Tc')
-    xSeries = Tcs; xSize = numTcs;
-else
-    xSeries = params; xSize = numParams;    
-end
+xSeries = params; 
+xSize   = numParams;    
 
 % user input %%%%%%%%%%%%%%%%%%%%%%% 
 xWanted = xSeries;
@@ -106,16 +87,10 @@ for i=1:xSize
         myIdx = [myIdx, i];
     end
 end
-
 xPlot       = xSeries(myIdx);
 csSweepPlot = csSweep(myIdx);
 
-if strcmp(sweepParamName, 'Tc')
-    cStats = CtrllerStats(eps_nullsp, xPlot);
-else
-    cStats = CtrllerStats(eps_nullsp, cParams.T_, sweepParamName, xPlot);
-end
-
+cStats = CtrllerStats(eps_nullsp, sweepParamName, xPlot);
 cStats = get_ctrller_stats(cStats, sys, slsOuts, csSweepPlot);
 
 % plot metrics and save to file
