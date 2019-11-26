@@ -27,7 +27,7 @@ end
 numItems = length(cStats.sweepParams);
 
 % check CL map for extra time steps (expect zero)
-extraT = 100;
+extraT = 100; %TODO: a bit hacky. Include a sanity check?
 tTotal = T + extraT;
 
 % total CL norms (for normalization)
