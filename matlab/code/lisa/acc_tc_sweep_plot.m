@@ -1,4 +1,6 @@
 %% set up system
+clear; close all; clc; 
+
 sys    = LTISystem();
 sys.Nx = 10;
 
