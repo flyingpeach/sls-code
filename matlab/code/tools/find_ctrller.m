@@ -42,7 +42,7 @@ if ismember(cParams.mode_, freeModes)
         
             BM = sys.B2 * Mc{t};
             for i=1:sys.Nx
-                for j=1:sys.Nx % note: this distance metric only for chain
+                for j=1:sys.Nx % TODO: this distance metric only for chain
                     objective = objective + cParams.fastCommPen_ * exp(abs(i-j)-t)*norm(Rc{t}(i,j));
                     objective = objective + cParams.fastCommPen_ * exp(abs(i-j)-t)*norm(BM(i,j));
                 end
@@ -55,7 +55,7 @@ if ismember(cParams.mode_, freeModes)
 
             BM = sys.B2 * Mc{t};
             for i=1:sys.Nx
-                for j=1:sys.Nx % note: this distance metric only for chain
+                for j=1:sys.Nx % TODO: this distance metric only for chain
                     objective = objective + cParams.nonLocalPen_ * exp(abs(i-j))*norm(Rc{t}(i,j));
                     objective = objective + cParams.nonLocalPen_ * exp(abs(i-j))*norm(BM(i,j));
                 end

@@ -18,7 +18,8 @@ for t=1:T
 end
 cStats.IntSpecRadiusOrig = check_int_stability(sys, R, M);
 
-for t=1:T
+for t=1:T % TODO: this calculation (and other similar ones) assume that
+          % output matrices are identity
     cStats.LQRCostOrig = cStats.LQRCostOrig + norm(full([R{t}; M{t}]), 'fro').^2;
 end
 
