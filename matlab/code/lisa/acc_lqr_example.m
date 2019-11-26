@@ -49,14 +49,17 @@ cParams.d_          = slsParams.d_;
 cParams.CLDiffPen_  = 1e2;
 
 ctrllerOurs = find_ctrller(sys, slsOutsCent, cParams);
-
 cStatsOurs  = CtrllerStats(eps_nullsp);
 csOurs{1}   = ctrllerOurs;
 cStatsOurs  = get_ctrller_stats(cStatsOurs, sys, slsOutsCent, csOurs);
 
-% slightly hacky: use virtually local as "original"
-cStats2     = CtrllerStats(eps_nullsp);
-cStats2     = get_ctrller_stats(cStats2, sys, slsOutsVirtLoc, csOurs);
+% Make a "Controller" out of slsOutsVirtLoc
+csALoc     = Ctrller();
+csALoc.Rc_ = slsOutsVirtLoc.R_; 
+csALoc.Mc_ = slsOutsVirtLoc.M_;
+csALocs{1} = csALoc;
+cStatsALoc = CtrllerStats(eps_nullsp);
+cStatsALoc = get_ctrller_stats(cStatsALoc, sys, slsOutsCent, csALocs);
 
 disp(sprintf('Centralized : cost=%.3f, rad=%.3f, l1norm=%.3f', ...
              cStatsOurs.LQRCostOrig / infH2Cost, ...
@@ -64,9 +67,9 @@ disp(sprintf('Centralized : cost=%.3f, rad=%.3f, l1norm=%.3f', ...
              cStatsOurs.L1NormOrig))
 
 disp(sprintf('Approx Loc. : cost=%.3f, rad=%.3f, l1norm=%.3f', ...
-             cStats2.LQRCostOrig / infH2Cost, ...
-             cStats2.IntSpecRadiusOrig, ...
-             cStats2.L1NormOrig))
+             cStatsALoc.LQRCosts / infH2Cost, ...
+             cStatsALoc.IntSpecRadii_c, ...
+             cStatsALoc.L1Norms))
 
 disp(sprintf('Our method  : cost=%.3f, rad=%.3f, l1norm=%.3f', ...
              cStatsOurs.LQRCosts / infH2Cost, ...
