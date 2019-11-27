@@ -30,21 +30,30 @@ for i=1:sys.Nx % H2 cost is sum of all costs from init condition
     infH2Cost = infH2Cost + x0'*P*x0;
 end
 
-% approx d-localized SLS
-slsParams.mode_     = SLSMode.Localized;
+% non-approx distributed SLS 
+slsParams.mode_     = SLSMode.Delayed;
+slsParams.actDelay_ = 1;
+slsParams.cSpeed_   = 0.5;
 slsParams.d_        = 3;
-slsParams.robCoeff_ = 1e3;
-slsParams.approx_   = true;
-slsOutsVirtLoc      = state_fdbk_sls(sys, slsParams);
+slsOutsDist         = state_fdbk_sls(sys, slsParams);
 
-% our method for d-localized SLS
+% approx distributed SLS
+slsParams.approx_   = true;
+slsParams.robCoeff_ = 1e3;
+slsOutsVirtDist     = state_fdbk_sls(sys, slsParams);
+
+% our method for distributed SLS
 eps_base   = 2.22e-16;
 eps_nullsp = eps_base.^(3/8);
 
 cParams             = CtrllerParams();
-cParams.mode_       = SLSMode.Localized;
+cParams.mode_       = slsParams.mode_;
+
 cParams.eps_nullsp_ = eps_nullsp;
 cParams.T_          = slsParams.T_;
+
+cParams.actDelay_   = slsParams.actDelay_;
+cParams.cSpeed_     = slsParams.cSpeed_;
 cParams.d_          = slsParams.d_;
 cParams.CLDiffPen_  = 1e2;
 
@@ -53,25 +62,41 @@ cStatsOurs  = CtrllerStats(eps_nullsp);
 csOurs{1}   = ctrllerOurs;
 cStatsOurs  = get_ctrller_stats(cStatsOurs, sys, slsOutsCent, csOurs);
 
-% Make a "Controller" out of slsOutsVirtLoc
-csALoc     = Ctrller();
-csALoc.Rc_ = slsOutsVirtLoc.R_; 
-csALoc.Mc_ = slsOutsVirtLoc.M_;
-csALocs{1} = csALoc;
-cStatsALoc = CtrllerStats(eps_nullsp);
-cStatsALoc = get_ctrller_stats(cStatsALoc, sys, slsOutsCent, csALocs);
+% Make a "Controller" out of slsOutsDist
+csDist         = Ctrller();
+csDist.Rc_     = slsOutsDist.R_;
+csDist.Mc_     = slsOutsDist.M_;
+csDists{1}     = csDist;
+cStatsDist     = CtrllerStats(eps_nullsp);
 
-disp(sprintf('Centralized : cost=%.3f, rad=%.3f, l1norm=%.3f', ...
+% Note: might have to comment out this line if the distributed
+% problem was so infeasible that there's NaNs in the matrix
+cStatsDist     = get_ctrller_stats(cStatsDist, sys, slsOutsCent, csDists);
+
+% Make a "Controller" out of slsOutsVirtDist
+csVirtDist     = Ctrller();
+csVirtDist.Rc_ = slsOutsVirtDist.R_; 
+csVirtDist.Mc_ = slsOutsVirtDist.M_;
+csVirtDists{1} = csVirtDist;
+cStatsVirtDist = CtrllerStats(eps_nullsp);
+cStatsVirtDist = get_ctrller_stats(cStatsVirtDist, sys, slsOutsCent, csVirtDists);
+
+disp(sprintf('Centralized  : cost=%.3f, rad=%.3f, l1norm=%.3f', ...
              cStatsOurs.LQRCostOrig / infH2Cost, ...
              cStatsOurs.IntSpecRadiusOrig, ...
              cStatsOurs.L1NormOrig))
 
-disp(sprintf('Approx Loc. : cost=%.3f, rad=%.3f, l1norm=%.3f', ...
-             cStatsALoc.LQRCosts / infH2Cost, ...
-             cStatsALoc.IntSpecRadii_c, ...
-             cStatsALoc.L1Norms))
+disp(sprintf('Distr SLS    : cost=%.3f, rad=%.3f, l1norm=%.3f', ...
+             cStatsDist.LQRCosts / infH2Cost, ...
+             cStatsDist.IntSpecRadii_c, ...
+             cStatsDist.L1Norms))         
+         
+disp(sprintf('VirtDist SLS : cost=%.3f, rad=%.3f, l1norm=%.3f', ...
+             cStatsVirtDist.LQRCosts / infH2Cost, ...
+             cStatsVirtDist.IntSpecRadii_c, ...
+             cStatsVirtDist.L1Norms))
 
-disp(sprintf('Our method  : cost=%.3f, rad=%.3f, l1norm=%.3f', ...
+disp(sprintf('Our method   : cost=%.3f, rad=%.3f, l1norm=%.3f', ...
              cStatsOurs.LQRCosts / infH2Cost, ...
              cStatsOurs.IntSpecRadii_c, ...
              cStatsOurs.L1Norms))
@@ -86,7 +111,7 @@ simParams.tSim_     = 60;
 simParams.w_(1, 1) = 1;
 
 [xcent1, ucent1] = simulate_system(sys, simParams, slsOutsCent.R_, slsOutsCent.M_);
-[xvirt1, uvirt1] = simulate_system(sys, simParams, slsOutsVirtLoc.R_, slsOutsVirtLoc.M_);
+[xvirt1, uvirt1] = simulate_system(sys, simParams, slsOutsVirtDist.R_, slsOutsVirtDist.M_);
 [xours1, uours1] = simulate_system(sys, simParams, ctrllerOurs.Rc_, ctrllerOurs.Mc_);
 
 % simulate with disturbance @ node 5
@@ -94,7 +119,7 @@ simParams.w_(1, 1) = 0;
 simParams.w_(5, 1) = 1;
 
 [xcent5, ucent5] = simulate_system(sys, simParams, slsOutsCent.R_, slsOutsCent.M_);
-[xvirt5, uvirt5] = simulate_system(sys, simParams, slsOutsVirtLoc.R_, slsOutsVirtLoc.M_);
+[xvirt5, uvirt5] = simulate_system(sys, simParams, slsOutsVirtDist.R_, slsOutsVirtDist.M_);
 [xours5, uours5] = simulate_system(sys, simParams, ctrllerOurs.Rc_, ctrllerOurs.Mc_);
 
 fig4h = figure(4);
@@ -102,7 +127,7 @@ logmin = -4; logmax = 0;
 
 spaces1 = '                                      ';
 spaces2 = '                                          ';
-mySupTitle = ['Centralized' spaces1 'Virtually Local' spaces2 'Local'];
+mySupTitle = ['Centralized' spaces1 'Virtually Distr' spaces2 'Distr'];
 st = suptitle(mySupTitle);
 set(st, 'FontSize', 13);
 set(st, 'Position', [0.52 -0.02 0]);
