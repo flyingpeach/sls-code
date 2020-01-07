@@ -79,14 +79,19 @@ end
 pctStable = sum(specRads < 1) / (counter - 1)
 
 figure(1)
+subplot(2,2,1)
 histogram(l1norms)
 title('L1 norms')
 
-figure(2)
+subplot(2,2,2)
 histogram(specRads)
 title('Spec radii')
 
-figure(3)
+subplot(2,2,3)
+histogram(l1norms(l1norms < 50))
+title('L1 norms < 50')
+
+subplot(2,2,4)
 histogram(specRads(specRads < 5))
 title('Spec radii < 5')
 
