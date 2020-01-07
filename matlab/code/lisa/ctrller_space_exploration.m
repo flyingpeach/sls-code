@@ -47,53 +47,53 @@ RMc_p         = F2 \ (-F1);
 nullsp        = get_nullsp(F2, cParams.eps_nullsp_);
 solnSpaceSize = size(nullsp, 2);
 
-coeffMagStart = -3;
-coeffMagEnd   = 3;
-numPerMag     = 500;
+% draw from unif(-unifBounds, unifBounds)
+unifBounds   = 1e3;  
+numPts       = 1000;
+l1norms      = zeros(numPts, 1);
+specRads     = zeros(numPts, 1);
+sanityChecks = zeros(numPts, 1); % check that it's still in the space
 
-numCoeffs = coeffMagEnd - coeffMagStart + 1;
-l1norms   = zeros(numCoeffs*numPerMag, 1);
-specRads  = zeros(numCoeffs*numPerMag, 1);
-
-counter = 1;
-for coeffMag=coeffMagStart:coeffMagEnd
-    coeffMag
-    for i=1:numPerMag
-        nullCoeff = (10^coeffMag) * rand(solnSpaceSize, sys.Nx);
-        RMc = RMc_p + nullsp*nullCoeff;
-        [Rc, Mc] = block_to_cell(RMc, cParams, sys);
-
-        % calculate L1 norm
-        for t=1:cParams.T_
-            l1norms(counter) = l1norms(counter) + norm([Rc{t}; Mc{t}], 1);
-        end
-        
-        % calculate spec radius
-        specRads(counter) = check_int_stability(sys, Rc, Mc);
+for i=1:numPts
+    nullCoeff = (rand(solnSpaceSize, sys.Nx) - 0.5) * 2 * unifBounds;
+    RMc = RMc_p + nullsp*nullCoeff;
     
-        counter = counter + 1;
+    % expect a very small norm
+    sanityChecks(i) = norm(F2 * RMc + F1);
+    
+    [Rc, Mc] = block_to_cell(RMc, cParams, sys);
+
+    for t=1:cParams.T_ % calculate L1 norm
+        l1norms(i) = l1norms(i) + norm([Rc{t}; Mc{t}], 1);
     end
+        
+    % calculate spec radius
+    specRads(i) = check_int_stability(sys, Rc, Mc);
 end
 
-%% analysis
-pctStable = sum(specRads < 1) / (counter - 1)
+[Rc_p, Mc_p] = block_to_cell(RMc_p, cParams, sys);
+
+l1normP = 0;
+for t=1:cParams.T_
+    l1normP = l1normP + norm([Rc_p{t}; Mc_p{t}], 1);
+end
+
+l1normP
+specRadP = check_int_stability(sys, Rc_p, Mc_p)
+norm(F2 * RMc_p + F1) % for comparison with sanity check value
 
 figure(1)
-subplot(2,2,1)
+subplot(2,1,1)
 histogram(l1norms)
 title('L1 norms')
 
-subplot(2,2,2)
+subplot(2,1,2)
 histogram(specRads)
 title('Spec radii')
 
-subplot(2,2,3)
-histogram(l1norms(l1norms < 50))
-title('L1 norms < 50')
-
-subplot(2,2,4)
-histogram(specRads(specRads < 5))
-title('Spec radii < 5')
+figure(2)
+histogram(sanityChecks)
+title('Sanity check (expect small)')
 
 %% helper functions (copied from find_ctrller, local functions)
 
