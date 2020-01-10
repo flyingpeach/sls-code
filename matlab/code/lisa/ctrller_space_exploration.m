@@ -20,16 +20,6 @@ slsParams.obj_  = Objective.H2;
 slsParams.mode_ = SLSMode.Basic;
 slsOuts         = state_fdbk_sls(sys, slsParams);
 
-% infinite horizon
-[P,L,K] = dare(full(sys.A), full(sys.B2), eye(sys.Nx), eye(sys.Nu));
-
-infH2Cost = 0;
-for i=1:sys.Nx % H2 cost is sum of all costs from init condition
-    x0    = zeros(sys.Nx, 1);
-    x0(i) = 1;
-    infH2Cost = infH2Cost + x0'*P*x0;
-end
-
 %% sample space of implementation matrices
 eps_base   = 2.22e-16;
 eps_nullsp = eps_base.^(3/8);
