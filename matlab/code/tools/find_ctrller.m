@@ -102,7 +102,7 @@ end
 % local functions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 function range = get_range(idx, size)
 % helper function to convert cells of block matrices into giant matrix
-% copied from get_F (inline)
+% copied from get_ctrller_constraint (inline)
 range = size*(idx-1)+1:size*(idx-1)+size;
 end 
 
