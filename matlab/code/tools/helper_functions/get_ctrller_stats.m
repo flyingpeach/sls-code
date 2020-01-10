@@ -33,8 +33,8 @@ tTotal = T + extraT;
 % total CL norms (for normalization)
 RTotalNorms = 0; MTotalNorms = 0;
 for t=1:T
-    RTotalNorms = RTotalNorms + norm(full(R{t}));
-    MTotalNorms = MTotalNorms + norm(full(M{t}));
+    RTotalNorms = RTotalNorms + norm(full(R{t}), 'fro');
+    MTotalNorms = MTotalNorms + norm(full(M{t}), 'fro');
 end
 
 % zero pad R, M for easy comparison with CL
@@ -61,8 +61,8 @@ for i=1:numItems
     end
     
     for t=1:tTotal % calculate differences
-        cStats.GcDiffs(i) = cStats.GcDiffs(i) + norm(full(R{t} - Gc{t}));
-        cStats.HcDiffs(i) = cStats.HcDiffs(i) + norm(full(M{t} - Hc{t}));
+        cStats.GcDiffs(i) = cStats.GcDiffs(i) + norm(full(R{t} - Gc{t}), 'fro');
+        cStats.HcDiffs(i) = cStats.HcDiffs(i) + norm(full(M{t} - Hc{t}), 'fro');
     end
     
     cStats.GcDiffs(i) = cStats.GcDiffs(i) / RTotalNorms;
