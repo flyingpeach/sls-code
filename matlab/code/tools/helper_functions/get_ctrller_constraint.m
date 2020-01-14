@@ -32,9 +32,6 @@ Rbeta  = zeros(T *sys.Nx, (Tc+1)*sys.Nx);
 Malpha = zeros(Tc*sys.Nu, (Tc+1)*sys.Nx);
 Mbeta  = zeros(T *sys.Nu, (Tc+1)*sys.Nx);
 
-% helper function to convert cells of block matrices into giant matrix
-get_range = @(idx, size) (size*(idx-1)+1:size*(idx-1)+size);
-
 for j=1:Tc+1
     jx = get_range(j, sys.Nx);    
     for i=1:Tc %"alpha" blocks are first Tc rows

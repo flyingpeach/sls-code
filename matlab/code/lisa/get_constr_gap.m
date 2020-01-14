@@ -12,8 +12,6 @@ RcBlock = zeros(sys.Nx*cParams.T_, sys.Nx);
 McBlock = zeros(sys.Nu*cParams.T_, sys.Nx);
 
 % below is copied from get_ctrller_constraint.m
-% helper function to convert cells of block matrices into giant matrix
-get_range = @(idx, size) (size*(idx-1)+1:size*(idx-1)+size);
 for i=1:cParams.T_
     ix = get_range(i, sys.Nx);
     iu = get_range(i, sys.Nu);        

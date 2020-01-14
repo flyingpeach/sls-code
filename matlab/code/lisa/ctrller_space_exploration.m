@@ -87,12 +87,6 @@ title('Sanity check (expect small)')
 
 %% helper functions (copied from find_ctrller, local functions)
 
-function range = get_range(idx, size)
-% helper function to convert cells of block matrices into giant matrix
-% copied from get_F (inline)
-range = size*(idx-1)+1:size*(idx-1)+size;
-end 
-
 function [Rc, Mc] = block_to_cell(RMc, cParams, sys)
 % Rc, Mc are cell structure (i.e. Rc{t})
 % RMc is one stacked matrix (Rc first, then Mc)
