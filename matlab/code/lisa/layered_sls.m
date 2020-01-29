@@ -1,8 +1,8 @@
 clear; close all; clc; 
 
 % which things we want to plot
-plotAnimation = false;
-plotTimeTraj  = true;
+plotAnimation = true;
+plotTimeTraj  = false;
 plotHeatMap   = false;
 
 % graph architecture %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -49,7 +49,7 @@ slsParams           = SLSParams;
 slsParams.actDelay_ = 1;
 slsParams.cSpeed_   = 3;
 slsParams.d_        = 3;
-slsParams.tFIR_     = 17;
+slsParams.T_     = 17;
 slsParams.obj_      = Objective.H2;
 slsParams.mode_     = SLSMode.Basic;
 slsParams.rfd_      = false;
@@ -58,7 +58,7 @@ slsParams.rfd_      = false;
 slsOuts = state_fdbk_sls(sys, slsParams);
 
 % desired trajectory %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-xDes    = zeros(sys.Nx, slsParams.tFIR_);
+xDes    = zeros(sys.Nx, slsParams.T_);
 
 xDes(6:7, 1)  = 1; % pedal
 xDes(6:7, 5)  = 1;
@@ -91,13 +91,13 @@ QLQR     = xPenalty * eye(sys.Nx);
 RLQR     = uPenalty * eye(sys.Nu);
 
 cvx_begin quiet
-variable xd(sys.Nx, slsParams.tFIR_)
-variable ud(sys.Nu, slsParams.tFIR_)
+variable xd(sys.Nx, slsParams.T_)
+variable ud(sys.Nu, slsParams.T_)
 
 objective = 0;
-for t = 1:slsParams.tFIR_
+for t = 1:slsParams.T_
     objective = objective + norm(QLQR*(xd(:,t)-xDes(:,t))) + norm(RLQR*ud(:,t));
-    if t < slsParams.tFIR_
+    if t < slsParams.T_
         xd(:,t+1) == sys.A*xd(:,t) + sys.B2*ud(:,t); % enforce dynamics
     end
 end
@@ -114,16 +114,16 @@ simParams           = SimParams;
 simParams.tSim_     = 25;
 simParams.openLoop_ = false;
 % white noise disturbance
-simParams.w_        = wgn(sys.Nx, simParams.tSim_, trajMag ./ 10);
+simParams.w_        = wgn(sys.Nx, simParams.tSim_, trajMag ./ 100);
 
 % note: these are the errors of the trajectories
-[xerr, uerr]  = simulate_system(sys, slsParams, slsOuts, simParams);
+[xerr, uerr]  = simulate_system(sys, simParams, slsOuts.R_, slsOuts.M_);
 
 % pad trajectories with zeros so that dimensions work out
-timediff = simParams.tSim_ - slsParams.tFIR_;
-x    = xerr + [xd zeros(sys.Nx, timediff)]; % x = xerror + trajectory
-u    = uerr + [ud zeros(sys.Nu, timediff)]; % u = uerror + trajectory
-xDes = [xDes zeros(sys.Nx, timediff)];
+timediff = simParams.tSim_ - slsParams.T_;
+x        = xerr + [xd zeros(sys.Nx, timediff)]; % x = xerror + trajectory
+u        = uerr + [ud zeros(sys.Nu, timediff)]; % u = uerror + trajectory
+xDes     = [xDes zeros(sys.Nx, timediff)];
 
 % visualizations %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 Bu = sys.B2*u; % want to look at actuation at each node

@@ -56,7 +56,7 @@ for time=1:TMax-1
         delete(timeText)
     end
     
-    if (time == slsParams.tFIR_)
+    if (time == slsParams.T_)
         timeText = text(2, -0.3, strcat('t=', num2str(time)), 'Color', 'r');
     else
         timeText = text(2, -0.3, strcat('t=', num2str(time)));
