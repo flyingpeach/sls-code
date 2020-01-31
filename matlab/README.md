@@ -1,6 +1,9 @@
 # System Level Synthesis
 MATLAB implementation of system level synthesis and regularization for design (RFD).
 
+## Dependencies
+This toolbox uses cvx, which can be downloaded from [here](http://cvxr.com/cvx/download/).
+
 ## Setup
 Add the sls directory to MATLAB's directory either manually or by running `code/init.m`.
 
