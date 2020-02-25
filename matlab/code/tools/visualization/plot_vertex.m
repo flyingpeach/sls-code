@@ -11,5 +11,5 @@ hold on
 plot(nodeCoords(node,1), nodeCoords(node,2), ...
      'o','MarkerSize', 10, 'MarkerFaceColor',colour,'MarkerEdgeColor','k');
 % label node    
-text(nodeCoords(node,1)+txtOffset, nodeCoords(node,2)+txtOffset, num2str(node));
+%text(nodeCoords(node,1)+txtOffset, nodeCoords(node,2)+txtOffset, num2str(node));
 hold off

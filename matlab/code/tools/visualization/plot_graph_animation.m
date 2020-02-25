@@ -13,12 +13,12 @@ if nargin == 6
 end
 
 % make full-screen
-figure('units','normalized','outerposition',[0 0 1 1])
+figure('units','normalized','outerposition',[0 0.1 1 0.7])
 
 Nx   = size(x, 1);
 TMax = size(x, 2);
 
-colormap jet; 
+colormap default; 
 cmap    = colormap; 
 
 if logScale
@@ -40,32 +40,32 @@ else
     normedu = abs(Bu) ./ maxmagu;
 end
 
-subplot(2,1,1);
+subplot(1,2,1);
 plot_graph(adjMtx, nodeCoords, cmap(1,:));
-title('normalized x')
+title('state (normalized)')
 colorbar;
 
-subplot(2,1,2);
+subplot(1,2,2);
 plot_graph(adjMtx, nodeCoords, cmap(1,:));
 colorbar;
-title('normalized u')
+title('control (normalized)')
 
 for time=1:TMax-1
     pause(waitTime);
-    if time > 1
-        delete(timeText)
-    end
-    
-    if (time == slsParams.T_)
-        timeText = text(2, -0.3, strcat('t=', num2str(time)), 'Color', 'r');
-    else
-        timeText = text(2, -0.3, strcat('t=', num2str(time)));
-    end
+%     if time > 1
+%         delete(timeText)
+%     end
+%     
+%     if (time == slsParams.T_)
+%         timeText = text(2, -0.3, strcat('t=', num2str(time)), 'Color', 'r');
+%     else
+%         timeText = text(2, -0.3, strcat('t=', num2str(time)));
+%     end
 
     for node=1:Nx
-        subplot(2,1,1)
+        subplot(1,2,1)
         plot_vertex(node, nodeCoords, get_colour(normedx(node, time), cmap));
-        subplot(2,1,2)
+        subplot(1,2,2)
         plot_vertex(node, nodeCoords, get_colour(normedu(node, time), cmap));
     end
 end
