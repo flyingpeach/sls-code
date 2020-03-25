@@ -52,15 +52,6 @@ title('control (normalized)')
 
 for time=1:TMax-1
     pause(waitTime);
-%     if time > 1
-%         delete(timeText)
-%     end
-%     
-%     if (time == slsParams.T_)
-%         timeText = text(2, -0.3, strcat('t=', num2str(time)), 'Color', 'r');
-%     else
-%         timeText = text(2, -0.3, strcat('t=', num2str(time)));
-%     end
 
     for node=1:Nx
         subplot(1,2,1)
