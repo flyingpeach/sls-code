@@ -63,7 +63,7 @@ clMaps.M_           = M;
 clMaps.solveStatus_ = cvx_status;
 
 if strcmp(cvx_status, 'Solved')
-    fprintf(['Solved!', '\n']);
+    fprintf(['Solved!', '\n\n']);
 else
     sls_warning(['Solver exited with status ', cvx_status]);
 end
