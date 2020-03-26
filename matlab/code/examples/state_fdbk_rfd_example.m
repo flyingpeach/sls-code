@@ -4,44 +4,50 @@ clear; close all; clc;
 
 % specify system matrices
 sys    = LTISystem;
-sys.Nx = 10;
+sys.Nx = 10; sys.Nw = sys.Nx; 
 
-rho = 0.8; actDens = 1;
-randn('seed', 0);
-generate_rand_chain(sys, rho, actDens); % generate sys.A, sys.B2
+% generate sys.A, sys.B2
+rho = 0.8; actDens = 1; randn('seed', 0);
+generate_rand_chain(sys, rho, actDens);
 
-sys.B1  = eye(sys.Nx); % used in simulation
-sys.C1  = [speye(sys.Nx); sparse(sys.Nu, sys.Nx)]; % used in H2/HInf ctrl
+sys.Nz  = sys.Nu + sys.Nx;
+sys.B1  = eye(sys.Nx); 
+sys.C1  = [speye(sys.Nx); sparse(sys.Nu, sys.Nx)];
+sys.D11 = sparse(sys.Nz, sys.Nw);
 sys.D12 = [sparse(sys.Nx, sys.Nu); speye(sys.Nu)];
+sys.sanity_check();
 
-% sls parameters
+% sls parameters (without rfd)
 slsParams      = SLSParams();
 slsParams.T_   = 15;
-slsParams.obj_ = Objective.H2; % objective function
+slsParams.add_objective(SLSObjective.H2, 1);
+slsParams.add_constraint(SLSConstraint.ActDelay, 1);
+slsParams.add_constraint(SLSConstraint.CommSpeed, 3);
+slsParams.add_constraint(SLSConstraint.Locality, 4);
 
-% delayed and localized sls with rfd
-num_acts = []; clnorms = [];
+% sls parameters (with rfd)
+slsParamsRFD = copy(slsParams);
 
-slsParams.mode_      = SLSMode.DAndL;
-slsParams.actDelay_  = 1;
-slsParams.cSpeed_    = 2;
-slsParams.d_         = 3;
+% delayed and localized sls with rfd (sweep over different rfd coeffs)
+powers    = -2:1:3;
+numPowers = length(powers);
 
-for power = -2:1:3
-    slsParams.rfdCoeff_ = 10^power;
-    slsParams.rfd_      = true;
-    slsOutsRFD2         = state_fdbk_sls(sys, slsParams);
+numActuators = zeros(numPowers, 1);
+h2Objectives = zeros(numPowers, 1);
 
-     % check performance with rfd-designed system
-    sysAfterRFD2     = updateActuation(sys, slsOutsRFD2);
-    slsParams.rfd_   = false;
-    slsOutsAfterRFD2 = state_fdbk_sls(sysAfterRFD2, slsParams);
+for i=1:numPowers
+    slsParamsRFD.add_objective(SLSObjective.RFD, 10^powers(i));
+    clMaps = state_fdbk_sls(sys, slsParamsRFD);
+    
+    % update system actuation
+    sysAfterRFD = update_actuation(sys, clMaps);
+    clMapsAfter = state_fdbk_sls(sysAfterRFD, slsParams);
 
-    num_acts         = [num_acts; length(slsOutsRFD2.acts_)];
-    clnorms          = [clnorms; slsOutsAfterRFD2.clnorm_];
+    numActuators(i) = sysAfterRFD.Nu;
+    h2Objectives(i) = get_H2_obj(sysAfterRFD, clMapsAfter.R_, clMapsAfter.M_);    
 end
 
 figure;
-plot(num_acts,clnorms,'*-');
-xlabel('Number of actuators'); ylabel('Close loop norm');
-title('d-localized RFD tradeoff curve');
+plot(numActuators, h2Objectives,'*-');
+xlabel('# actuators'); ylabel('H2 objective val');
+title('delayed + localized RFD tradeoff curve');
