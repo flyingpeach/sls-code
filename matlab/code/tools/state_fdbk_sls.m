@@ -31,7 +31,9 @@ end
 
 % enforce constraints
 if ~isempty(params.constraints_)
-    [R, M] = add_sparse_constraints(sys, params, R, M);
+    [RSupp, MSupp, count] = get_supports(sys, params);
+    variable RMSuppVals(count)
+    [R, M] = add_sparse_constraints(params, R, M, RSupp, MSupp, RMSuppVals);
 end
 objective = get_total_objective(sys, params, R, M);
 
@@ -54,11 +56,11 @@ minimize(objective);
 cvx_end
 
 % outputs
-slsOuts              = CLMaps();
-slsOuts.acts_        = get_acts_rfd(sys, params, M); % rfd actuator selection
-slsOuts.R_           = R;
-slsOuts.M_           = M;
-slsOuts.solveStatus_ = cvx_status;
+clMaps              = CLMaps();
+clMaps.acts_        = get_acts_rfd(sys, M); % rfd actuator selection
+clMaps.R_           = R;
+clMaps.M_           = M;
+clMaps.solveStatus_ = cvx_status;
 
 if strcmp(cvx_status, 'Solved')
     fprintf(['Solved!', '\n']);
@@ -69,15 +71,13 @@ end
 
 
 % local functions %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-function acts = get_acts_rfd(sys, params, M)
+function acts = get_acts_rfd(sys, M)
 tol = 1e-4;
 
 acts = [];
-if params.rfd_
     for i=1:sys.Nu
         if norm(vec(M{1}(i,:)),2) > tol
             acts = [acts; i];
         end
-    end    
-end
+    end
 end

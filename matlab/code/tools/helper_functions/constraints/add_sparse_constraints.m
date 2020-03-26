@@ -1,7 +1,4 @@
-function [R, M] = add_sparse_constraints(sys, params, R, M)
-    [RSupp, MSupp, count] = get_supports(sys, params);
-    variable RMSuppVals(count)
-
+function [R, M] = add_sparse_constraints(params, R, M, RSupp, MSupp, X)
     spot = 0;
     for t = 1:params.T_
         suppR = find(RSupp{t});
