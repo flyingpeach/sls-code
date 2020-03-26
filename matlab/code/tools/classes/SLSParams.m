@@ -32,7 +32,7 @@ classdef SLSParams < matlab.mixin.Copyable
           if not(is_instance(type, 'SLSObjective'))
               sls_error('Tried to add invalid objective')
           end
-          obj.objectives_ = obj.add(obj.constraints_, type, reg_val);
+          obj.objectives_ = obj.add(obj.objectives_, type, reg_val);
       end
             
       function print(obj)
