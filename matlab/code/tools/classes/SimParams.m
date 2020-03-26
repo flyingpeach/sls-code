@@ -7,13 +7,7 @@ classdef SimParams < matlab.mixin.Copyable
       w_;        % disturbance w(t) (as per (3.1))
     end
     
-    methods
-      function obj = SimParams()
-        % initialize to zero instead of empty array
-        obj.tSim_     = 0; 
-        obj.w_        = 0; 
-      end
-        
+    methods       
       function sanity_check(obj)
         if size(obj.w_, 2) < obj.tSim_
             sls_error('w_ must be at least as long as tSim')

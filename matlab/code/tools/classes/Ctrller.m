@@ -5,13 +5,8 @@ classdef Ctrller < matlab.mixin.Copyable
     properties
       Rc_;
       Mc_;
-    end
-    
-    methods
-      function obj = Ctrller()
-        % initialize to zero instead of empty array
-        obj.Rc_ = 0; obj.Mc_ = 0;
-      end
+      
+      solveStatus_; % cvx_status
     end
     
     methods(Static)

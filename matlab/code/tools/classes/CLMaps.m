@@ -17,13 +17,5 @@ classdef CLMaps < matlab.mixin.Copyable
       acts_;        % indices of actuators (u) kept after rfd
       solveStatus_; % cvx_status
       
-    end
-    
-    methods
-      function obj = CLMaps()
-        % initialize to zero instead of empty array
-        obj.R_ = 0; obj.M_ = 0; obj.N_ = 0; obj.L_ = 0;
-      end
-    end
-    
+    end    
 end
