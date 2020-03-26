@@ -5,4 +5,5 @@ classdef SLSConstraint
       ActDelay  % actuator delay
       CommSpeed % communication speed
       Locality  % d-hops of locality
+    end
 end
