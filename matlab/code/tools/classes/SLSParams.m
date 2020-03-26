@@ -42,7 +42,7 @@ classdef SLSParams < matlab.mixin.Copyable
               this_constr = obj.constraints_{i};
               constrType  = this_constr{1};
               constrVal   = this_constr{2};
-              fprintf(['\t', class(constrType), ': ', num2str(constrVal), '\n']);
+              fprintf(['\t', char(constrType), ': ', num2str(constrVal), '\n']);
           end
       end
       
@@ -51,7 +51,7 @@ classdef SLSParams < matlab.mixin.Copyable
               this_obj  = obj.objectives_{i};
               objType   = this_obj{1};
               objRegVal = this_obj{2};
-              fprintf(['\t', class(objType), ', reg const: ' , num2str(objRegVal), '\n']);
+              fprintf(['\t', char(objType), ', reg const: ' , num2str(objRegVal), '\n']);
           end
       end
       
