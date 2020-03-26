@@ -12,7 +12,7 @@ function generate_dbl_stoch_chain(sys, rho, actDens, alpha)
 %    alpha   : how much state is spread between neighbours
 
 if not(sys.Nx)
-    error('[SLS ERROR] Nx = 0 in the LTISystem! Please specify it first');
+    sls_error('Nx = 0 in the LTISystem! Please specify it first');
 end
 
 sys.Nu = ceil(sys.Nx * actDens);

@@ -15,7 +15,7 @@ classdef Ctrller < matlab.mixin.Copyable
     end
     
     methods(Static)
-      function obj = CtrllerFromCLMaps(clMaps)
+      function obj = ctrller_from_cl_maps(clMaps)
         % use closed loop maps as controller
         obj.Rc_ = clMaps.R_;
         obj.Mc_ = clMaps.M_;
