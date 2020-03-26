@@ -6,35 +6,41 @@ plotHeatMap   = true;
 
 % specify system matrices
 sys    = LTISystem;
-sys.Nx = 50;
+sys.Nx = 50; sys.Nw = sys.Nx;
 
 alpha = 0.8; rho = 1; actDens = 1; 
-generate_dbl_stoch_chain(sys, rho, actDens, alpha); % update A, B2
-sys.B1  = eye(sys.Nx); % used in simulation
+generate_dbl_stoch_chain(sys, rho, actDens, alpha);
+sys.Nz  = sys.Nu + sys.Nx;
+sys.B1  = eye(sys.Nx);
 sys.C1  = [speye(sys.Nx); sparse(sys.Nu, sys.Nx)];
+sys.D11 = sparse(sys.Nz, sys.Nw);
 sys.D12 = [sparse(sys.Nx, sys.Nu); speye(sys.Nu)];
+sys.sanity_check();
 
-% sls parameters
-slsParams           = SLSParams();
-slsParams.obj_      = Objective.H2;
-slsParams.T_        = 10;
-slsParams.actDelay_ = 1;
-slsParams.cSpeed_   = 1;
-slsParams.d_        = 8;
-slsParams.robCoeff_ = 1000;
-slsParams.mode_     = SLSMode.DAndL;
-slsParams.approx_   = true;
-
-% simulation parameters
+% simulation setup
 simParams           = SimParams;
 simParams.tSim_     = 80;
-simParams.openLoop_ = false;
 simParams.w_        = zeros(sys.Nx, 100);
 simParams.w_(floor(sys.Nx/2), 1) = 10;
 
-slsOuts = state_fdbk_sls(sys, slsParams);
-[x, u]  = simulate_system(sys, simParams, slsOuts.R_, slsOuts.M_);
+% sls parameters
+slsParams    = SLSParams();
+slsParams.T_ = 20;
 
+slsParams.add_objective(SLSObjective.H2, 1); 
+slsParams.add_constraint(SLSConstraint.ActDelay, 1);
+slsParams.add_constraint(SLSConstraint.CommSpeed, 1);
+slsParams.add_constraint(SLSConstraint.Locality, 8);
+
+slsParams.approx_      = true;
+slsParams.approxCoeff_ = 1e3;
+
+% find closed loop map + controller + simulate
+clMaps  = state_fdbk_sls(sys, slsParams);
+ctrller = Ctrller.ctrller_from_cl_maps(clMaps);
+[x, u]  = simulate_state_fdbk(sys, ctrller, simParams);
+
+% plot
 nodeCoords = [1:1:sys.Nx;
               zeros(1, sys.Nx)]';
 

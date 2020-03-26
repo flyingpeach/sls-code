@@ -2,7 +2,7 @@ clear; close all; clc;
 
 % specify system matrices
 sys    = LTISystem;
-sys.Nx = 10; sys.Nw = 10; 
+sys.Nx = 10; sys.Nw = sys.Nx; 
 
 % generate sys.A, sys.B2
 alpha = 0.2; rho = 1; actDens = 1;
