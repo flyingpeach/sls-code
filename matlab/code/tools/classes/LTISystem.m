@@ -39,45 +39,33 @@ classdef LTISystem < matlab.mixin.Copyable
       
       function sanityCheck(obj)
         % sanity check that dimensions are consistent
-        sizeA   = size(obj.A);
-        sizeB1  = size(obj.B1);
-        sizeB2  = size(obj.B2);
-        
-        sizeC1  = size(obj.C1);
-        sizeD11 = size(obj.D11);
-        sizeD12 = size(obj.D12);
-        
-        sizeC2  = size(obj.C2);
-        sizeD21 = size(obj.D21);
-        sizeD22 = size(obj.D22);
-        
-        if sizeA(1) ~= obj.Nx || sizeA(2) ~= obj.Nx
+        if size(obj.A,1) ~= obj.Nx || size(obj.A,2) ~= obj.Nx
             sls_error('A matrix has incorrect dimensions')
         end
-        if sizeB1(1) ~= obj.Nx || sizeB1(2) ~= obj.Nw
+        if size(obj.B1,1) ~= obj.Nx || size(obj.B1,2) ~= obj.Nw
             sls_error('B1 matrix has incorrect dimensions')
         end
-        if sizeB2(1) ~= obj.Nx || sizeB2(2) ~= obj.Nu
+        if size(obj.B2,1) ~= obj.Nx || size(obj.B2,2) ~= obj.Nu
             sls_error('B2 matrix has incorrect dimensions')
         end
 
-        if sizeC1(1) ~= obj.Nz || sizeC1(2) ~= obj.Nx
+        if size(obj.C1,1) ~= obj.Nz || size(obj.C1,2) ~= obj.Nx
             sls_error('C1 matrix has incorrect dimensions')
         end
-        if sizeD11(1) ~= obj.Nz || sizeD11(2) ~= obj.Nw
+        if size(obj.D11,1) ~= obj.Nz || size(obj.D11,2) ~= obj.Nw
             sls_error('D11 matrix has incorrect dimensions')
         end
-        if sizeD12(1) ~= obj.Nz || sizeD12(2) ~= obj.Nu
+        if size(obj.D12,1) ~= obj.Nz || size(obj.D12,2) ~= obj.Nu
             sls_error('D12 matrix has incorrect dimensions')
         end
 
-        if sizeC2(1) ~= obj.Ny || sizeC2(2) ~= obj.Nx
+        if size(obj.C2,1) ~= obj.Ny || size(obj.C2,2) ~= obj.Nx
             sls_error('C2 matrix has incorrect dimensions')
         end
-        if sizeD21(1) ~= obj.Ny || sizeD21(2) ~= obj.Nw
+        if size(obj.D21,1) ~= obj.Ny || size(obj.D21,2) ~= obj.Nw
             sls_error('D21 matrix has incorrect dimensions')
         end
-        if sizeD22(1) ~= obj.Ny || sizeD22(2) ~= obj.Nu
+        if size(obj.D22,1) ~= obj.Ny || size(obj.D22,2) ~= obj.Nu
             sls_error('D22 matrix has incorrect dimensions')
         end
     end

@@ -4,8 +4,7 @@ classdef SimParams < matlab.mixin.Copyable
 
     properties  
       tSim_;     % amount of time to simulate
-      w_;        % disturbance w(t) (as per (3.1)
-      openLoop_; % whether to simulate the system open loop only
+      w_;        % disturbance w(t) (as per (3.1))
     end
     
     methods
@@ -13,21 +12,13 @@ classdef SimParams < matlab.mixin.Copyable
         % initialize to zero instead of empty array
         obj.tSim_     = 0; 
         obj.w_        = 0; 
-        obj.openLoop_ = 0;
       end
         
-      function statusTxt = sanity_check(obj)
-        modestr = 'closed-loop';
-        if obj.openLoop_ == 1
-            modestr = 'open-loop';
-        end
-        statusTxt = ['tSim=', num2str(obj.tSim_), ', ', modestr];
-        
-        % sanity check
+      function sanity_check(obj)
         if size(obj.w_, 2) < obj.tSim_
-            error('[SLS ERROR] The specified length of the disturbance (w) is less than tSim!')
+            sls_error('w_ must be at least as long as tSim')
         end
-      end
+      end  
     end
-
+    
 end
