@@ -18,14 +18,13 @@ classdef SLSParams < matlab.mixin.Copyable
         obj.approx_      = false;
         obj.approxCoeff_ = 0;
       end
-      
+
       function add_constraint(obj, type, val)
           % val : value (i.e. locality) associated with constraint
-          %       unused if type = Standard or Robust
           if not(is_instance(type, 'SLSConstraint'))
               sls_error('Tried to add invalid constraint')
           end
-          obj.constraints_{length(obj.constraints_)+1} = {type, val};
+          obj.constraints_ = obj.add(obj.constraints_, type, val);
       end
       
       function add_objective(obj, type, reg_val)
@@ -33,32 +32,13 @@ classdef SLSParams < matlab.mixin.Copyable
           if not(is_instance(type, 'SLSObjective'))
               sls_error('Tried to add invalid objective')
           end
-          obj.objectives_{length(obj.objectives_)+1} = {type, reg_val};
-          
+          obj.objectives_ = obj.add(obj.constraints_, type, reg_val);
       end
-      
-      function print_constraints(obj)
-          for i=1:length(obj.constraints_)
-              this_constr = obj.constraints_{i};
-              constrType  = this_constr{1};
-              constrVal   = this_constr{2};
-              fprintf(['\t', char(constrType), ': ', num2str(constrVal), '\n']);
-          end
-      end
-      
-      function print_objectives(obj)
-          for i=1:length(obj.objectives_)
-              this_obj  = obj.objectives_{i};
-              objType   = this_obj{1};
-              objRegVal = this_obj{2};
-              fprintf(['\t', char(objType), ', reg coeff: ' , num2str(objRegVal), '\n']);
-          end
-      end
-      
+            
       function print(obj)
           fprintf(['T = ', num2str(obj.T_), '\n']);
-          fprintf('Objectives:\n');  print_objectives(obj);
-          fprintf('Constraints:\n'); print_constraints(obj);
+          fprintf('Objectives:\n');  obj.print_(obj.objectives_, ', reg coeff:  ');
+          fprintf('Constraints:\n'); obj.print_(obj.constraints_, ': ');
           if obj.approx_
               fprintf(['Using approximate SLS algorithm, coeff = ', ...
                         num2str(obj.approxCoeff_), '\n'])
@@ -78,6 +58,31 @@ classdef SLSParams < matlab.mixin.Copyable
           
           if obj.approxCoeff_ && ~obj.approx_
               sls_warning('approxCoeff specified but not used');
+          end
+      end
+    end
+    
+    methods (Static)
+      function list = add(list, type, val)
+          add_idx = length(list) + 1;
+          % if type already exists in list, replace value
+          for i=1:length(list)
+              thisItem = list{i};
+              thisType = thisItem{1};
+              if thisType == type
+                  add_idx = i;
+                  break;
+              end
+          end
+          list{add_idx} = {type, val};
+      end
+      
+      function print_(list, linkStr)
+          for i=1:length(list)
+              thisItem = list{i};
+              thisType = thisItem{1};
+              thisVal  = thisItem{2};
+              fprintf(['\t', char(thisType), linkStr, num2str(thisVal), '\n']);
           end
       end
     end
