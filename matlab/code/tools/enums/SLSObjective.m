@@ -8,10 +8,7 @@ classdef SLSObjective
       L1
       
       % Regularizers
-      Stability % for robust SLS
       RFD       % actuator regularization
-      Locality  % penalize nonlocal patterns
-      Delay     % penalize patterns that require fast communication
       
     end
 end
