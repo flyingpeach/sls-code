@@ -28,13 +28,18 @@ classdef LTISystem < matlab.mixin.Copyable
         obj.Ny = 0;
       end
 
-      function obj = update_actuation(oldObj, slsOuts)
+      function obj = update_actuation(oldObj, clMaps)
         % make a new system with the dynamics of the old system and updated
         % actuation (based on rfd output)
         obj     = copy(oldObj);
-        obj.B2  = oldObj.B2(:, slsOuts.acts_);
-        obj.D12 = oldObj.D12(:, slsOuts.acts_);
-        obj.Nu  = size(slsOuts.acts_, 1);      
+        obj.B2  = oldObj.B2(:, clMaps.acts_);
+        obj.D12 = oldObj.D12(:, clMaps.acts_);
+        
+        if obj.Ny ~=0
+            obj.D22 = oldObj.D22(:, clMaps.acts_);
+        end
+        
+        obj.Nu  = size(clMaps.acts_, 1);      
       end
       
       function sanity_check(obj)
