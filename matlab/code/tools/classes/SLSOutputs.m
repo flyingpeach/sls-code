@@ -13,25 +13,16 @@ classdef SLSOutputs < matlab.mixin.Copyable
       % output feedback only
       N_; % dy to x transfer matrix (phi_xy)
       L_; % dy to u transfer matrix (phi_uy)
-        
-      clnorm_; % final (optimal value) of original objective
-               % doesn't include regularization terms
-      acts_;   % indices of actuators (u) kept after rfd
-      
+
+      acts_;        % indices of actuators (u) kept after rfd
       solveStatus_; % cvx_status
       
-      % TODO: this enforces small gain on l1->l1; should generalize
-      robustStab_; % inf norm of delta from (2.24), (4.22)
-                   % <1 means we can guarantee stab
     end
     
     methods
       function obj = SLSOutputs()
         % initialize to zero instead of empty array
         obj.R_ = 0; obj.M_ = 0; obj.N_ = 0; obj.L_ = 0;
-        obj.clnorm_     = 0;
-        obj.acts_       = 0;
-        obj.robustStab_ = 0;
       end
     end
     
