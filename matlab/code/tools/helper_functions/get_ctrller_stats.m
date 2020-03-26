@@ -13,8 +13,6 @@ T = length(R);
 % calculate metrics for original R, M %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 for t=1:T  
     cStats.L1NormOrig = cStats.L1NormOrig + norm([R{t}; M{t}], 1);
-    cStats.RNonzero   = cStats.RNonzero + sum(abs(vec(R{t})) > cStats.tol);
-    cStats.MNonzero   = cStats.MNonzero + sum(abs(vec(M{t})) > cStats.tol);
 end
 cStats.IntSpecRadiusOrig = check_int_stability(sys, R, M);
 
@@ -27,7 +25,7 @@ end
 numItems = length(cStats.sweepParams);
 
 % check CL map for extra time steps (expect zero)
-extraT = 100; %TODO: a bit hacky. Include a sanity check?
+extraT = 100; % TODO: a bit hacky. Include a sanity check?
 tTotal = T + extraT;
 
 % total CL norms (for normalization)
@@ -49,8 +47,6 @@ for i=1:numItems
 
     for t=1:Tc
         cStats.L1Norms(i)    = cStats.L1Norms(i) + norm([Rc{t}; Mc{t}], 1);        
-        cStats.RcNonzeros(i) = cStats.RcNonzeros(i) + sum(abs(vec(Rc{t})) > cStats.tol);
-        cStats.McNonzeros(i) = cStats.McNonzeros(i) + sum(abs(vec(Mc{t})) > cStats.tol);        
     end
     
     % get CL map of Rc, Mc
