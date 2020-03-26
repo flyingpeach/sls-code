@@ -51,7 +51,7 @@ classdef SLSParams < matlab.mixin.Copyable
               this_obj  = obj.objectives_{i};
               objType   = this_obj{1};
               objRegVal = this_obj{2};
-              fprintf(['\t', char(objType), ', reg const: ' , num2str(objRegVal), '\n']);
+              fprintf(['\t', char(objType), ', reg coeff: ' , num2str(objRegVal), '\n']);
           end
       end
       
@@ -60,9 +60,10 @@ classdef SLSParams < matlab.mixin.Copyable
           fprintf('Objectives:\n');  print_objectives(obj);
           fprintf('Constraints:\n'); print_constraints(obj);
           if obj.approx_
-              fprintf(['Using approximate SLS algorithm, coeff = ', 
+              fprintf(['Using approximate SLS algorithm, coeff = ', ...
                         num2str(obj.approxCoeff_), '\n'])
-          end          
+          end
+          fprintf('\n')
       end
       
       function sanity_check(obj)
