@@ -1,4 +1,4 @@
-classdef SLSOutputs < matlab.mixin.Copyable
+classdef CLMaps < matlab.mixin.Copyable
     % Contains outputs of SLS
     % Depending on the solver / mode called, not all outputs are set 
     % Inherits handle class with deep copy functionality
@@ -20,7 +20,7 @@ classdef SLSOutputs < matlab.mixin.Copyable
     end
     
     methods
-      function obj = SLSOutputs()
+      function obj = CLMaps()
         % initialize to zero instead of empty array
         obj.R_ = 0; obj.M_ = 0; obj.N_ = 0; obj.L_ = 0;
       end
