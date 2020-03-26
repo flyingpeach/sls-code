@@ -68,6 +68,6 @@ classdef LTISystem < matlab.mixin.Copyable
         if size(obj.D22,1) ~= obj.Ny || size(obj.D22,2) ~= obj.Nu
             sls_error('D22 matrix has incorrect dimensions')
         end
+      end
     end
-
 end
