@@ -1,3 +1,3 @@
-function is_instance = is_instance(obj, classStr)
-    is_instance = strcmp(class(obj), classStr);
+function bool = is_instance(obj, classStr)
+    bool = strcmp(class(obj), classStr);
 end
