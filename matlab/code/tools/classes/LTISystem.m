@@ -28,7 +28,7 @@ classdef LTISystem < matlab.mixin.Copyable
         obj.Ny = 0;
       end
 
-      function obj = updateActuation(oldObj, slsOuts)
+      function obj = update_actuation(oldObj, slsOuts)
         % make a new system with the dynamics of the old system and updated
         % actuation (based on rfd output)
         obj     = copy(oldObj);
@@ -37,7 +37,7 @@ classdef LTISystem < matlab.mixin.Copyable
         obj.Nu  = size(slsOuts.acts_, 1);      
       end
       
-      function sanityCheck(obj)
+      function sanity_check(obj)
         % sanity check that dimensions are consistent
         if size(obj.A,1) ~= obj.Nx || size(obj.A,2) ~= obj.Nx
             sls_error('A matrix has incorrect dimensions')
@@ -59,15 +59,17 @@ classdef LTISystem < matlab.mixin.Copyable
             sls_error('D12 matrix has incorrect dimensions')
         end
 
-        if size(obj.C2,1) ~= obj.Ny || size(obj.C2,2) ~= obj.Nx
-            sls_error('C2 matrix has incorrect dimensions')
-        end
-        if size(obj.D21,1) ~= obj.Ny || size(obj.D21,2) ~= obj.Nw
-            sls_error('D21 matrix has incorrect dimensions')
-        end
-        if size(obj.D22,1) ~= obj.Ny || size(obj.D22,2) ~= obj.Nu
-            sls_error('D22 matrix has incorrect dimensions')
-        end
+        if obj.Ny ~= 0 % No need to check output matrices if no output
+            if size(obj.C2,1) ~= obj.Ny || size(obj.C2,2) ~= obj.Nx
+                sls_error('C2 matrix has incorrect dimensions')
+            end
+            if size(obj.D21,1) ~= obj.Ny || size(obj.D21,2) ~= obj.Nw
+                sls_error('D21 matrix has incorrect dimensions')
+            end
+            if size(obj.D22,1) ~= obj.Ny || size(obj.D22,2) ~= obj.Nu
+                sls_error('D22 matrix has incorrect dimensions')
+            end
+        end    
       end
     end
 end
