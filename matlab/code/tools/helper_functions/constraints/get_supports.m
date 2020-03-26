@@ -21,8 +21,8 @@ for i=1:length(params.constraints_)
     end
 end
 
-RSupp = cell(params.T_); 
-MSupp = cell(params.T_);
+RSupp = cell(params.T_, 1); 
+MSupp = cell(params.T_, 1);
 
 commsAdj   = abs(sys.A) > 0;
 localRSupp = commsAdj^(locality-1) > 0;
