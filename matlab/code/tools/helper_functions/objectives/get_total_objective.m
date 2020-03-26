@@ -4,8 +4,8 @@ total_objective = 0;
 
 for i=1:length(params.objectives_)
     this_obj  = params.objectives_{i};
-    objType   = this_obj(1);
-    objRegVal = this_obj(2);
+    objType   = this_obj{1};
+    objRegVal = this_obj{2};
 
     objective = 0;
     switch objType

@@ -8,8 +8,8 @@ locality  = sys.Nx+1;
       
 for i=1:length(params.constraints_)
     this_constr = params.constraints_{i};
-    constrType  = this_constr(1);
-    constrVal   = this_constr(2);
+    constrType  = this_constr{1};
+    constrVal   = this_constr{2};
     
     switch constrType
         case SLSConstraint.ActDelay
