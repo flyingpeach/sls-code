@@ -1,8 +1,8 @@
-function objective = get_HInf_obj(sys, R, M)
-mtx = [];
-for t = 1:length(R)
-    mtx = blkdiag(mtx, [sys.C1, sys.D12]*[R{t};M{t}]);
+function objective = get_HInf_obj(transferMtx)
+bigMtx = [];
+for k=1:length(transferMtx)
+    bigMtx = blkdiag(bigMtx, transferMtx{k});
 end
 
-objective = sigma_max(full(mtx));
+objective = sigma_max(full(bigMtx));
 end
