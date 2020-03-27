@@ -1,8 +1,6 @@
 function objective = get_L1_obj(sys, R, M)
-mtx = [];
+objective = 0;
 for t = 1:length(R)
-    mtx = blkdiag(mtx, [sys.C1, sys.D12]*[R{t};M{t}]);
+    objective = max(objective, norm([sys.C1, sys.D12]*[R{t};M{t}], Inf));
 end
-
-objective = norm(mtx, Inf); % note: L1 is induced inf-inf norm
 end
