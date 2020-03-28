@@ -22,14 +22,20 @@ else
 end
 
 if params.approx_
-    expression Delta(sys.Nx, sys.Nx * T)
+    expression Deltas(sys.Nx, sys.Nx, T)
 end
 
 % populate decision variables for ease-of-use
 R = cell(T, 1); 
 M = cell(T, 1);
 for t = 1:T
-    R{t} = Rs(:,:,t); M{t} = Ms(:,:,t);
+    R{t} = Rs(:,:,t); M{t} = Ms(:,:,t); 
+end
+if params.approx_
+   Delta = cell(T, 1);
+   for t = 1:T
+       Delta{t} = Deltas(:,:,t);
+   end
 end
 
 % enforce constraints
@@ -38,6 +44,7 @@ if ~isempty(params.constraints_)
     variable RMSuppVals(count)
     [R, M] = add_sparse_constraints(R, M, RSupp, MSupp, RMSuppVals, T);
 end
+
 objective = get_total_objective(sys, params, R, M);
 
 % achievability  / approx achievability constraints
@@ -46,9 +53,11 @@ R{T} == zeros(sys.Nx, sys.Nx);
 
 if params.approx_
     for t=1:T-1
-        Delta(:,(t-1)*sys.Nx+1:t*sys.Nx) = R{t+1} - sys.A*R{t} - sys.B2*M{t};
+        Delta{t} = R{t+1} - sys.A*R{t} - sys.B2*M{t};
     end
-    objective = objective + params.approxCoeff_ * norm(Delta, inf);    
+    Delta{T} = - sys.A*R{T} - sys.B2*M{T};
+    % regularization for stability
+    objective = objective + params.approxCoeff_ * get_stab_obj(Delta);
 else
     for t=1:T-1
         R{t+1} == sys.A*R{t} + sys.B2*M{t};
