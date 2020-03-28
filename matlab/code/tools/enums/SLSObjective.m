@@ -11,6 +11,7 @@ classdef SLSObjective
 
       % Regularizers
       RFD       % actuator regularization
+      EqnErr    % for two-step SLS
       
     end
 end

@@ -14,6 +14,8 @@ classdef Ctrller < matlab.mixin.Copyable
         % use closed loop maps as controller
         obj.Rc_ = clMaps.R_;
         obj.Mc_ = clMaps.M_;
+        
+        obj.solveStatus_ = clMaps.solveStatus_;
       end
     end
     

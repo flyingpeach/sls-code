@@ -1,11 +1,18 @@
-function clMaps = state_fdbk_sls(sys, params)
+function clMaps = state_fdbk_sls(sys, params, varargin)
 % System level synthesis with state feedback
 % Returns 
-%    clMaps : SLSOutputs containing system responses and other info
+%    clMaps   : SLSOutputs containing system responses and other info
 % Inputs
-%    sys     : LTISystem containing system matrices
-%    params  : SLSParams containing parameters
-fprintf('Finding closed loop maps\n\n');
+%    sys      : LTISystem containing system matrices
+%    params   : SLSParams containing parameters
+%    varargin expects clMapsIn (for two-step SLS only)
+clMapsIn = [];
+try 
+    clMapsIn = varargin{1};
+end
+if isempty(clMapsIn) % Otherwise we are not solving for closed-loop maps
+    fprintf('Finding closed loop maps\n\n');
+end
 params.print()
 params.sanity_check()
 

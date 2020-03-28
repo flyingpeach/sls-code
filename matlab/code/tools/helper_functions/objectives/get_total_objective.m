@@ -1,4 +1,8 @@
-function totalObjective = get_total_objective(sys, params, R, M)
+function totalObjective = get_total_objective(sys, params, R, M, varargin)
+clMapsIn = [];
+try 
+    clMapsIn = varargin{1};
+end
 
 totalObjective = 0;
 
@@ -26,6 +30,8 @@ for i=1:length(params.objectives_)
             objective = get_1to1_obj(objectiveMtx);
         case SLSObjective.RFD
             objective = get_rfd_obj(sys, M);
+        case SLSObjective.EqnErr
+            objective = get_eqn_err_obj(sys, clMapsIn, R, M);
     end
     
     totalObjective = totalObjective + objRegVal * objective;    
