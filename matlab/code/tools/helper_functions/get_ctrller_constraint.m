@@ -1,6 +1,6 @@
-function F = get_ctrller_constraint(sys, slsOuts, Tc)
+function [F, G] = get_ctrller_constraint(sys, slsOuts, Tc)
 % Returns the matrix F = [F1, F2] where F1 are the first Nx columns
-% This will provide the constraint F2[Rc; Mc] = -F1
+% This will provide the constraint F[Rc; Mc] = G
 % Outputs
 %    F         : constraint matrix
 % Inputs
@@ -64,4 +64,6 @@ end
 myEye = eye(Tc*(sys.Nx + sys.Nu));
 myZer = zeros(T*(sys.Nx + sys.Nu), Tc*(sys.Nx + sys.Nu));
 
-F = [Ralpha; Malpha; Rbeta; Mbeta] * Dellc - [myEye; myZer];
+FG = [Ralpha; Malpha; Rbeta; Mbeta] * Dellc - [myEye; myZer];
+F  = FG(:,sys.Nx+1:end);
+G  = -FG(:, 1:sys.Nx);
