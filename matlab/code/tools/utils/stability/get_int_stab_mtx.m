@@ -1,6 +1,10 @@
-function spectralRadius = check_int_stability(sys, Rc, Mc)
+function intStabMtx = get_int_stab_mtx(sys, ctrller)
 
+Rc = ctrller.Rc_; 
+Mc = ctrller.Mc_;
 Tc = length(Rc);
+
+Dellc = cell(Tc, 1);
 
 for k=1:Tc-1
     Dellc{k} = Rc{k+1} - sys.A*Rc{k} - sys.B2*Mc{k};
@@ -21,4 +25,3 @@ for i=1:Tc
     
     intStabMtx(endx, ix) = -Dellc{Tc+1-i};
 end
-spectralRadius = max(abs(eig(intStabMtx))); % biggest eigenvalue
