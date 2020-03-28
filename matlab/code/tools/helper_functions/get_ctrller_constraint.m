@@ -1,14 +1,12 @@
-function [F, G] = get_ctrller_constraint(sys, slsOuts, Tc)
-% Returns the matrix F = [F1, F2] where F1 are the first Nx columns
-% This will provide the constraint F[Rc; Mc] = G
-% Outputs
-%    F         : constraint matrix
+function [F, G] = get_ctrller_constraint(sys, clMaps, Tc)
+% Returns the matrices F, G that provide the constraint F[Rc{2:Tc}; Mc] = G
+% (This assumes Rc{1} = I, as expected)
 % Inputs
-%    sys       : LTISystem containing system matrices
-%    slsOuts   : contains info from SLS (original R, M)
-%    Tc        : length of the approximate solution
+%    sys    : LTISystem containing system matrices
+%    clMaps : contains closed-loop maps (R, M)
+%    Tc     : order of controller matrices
 
-T      = length(slsOuts.R_);
+T      = length(clMaps.R_);
 Rblock = cell(T+Tc, Tc+1);
 Mblock = cell(T+Tc, Tc+1);
 
@@ -22,8 +20,8 @@ end
 
 for j=1:Tc+1
     for idx=1:T
-        Rblock{idx+j-1,j} = slsOuts.R_{idx};
-        Mblock{idx+j-1,j} = slsOuts.M_{idx};
+        Rblock{idx+j-1,j} = clMaps.R_{idx};
+        Mblock{idx+j-1,j} = clMaps.M_{idx};
     end
 end
 
