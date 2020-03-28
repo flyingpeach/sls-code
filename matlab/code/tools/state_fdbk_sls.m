@@ -49,7 +49,6 @@ objective = get_total_objective(sys, params, R, M);
 
 % achievability  / approx achievability constraints
 R{1} == eye(sys.Nx);
-R{T} == zeros(sys.Nx, sys.Nx);
 
 if params.approx_
     for t=1:T-1
@@ -59,6 +58,7 @@ if params.approx_
     % regularization for stability
     objective = objective + params.approxCoeff_ * get_stab_obj(Delta);
 else
+    R{T} == zeros(sys.Nx, sys.Nx);
     for t=1:T-1
         R{t+1} == sys.A*R{t} + sys.B2*M{t};
     end
