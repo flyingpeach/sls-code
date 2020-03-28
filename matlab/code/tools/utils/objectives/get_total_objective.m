@@ -19,19 +19,19 @@ for i=1:length(params.objectives_)
     objective = 0;
     switch objType
         case SLSObjective.H2
-            objective = get_H2_obj(objectiveMtx);
+            objective = get_H2_norm(objectiveMtx);
         case SLSObjective.HInf
-            objective = get_HInf_obj(objectiveMtx);
+            objective = get_HInf_norm(objectiveMtx);
         case SLSObjective.L1
-            objective = get_L1_obj(objectiveMtx);
+            objective = get_L1_norm(objectiveMtx);
         case SLSObjective.Eps1
-            objective = get_eps1_obj(objectiveMtx);
+            objective = get_eps1_norm(objectiveMtx);
         case SLSObjective.OneToOne
-            objective = get_1to1_obj(objectiveMtx);
+            objective = get_1to1_norm(objectiveMtx);
         case SLSObjective.RFD
-            objective = get_rfd_obj(sys, M);
+            objective = get_rfd_norm(sys, M);
         case SLSObjective.EqnErr
-            objective = get_eqn_err_obj(sys, clMapsIn, R, M);
+            objective = get_eqn_err(sys, clMapsIn, R, M);
     end
     
     totalObjective = totalObjective + objRegVal * objective;    

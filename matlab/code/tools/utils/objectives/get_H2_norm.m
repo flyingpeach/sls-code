@@ -1,4 +1,4 @@
-function objective = get_H2_obj(transferMtx)
+function objective = get_H2_norm(transferMtx)
 % Frobenius
 objective = 0;
 for k=1:length(transferMtx)

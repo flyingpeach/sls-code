@@ -44,7 +44,7 @@ for i=1:numPowers
     clMapsAfter = state_fdbk_sls(sysAfterRFD, slsParams);
 
     numActuators(i) = sysAfterRFD.Nu;
-    h2Objectives(i) = get_H2_obj(sysAfterRFD, clMapsAfter.R_, clMapsAfter.M_);    
+    h2Objectives(i) = get_H2_norm(sysAfterRFD, clMapsAfter.R_, clMapsAfter.M_);    
 end
 
 figure;

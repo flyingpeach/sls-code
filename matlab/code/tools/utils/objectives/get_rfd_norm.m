@@ -1,4 +1,4 @@
-function objective = get_rfd_obj(sys, M)
+function objective = get_rfd_norm(sys, M)
 objective = 0;
 for i = 1:sys.Nu
     Mi = [];

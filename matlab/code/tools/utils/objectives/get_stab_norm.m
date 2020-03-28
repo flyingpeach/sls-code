@@ -1,4 +1,4 @@
-function objective = get_stab_obj(transferMtx)
+function objective = get_stab_norm(transferMtx)
 % Stability objective used to produce plots in previous publications
 bigMtx = [];
 

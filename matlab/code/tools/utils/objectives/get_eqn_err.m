@@ -1,4 +1,4 @@
-function objective = get_eqn_err_obj(sys, clMaps, Rc, Mc)
+function objective = get_eqn_err(sys, clMaps, Rc, Mc)
 % Objective for equation error (heuristic difference between desired 
 % closed-loop maps and implemented closed-loop maps)
 Tc = length(Rc);
