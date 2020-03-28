@@ -1,4 +1,4 @@
-function plot_ctrller_matrices(sys, slsOuts, ctrller, t)
+function visualize_matrices(sys, slsOuts, ctrller, t)
 % Plot log magnitudes of R, M, Rc, Mc
 % Note: M, Mc are plotted as B2*M and B2*Mc to visualize actuation per node
 % Inputs
