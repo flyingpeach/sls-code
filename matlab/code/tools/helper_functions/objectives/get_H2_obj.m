@@ -1,4 +1,5 @@
 function objective = get_H2_obj(transferMtx)
+% Frobenius
 objective = 0;
 for k=1:length(transferMtx)
     % need to do the vect operation because of quirk in cvx
