@@ -1,4 +1,4 @@
-function [F, G] = get_ctrller_constraint(sys, clMaps, Tc)
+function [F, G] = get_ctrller_eqn(sys, clMaps, Tc)
 % Returns the matrices F, G that provide the constraint F[Rc{2:Tc}; Mc] = G
 % (This assumes Rc{1} = I, as expected)
 % Inputs

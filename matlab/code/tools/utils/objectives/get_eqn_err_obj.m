@@ -3,7 +3,7 @@ function objective = get_eqn_err_obj(sys, clMaps, Rc, Mc)
 % closed-loop maps and implemented closed-loop maps)
 Tc = length(Rc);
 
-[F, G] = get_ctrller_constraint(sys, clMaps, Tc);
+[F, G] = get_ctrller_eqn(sys, clMaps, Tc);
 
 RcMc = [];
 
