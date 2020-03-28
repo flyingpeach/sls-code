@@ -20,6 +20,10 @@ for i=1:length(params.objectives_)
             objective = get_HInf_obj(objectiveMtx);
         case SLSObjective.L1
             objective = get_L1_obj(objectiveMtx);
+        case SLSObjective.Eps1
+            objective = get_eps1_obj(objectiveMtx);
+        case SLSObjective.OneToOne
+            objective = get_1to1_obj(objectiveMtx);
         case SLSObjective.RFD
             objective = get_rfd_obj(sys, M);
     end

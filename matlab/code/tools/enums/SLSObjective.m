@@ -6,7 +6,9 @@ classdef SLSObjective
       H2
       HInf
       L1
-      
+      Eps1
+      OneToOne
+
       % Regularizers
       RFD       % actuator regularization
       
