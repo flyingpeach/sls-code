@@ -19,9 +19,8 @@ for i=1:Tc-1
     intStabMtx(ix, ixplus) = eye(sys.Nx);
 end
 
+endx = get_range(Tc, sys.Nx);
 for i=1:Tc
-    ix   = get_range(i, sys.Nx);
-    endx = get_range(Tc, sys.Nx);
-    
+    ix   = get_range(i, sys.Nx);    
     intStabMtx(endx, ix) = -Dellc{Tc+1-i};
 end
