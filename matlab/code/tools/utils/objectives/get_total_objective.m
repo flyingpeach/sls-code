@@ -5,11 +5,7 @@ try
 end
 
 totalObjective = 0;
-
-objectiveMtx = cell(params.T_, 1);
-for k=1:params.T_
-    objectiveMtx{k} = [sys.C1, sys.D12]*[R{k};M{k}];
-end
+objectiveMtx   = get_objective_mtx(sys, R, M);
 
 for i=1:length(params.objectives_)
     this_obj  = params.objectives_{i};
