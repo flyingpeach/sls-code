@@ -25,7 +25,7 @@ simParams.w_(floor(sys.Nx/2), 1) = 10;
 
 % sls parameters
 slsParams    = SLSParams();
-slsParams.T_ = 20;
+slsParams.T_ = 9;
 
 slsParams.add_objective(SLSObjective.H2, 1); 
 slsParams.add_constraint(SLSConstraint.ActDelay, 1);
