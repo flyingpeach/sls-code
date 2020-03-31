@@ -48,7 +48,7 @@ ctrllerVirt = Ctrller.ctrller_from_cl_maps(clMapsVirt);
 eqnErrCoeff  = 1e2;
 ctrller2Step = find_ctrller(sys, clMapsCent, slsParams, eqnErrCoeff); 
 
-% calculate + print stats for comparison
+%% calculate + print stats for comparison
 tTotal = 200;
 
 [lqrCostCent, intRadCent, l1normCent] = get_ctrller_stats(sys, ctrllerCent, tTotal);
@@ -60,7 +60,7 @@ if strcmp(clMapsDistr.solveStatus_, 'Solved')
     fprintf('Distributed  : cost=%.3f, rad=%.3f, l1norm=%.3f\n', ...
             lqrCostDistr / infLQRCost, intRadDistr, l1normDistr);
 else
-    fprintf('Distributed  : Infeasible!');
+    fprintf('Distributed  : Infeasible!\n');
 end
 
 [lqrCostVirt, intRadVirt, l1normVirt] = get_ctrller_stats(sys, ctrllerVirt, tTotal);

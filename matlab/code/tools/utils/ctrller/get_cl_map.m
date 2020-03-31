@@ -17,7 +17,7 @@ for i=1:sys.Nx
     simParams.w_ = zeros(sys.Nx, simParams.tSim_);
     simParams.w_(i, 1) = 1;
 
-    [x, u]  = simulate_system(sys, ctrller, simParams);
+    [x, u]  = simulate_state_fdbk(sys, ctrller, simParams);
 
     for t=1:tTotal
         R_{t}(:,i) = x(:,t+1);

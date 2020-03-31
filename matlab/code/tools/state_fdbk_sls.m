@@ -52,7 +52,7 @@ if ~isempty(params.constraints_)
     [R, M] = add_sparse_constraints(R, M, RSupp, MSupp, RMSuppVals, T);
 end
 
-objective = get_total_objective(sys, params, R, M);
+objective = get_total_objective(sys, params, R, M, clMapsIn);
 
 % achievability  / approx achievability constraints
 R{1} == eye(sys.Nx);
