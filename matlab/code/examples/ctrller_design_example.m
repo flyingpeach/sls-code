@@ -44,8 +44,12 @@ slsParams.approxCoeff_ = 1e3;
 clMapsVirt  = state_fdbk_sls(sys, slsParams);
 ctrllerVirt = Ctrller.ctrller_from_cl_maps(clMapsVirt);
 
-% two-step method
-eqnErrCoeff  = 1e2;
+% two-step method with L1 objective
+slsParams.objectives_  = {}; % reset objectives
+
+slsParams.approxCoeff_ = 1; % stability objective
+eqnErrCoeff            = 1; % equation error penalty
+slsParams.add_objective(SLSObjective.L1, 1); % L1 objective
 ctrller2Step = find_ctrller(sys, clMapsCent, slsParams, eqnErrCoeff); 
 
 %% calculate + print stats for comparison
