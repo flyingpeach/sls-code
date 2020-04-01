@@ -1,22 +1,39 @@
-function plot_graph_animation(adjMtx, nodeCoords, slsParams, x, Bu, waitTime, logScale)
+function plot_graph_animation(adjMtx, nodeCoords, x_, Bu_, waitTime, logScale)
 % Plots topology of graph and animates states values at nodes
 % Inputs
 %   adjMtx     : adjacency matrix
 %   nodeCoords : x,y coordinates of each node (in order)
-%   slsParams  : SLSParams containing parameters
 %   x, Bu      : state and actuation values at nodes
 %   waitTime   : amount of time to wait between steps
 %   logScale   : whether to use the same scale as heat map plotter
 
-if nargin == 6
+if nargin == 5
     logScale = false;
 end
 
-% make full-screen
-figure('units','normalized','outerposition',[0 0.1 1 0.7])
+minCoords = min(nodeCoords);
+maxCoords = max(nodeCoords);
+width     = maxCoords(1) - minCoords(1);
+height    = maxCoords(2) - minCoords(2);
+buffer    = 3;    % min size 3 cm
+maxHeight = 15;   % max height 15 cm
 
-Nx   = size(x, 1);
-TMax = size(x, 2);
+if width > height
+    height = height / width;
+    width  = 1;
+else
+    width  = width / height;
+    height = 1;
+end
+
+height = max(height * maxHeight, buffer); 
+width  = 2 * max(width * maxHeight, buffer) + buffer; % two windows
+
+% [left bottom width height]
+figure('units','centimeters','outerposition',[1 1 width height])
+
+Nx   = size(x_, 1);
+TMax = size(x_, 2);
 
 colormap default; 
 cmap    = colormap; 
@@ -26,18 +43,18 @@ if logScale
     logmax  = 0;
 
     % clamp values within min and max
-    normedx = max(min(log10(abs(x)), logmax), logmin);
-    normedu = max(min(log10(abs(Bu)), logmax), logmin);
+    normedx = max(min(log10(abs(x_)), logmax), logmin);
+    normedu = max(min(log10(abs(Bu_)), logmax), logmin);
     
     % normalize values
     normedx = (normedx - logmin)./ (logmax - logmin);
     normedu = (normedu - logmin)./ (logmax - logmin);
 
 else
-    maxmagx = max(abs(vec(x)));  % max magnitude
-    maxmagu = max(abs(vec(Bu)));
-    normedx = abs(x) ./ maxmagx;
-    normedu = abs(Bu) ./ maxmagu;
+    maxmagx = max(abs(vec(x_)));  % max magnitude
+    maxmagu = max(abs(vec(Bu_)));
+    normedx = abs(x_) ./ maxmagx;
+    normedu = abs(Bu_) ./ maxmagu;
 end
 
 subplot(1,2,1);
@@ -52,7 +69,6 @@ title('control (normalized)')
 
 for time=1:TMax-1
     pause(waitTime);
-
     for node=1:Nx
         subplot(1,2,1)
         plot_vertex(node, nodeCoords, get_colour(normedx(node, time), cmap));

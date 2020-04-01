@@ -10,10 +10,9 @@ nodeDim = size(nodeCoords);
 numNodes = nodeDim(1);
 
 hold on
-for node=1:numNodes;
+for node=1:numNodes
     plot_vertex(node, nodeCoords, colour)
 end
-hold off
 
 % dynamic axis limits
 minCoords = min(nodeCoords);     maxCoords = max(nodeCoords); 
