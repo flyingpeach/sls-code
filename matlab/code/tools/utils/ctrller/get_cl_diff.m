@@ -16,8 +16,8 @@ RTotalNorm = 0;
 MTotalNorm = 0;
 
 for k=1:T
-    RTotalNorm = RTotalNorm + norm(full(R{t}), 'fro');
-    MTotalNorm = MTotalNorm + norm(full(M{t}), 'fro');
+    RTotalNorm = RTotalNorm + norm(full(R{k}), 'fro');
+    MTotalNorm = MTotalNorm + norm(full(M{k}), 'fro');
     RDiff = RDiff + norm(full(R{k} - R_{k}), 'fro');
     MDiff = MDiff + norm(full(M{k} - M_{k}), 'fro');
 end
