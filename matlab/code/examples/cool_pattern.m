@@ -1,8 +1,8 @@
 clear; close all; clc; 
 
 % which things we want to plot
-plotAnimation = true;
-plotHeatMap   = false;
+plotAnimation = false;
+plotHeatMap   = true;
 
 % specify system matrices
 sys    = LTISystem;
@@ -19,7 +19,7 @@ sys.sanity_check();
 
 % simulation setup
 simParams           = SimParams;
-simParams.tSim_     = 30;
+simParams.tSim_     = 75;
 simParams.w_        = zeros(sys.Nx, 100);
 simParams.w_(floor(sys.Nx/2), 1) = 10;
 

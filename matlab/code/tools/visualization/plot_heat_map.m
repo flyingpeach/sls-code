@@ -5,23 +5,18 @@ function plot_heat_map(x, Bu, myTitle)
 %    myTitle  : overall title of the heat maps
 
 figure; suptitle(myTitle);
-
 logmin = -4;
 logmax = 0;
-    
-if Bu == zeros(size(Bu, 1), size(Bu, 2));
-    % don't subplot; plot only x
-    imagesc(log10(abs(x))); colorbar; colormap jet; caxis([logmin logmax]);
-    title('log10(|x|)'); xlabel('Time'); ylabel('Space');
-else
-    subplot(1,2,1)
-    imagesc(log10(abs(x))); colorbar; colormap jet; caxis([logmin logmax]);
-    title('log10(|x|)'); xlabel('Time'); ylabel('Space');
 
-    subplot(1,2,2)
-    imagesc(log10(abs(Bu))); colorbar; colormap jet; caxis([logmin logmax]);
-    title('log10(|u|)'); xlabel('Time');
-end
+subplot(1,2,1)
+imagesc(log10(abs(x))); colorbar; colormap jet; caxis([logmin logmax]);
+title('log10(|x|)'); xlabel('Time'); ylabel('Space');
+pos = get(gca, 'Position');
+set(gca, 'Position', [pos(1) pos(2)+0.01 pos(3) pos(4)-0.01]);
+
+subplot(1,2,2)
+imagesc(log10(abs(Bu))); colorbar; colormap jet; caxis([logmin logmax]);
+title('log10(|u|)'); xlabel('Time');
 
 % These are the font settings from previous papers; uncomment as wanted
 % set(gca,'FontSize',16,'fontWeight','bold')
