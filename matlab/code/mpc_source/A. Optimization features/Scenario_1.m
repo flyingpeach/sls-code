@@ -4,7 +4,6 @@ clc; clear all; close all;
 
 locality = 3; % this is between states, no subsystems
 network = 4;
-    
 %% Plant dynamics
 
 % Number of pendulums
