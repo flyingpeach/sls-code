@@ -33,7 +33,7 @@ slsParams.add_constraint(SLSConstraint.CommSpeed, 1);
 slsParams.add_constraint(SLSConstraint.Locality, 8);
 
 slsParams.approx_      = true;
-slsParams.approxCoeff_ = 1e3;
+slsParams.stabCoeff_ = 1e3;
 
 % find closed loop map + controller + simulate
 clMaps  = state_fdbk_sls(sys, slsParams);

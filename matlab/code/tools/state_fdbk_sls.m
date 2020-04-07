@@ -63,7 +63,7 @@ if params.approx_
     end
     Delta{T} = - sys.A*R{T} - sys.B2*M{T};
     % regularization for stability
-    objective = objective + params.approxCoeff_ * get_stab_norm(Delta);
+    objective = objective + params.stabCoeff_ * get_stab_norm(Delta);
 else
     R{T} == zeros(sys.Nx, sys.Nx);
     for t=1:T-1

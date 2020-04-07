@@ -46,8 +46,8 @@ plot_heat_map(x2, sys.B2*u2, 'Loc + Delayed');
 %% (3) approximate localized and delayed sls
 slsParams.add_constraint(SLSConstraint.CommSpeed, 1);
 
-slsParams.approx_      = true;
-slsParams.approxCoeff_ = 1e3;
+slsParams.approx_    = true;
+slsParams.stabCoeff_ = 1e3;
 
 clMaps3  = state_fdbk_sls(sys, slsParams);
 ctrller3 = Ctrller.ctrller_from_cl_maps(clMaps3);
