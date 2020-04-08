@@ -12,7 +12,6 @@ S = diag(ones(Nu,1));
 x(:,1) = x0;
 xi = x0;
 
-    % Warm-start
     Phi = zeros(Nx*tFIR + Nu*(tFIR-1),Nx);
     Psi = zeros(Nx*tFIR + Nu*(tFIR-1),Nx);
     Lambda = zeros(Nx*tFIR + Nu*(tFIR-1),Nx);
