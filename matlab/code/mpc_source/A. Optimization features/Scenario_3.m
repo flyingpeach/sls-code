@@ -4,7 +4,6 @@ setup_sls_constr;
 
 %% Coupling weights and constraints
 
-% Weights
 Q = zeros(Nx,Nx);
 for i = 1:2:Nx
     Q(i,i) = 1;
@@ -58,12 +57,12 @@ up = .05;
 % Coupling (since the coupling from cost is more extensive than the coupling from the constraints this
             % time we only count the coupling from the cost)
 for i = 1:Nx*tFIR+Nu*(tFIR-1)
-    indeces{i} = [];
+    indices{i} = [];
     for j = 1:Nx*tFIR+Nu*(tFIR-1)
         if C(i,j) ~= 0
-            indeces{i} = [indeces{i} j];
+            indices{i} = [indices{i} j];
         end
-        indeces{i} = unique(indeces{i});
+        indices{i} = unique(indices{i});
     end
 end
 
@@ -136,9 +135,9 @@ Phi = zeros(Nx*tFIR + Nu*(tFIR-1),Nx);
 Psi = zeros(Nx*tFIR + Nu*(tFIR-1),Nx);
 Lambda = zeros(Nx*tFIR + Nu*(tFIR-1),Nx);
 for i = 1:Nx*tFIR+Nu*(tFIR-1)
-    if isempty(indeces{i}) == 0
+    if isempty(indices{i}) == 0
         Z_admm{i} = 0;
-        for j = indeces{i}
+        for j = indices{i}
             Y{i}{j} = 0;
         end
     else
@@ -193,16 +192,16 @@ while norm(conv1)>10^(-3) || norm(conv2)>10^(-4)
         for i = r{sys}
             
             n = max(length(s_r{sys}(find(r{sys}==i),:)));
-            m = max(length(indeces{i}));
+            m = max(length(indices{i}));
             
             % Define parameters
-            m_j = max(length(indeces{i}));
-            C_proxi = C(i,indeces{i});
+            m_j = max(length(indices{i}));
+            C_proxi = C(i,indices{i});
             M1 = [eye(n) zeros(n,m_j-1)];
             Id = eye(m_j-1);
             xi_i = xi(s_r{sys}(find(r{sys}==i),:));
             
-            i_new = find(indeces{i} == i);
+            i_new = find(indices{i} == i);
             
             M2 = [zeros(i_new-1,n) Id(1:i_new-1,:); xi_i' zeros(1,m_j-1); zeros(m_j-i_new,n) Id(i_new:end,:)];
             a = Psi_loc_row{i}-Lambda_loc_row{i};
@@ -220,14 +219,14 @@ while norm(conv1)>10^(-3) || norm(conv2)>10^(-4)
                 
                 Mj_sum = Mj_sum + (M{j}'*M{j});
                 
-                k = indeces{i}(j);
+                k = indices{i}(j);
                 b{k} = Z_admm{k}-Y{i}{k};
                 Mjb_sum = Mjb_sum + M{j}'*b{k};
             end
             
             
             if i <= Nx*tFIR && i >= Nx*2
-                K_proxi = K(2*i-1:2*i,indeces{i});
+                K_proxi = K(2*i-1:2*i,indices{i});
                 model.Q = sparse((C_proxi*M2)'*(C_proxi*M2)+rho/2*(M1'*M1)+mu/2*(Mj_sum));
                 model.A = sparse(K_proxi*M2); 
                 model.obj = -rho*a*M1 -mu*Mjb_sum';
@@ -246,7 +245,7 @@ while norm(conv1)>10^(-3) || norm(conv2)>10^(-4)
             Phi_loc{i} = (M1*W)';
             
             X_i = M2*W;
-            X{i} = zeros(Nx*tFIR+Nu*(tFIR-1),1); X{i}(indeces{i}) = X_i;
+            X{i} = zeros(Nx*tFIR+Nu*(tFIR-1),1); X{i}(indices{i}) = X_i;
             
         end
     end
@@ -259,8 +258,8 @@ while norm(conv1)>10^(-3) || norm(conv2)>10^(-4)
     for sys = 1:Nx
         for j = r{sys}
             Z_admm{j} = 0;
-            for i = indeces{j}
-                Z_admm{j} = Z_admm{j} + (X{i}(j)+Y{i}{j})/length(indeces{j});
+            for i = indices{j}
+                Z_admm{j} = Z_admm{j} + (X{i}(j)+Y{i}{j})/length(indices{j});
             end
         end
     end
@@ -269,7 +268,7 @@ while norm(conv1)>10^(-3) || norm(conv2)>10^(-4)
     
     for sys = 1:Nx
         for i = r{sys}
-            for j = indeces{i}
+            for j = indices{i}
                 Y{i}{j} = Y{i}{j} + X{i}(j) - Z_admm{j};
             end
         end
@@ -281,7 +280,7 @@ while norm(conv1)>10^(-3) || norm(conv2)>10^(-4)
     for sys = 1:Nx
         for i = r{sys}
             average = zeros(Nx*tFIR+Nu*(tFIR-1),1);
-            for j = indeces{i}
+            for j = indices{i}
                 average(j) = Z_admm{j};
             end
             primal (i) = norm(X{i}-average);
