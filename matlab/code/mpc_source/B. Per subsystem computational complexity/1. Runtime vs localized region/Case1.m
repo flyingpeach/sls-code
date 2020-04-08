@@ -64,7 +64,6 @@ x0 = rand(Nx,1);
 Tsim = 10;
 
 %% Feasibility constraints
-
 E1 = [eye(Nx);zeros(Nx*(T-1),Nx)];
 
 I = kron(eye(T),eye(Nx));
