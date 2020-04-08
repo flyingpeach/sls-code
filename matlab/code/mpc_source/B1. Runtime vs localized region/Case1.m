@@ -1,93 +1,23 @@
-%% ALGORTIHM I
+% Algorithm I, System B
+clear all; close all; clc;
 
-clc; clear all; close all;
+localities = [3 5 7 10];
+numLocs    = length(localities);
+times      = zeros(1, numLocs);
+timeCents  = zeros(1, numLocs);
+iters      = zeros(1, numLocs);
 
-index = 0;
-cases = [3 5 7 10];
-
-for locality = cases
+numPendula = 10;
+for index=1:numLocs
+    locality = localities(index);
+    clear x u x_VAL u_VAL LocalityR LocalityM
     
-    index = index+1; time(index) = 0; time_centr(index) = 0; iter(index) = 0; clear x u x_VAL u_VAL LocalityR LocalityM
-    
-    %% Plant dynamics
-
-% Number of pendulums
-n = 10;
-
-Nx = 2*n; Nu = n;
-
-% index = index+1; time(index) = 0; clear x u 
-
-% A matrix
-Ac = zeros(Nx,Nx); j = 0;
-for i = 1:2:Nx
-    j = j+1;
-    if j == 1
-        Ac (i:i+1,i+2:i+3) = [0    0; 1  1];
-        Ac (i:i+1,i:i+1) = [0 1; -3 -3];
-    elseif j == Nx/2        
-        Ac (i:i+1,i:i+1) = [0 1; -3 -3];
-        Ac (i:i+1,i-2:i-1) = [0    0; 1 1];
-    else
-        Ac (i:i+1,i+2:i+3) = [0    0; 1 1];
-        Ac (i:i+1,i:i+1) = [0 1; -3 -3];
-        Ac (i:i+1,i-2:i-1) = [0    0; 1 1];
-    end
-end
-
-% B matrix
-Bc = zeros(Nx,Nu); j = 0;
-for i = 1:2:Nx
-    j = j+1;
-    Bc (i:i+1,j) = [0; 1];
-end
-
-% Discretize 
-Ts = .1;
-
-A  = (eye(Nx)+Ac*Ts);
-B = Ts*Bc;
-
-%% Scenario definition
-
-% Time horizonn (FIR)
-T = 5;
-
-% Locality constraint
-d = locality;
-
-% Initial condition
-rng(2020)
-x0 = rand(Nx,1);
-
-% Simulation time
-Tsim = 10;
-
-%% Feasibility constraints
-E1 = [eye(Nx);zeros(Nx*(T-1),Nx)];
-
-I = kron(eye(T),eye(Nx));
-
-Z = kron(eye(T-1),eye(Nx));
-Z = [zeros(Nx,Nx*(T));Z,zeros(Nx*(T-1),Nx)];
-
-tmp = repmat({A},T,1);
-Aa = blkdiag(tmp{:});
-clear tmp
-tmp = repmat({B},T,1);
-Bb = blkdiag(tmp{:});
-
-IZAa = I - Z*Aa;
-ZB = -Z*Bb;
-
-IZA_ZB = [IZAa ZB];
-IZA_ZB = IZA_ZB(:,1:end-Nu);
-invIZA_ZB = inv(IZA_ZB*IZA_ZB');
+    setup_system_b;
+    setup_sls_constr;
 
 %% Locality constraints
-
 Comms_Adj = abs(A)>0;
-for t = 1:T
+for t = 1:tFIR
     LocalityR{t} = Comms_Adj^(d-1)>0;
     LocalityM{t} = abs(B)'*LocalityR{t}>0;
 end
@@ -96,21 +26,21 @@ end
 for i = 1:Nx
     c{i} = i;
     count = 0;
-    for j = 1:T+(T-1)
-        if j<=T
+    for j = 1:tFIR+(tFIR-1)
+        if j<=tFIR
             find_locR = find(LocalityR{j}(:,i));
             for k =1:max(length(find_locR))
                 count = count +1;
                 s_c{i}(count) = find_locR(k)+(j-1)*Nx;
-                if j == T
+                if j == tFIR
                     s_c_T{i}(k) = count;
                 end
             end
         else
-            find_locM = find(LocalityM{j-T}(:,i));
+            find_locM = find(LocalityM{j-tFIR}(:,i));
             for k =1:max(length(find_locM))
                 count = count +1;
-                s_c{i}(count) = find_locM(k)+(j-T-1)*Nu+T*Nx;
+                s_c{i}(count) = find_locM(k)+(j-tFIR-1)*Nu+tFIR*Nx;
             end
         end
     end
@@ -120,20 +50,20 @@ end
 k = 0;
 for i = 1:Nx
     if mod(i, Nx/Nu) == 0 % Decide whether or not there is actuation
-        s_r{i} = zeros(T+(T-1),Nx); % Prealocate the indices
+        s_r{i} = zeros(tFIR+(tFIR-1),Nx); % Prealocate the indices
         k = k+1;
-        for j = 1:T+(T-1)
-            if j<=T
+        for j = 1:tFIR+(tFIR-1)
+            if j<=tFIR
                 r{i}(j) = Nx*(j-1) + i;
                 s_r{i}(j,1:max(length(find(LocalityR{j}(i,:))))) = find(LocalityR{j}(i,:));
             else
-                r{i}(j) = Nu*(j-T-1) + Nx*T + k;
-                s_r{i}(j,1:max(length(find(LocalityM{j-T}(k,:))))) = find(LocalityM{j-T}(k,:));
+                r{i}(j) = Nu*(j-tFIR-1) + Nx*tFIR + k;
+                s_r{i}(j,1:max(length(find(LocalityM{j-tFIR}(k,:))))) = find(LocalityM{j-tFIR}(k,:));
             end
         end
     else
-        s_r{i} = zeros(T,Nx); % Prealocate the indices
-        for j = 1:T
+        s_r{i} = zeros(tFIR,Nx); % Prealocate the indices
+        for j = 1:tFIR
             r{i}(j) = Nx*(j-1) + i;
             s_r{i}(j,1:max(length(find(LocalityR{j}(i,:))))) = find(LocalityR{j}(i,:));
         end
@@ -148,13 +78,13 @@ x(:,1) = x0;
 xi = x0;
 
     % Warm-start
-    Phi = zeros(Nx*T + Nu*(T-1),Nx);
-    Psi = zeros(Nx*T + Nu*(T-1),Nx);
-    Lambda = zeros(Nx*T + Nu*(T-1),Nx);
+    Phi = zeros(Nx*tFIR + Nu*(tFIR-1),Nx);
+    Psi = zeros(Nx*tFIR + Nu*(tFIR-1),Nx);
+    Lambda = zeros(Nx*tFIR + Nu*(tFIR-1),Nx);
 
-for t = 1:Tsim
+for t = 1:tSim
 
-    Psi_prev = ones(Nx*T + Nu*(T-1),Nx); % Just so the while doesn't break
+    Psi_prev = ones(Nx*tFIR + Nu*(tFIR-1),Nx); % Just so the while doesn't break
     
     rho = 5;
     
@@ -169,17 +99,17 @@ for t = 1:Tsim
         for i = 1:Nx
             if mod(i, Nx/Nu) == 0
                  k = k+1;
-                for j = 1:T+(T-1)
-                    if j<=T
+                for j = 1:tFIR+(tFIR-1)
+                    if j<=tFIR
                         Psi_loc_row{i} = Psi(r{i},s_r{i}(j,1:max(length(find(LocalityR{j}(i,:))))));
                         Lambda_loc_row{i} = Lambda(r{i},s_r{i}(j,1:max(length(find(LocalityR{j}(i,:))))));
                     else
-                        Psi_loc_row{i} = Psi(r{i},s_r{i}(j,1:max(length(find(LocalityM{j-T}(k,:))))));
-                        Lambda_loc_row{i} = Lambda(r{i},s_r{i}(j,1:max(length(find(LocalityM{j-T}(k,:))))));
+                        Psi_loc_row{i} = Psi(r{i},s_r{i}(j,1:max(length(find(LocalityM{j-tFIR}(k,:))))));
+                        Lambda_loc_row{i} = Lambda(r{i},s_r{i}(j,1:max(length(find(LocalityM{j-tFIR}(k,:))))));
                     end
                 end
             else
-                for j = 1:T
+                for j = 1:tFIR
                         Psi_loc_row{i} = Psi(r{i},s_r{i}(j,1:max(length(find(LocalityR{j}(i,:))))));
                         Lambda_loc_row{i} = Lambda(r{i},s_r{i}(j,1:max(length(find(LocalityR{j}(i,:))))));
                 end
@@ -190,20 +120,20 @@ for t = 1:Tsim
         % Solve for each row
         i = 1; % Separate the first row since we want to measure time
         tic
-        ADMM_matrix = inv(2*xi(s_r{i}(T,:))*xi(s_r{i}(T,:))'+rho*eye(size(s_r{i},2)));
+        ADMM_matrix = inv(2*xi(s_r{i}(tFIR,:))*xi(s_r{i}(tFIR,:))'+rho*eye(size(s_r{i},2)));
         Phi_loc{i} = rho*(Psi_loc_row{i}-Lambda_loc_row{i})*ADMM_matrix;
         toc
-        time(index) = time(index) + toc;
+        times(index) = times(index) + toc;
         
         for i = 2:Nx
             clear ADMM_matrix
-            ADMM_matrix = inv(2*xi(s_r{i}(T,:))*xi(s_r{i}(T,:))'+rho*eye(size(s_r{i},2)));
+            ADMM_matrix = inv(2*xi(s_r{i}(tFIR,:))*xi(s_r{i}(tFIR,:))'+rho*eye(size(s_r{i},2)));
             Phi_loc{i} = rho*(Psi_loc_row{i}-Lambda_loc_row{i})*ADMM_matrix;
         end
         
         % Build the big matrix
         for i = 1:Nx
-            Phi(r{i},s_r{i}(T,:)) = Phi_loc{i};
+            Phi(r{i},s_r{i}(tFIR,:)) = Phi_loc{i};
         end
                
         %% Column-wise separability
@@ -215,17 +145,17 @@ for t = 1:Tsim
         
         % Solve for each column
         i = 1; % Separate the first row since we want to measure time
-        IZA_ZB_loc = IZA_ZB(:,s_c{i}); row_all_zeros = find(all(IZA_ZB_loc == 0,2)); keep_indices = setdiff(linspace(1,Nx*T,Nx*T),row_all_zeros);
+        IZA_ZB_loc = IZA_ZB(:,s_c{i}); row_all_zeros = find(all(IZA_ZB_loc == 0,2)); keep_indices = setdiff(linspace(1,Nx*tFIR,Nx*tFIR),row_all_zeros);
         IZA_ZB_loc = IZA_ZB(keep_indices,s_c{i}); E1_loc = E1(keep_indices,c{i}); 
         tic
         AUX_matrix = IZA_ZB_loc'*pinv(IZA_ZB_loc*IZA_ZB_loc');
         Psi_loc{i} = (Phi_loc_col{i}+Lambda_loc_col{i})+AUX_matrix*(E1_loc-IZA_ZB_loc*(Phi_loc_col{i}+Lambda_loc_col{i}));
         toc
-        time(index) = time(index) + toc;
+        times(index) = times(index) + toc;
 
         for i = 2:Nx
             clear AUX_matrix
-            IZA_ZB_loc = IZA_ZB(:,s_c{i}); row_all_zeros = find(all(IZA_ZB_loc == 0,2)); keep_indices = setdiff(linspace(1,Nx*T,Nx*T),row_all_zeros);
+            IZA_ZB_loc = IZA_ZB(:,s_c{i}); row_all_zeros = find(all(IZA_ZB_loc == 0,2)); keep_indices = setdiff(linspace(1,Nx*tFIR,Nx*tFIR),row_all_zeros);
             IZA_ZB_loc = IZA_ZB(keep_indices,s_c{i}); E1_loc = E1(keep_indices,c{i}); 
             AUX_matrix = IZA_ZB_loc'*pinv(IZA_ZB_loc*IZA_ZB_loc');
             Psi_loc{i} = (Phi_loc_col{i}+Lambda_loc_col{i})+AUX_matrix*(E1_loc-IZA_ZB_loc*(Phi_loc_col{i}+Lambda_loc_col{i}));
@@ -245,9 +175,9 @@ for t = 1:Tsim
         conv = [0];
         
         for sys = 1:Nx
-            local_phi = Phi(r{sys},s_r{sys}(T,:));
-            local_psi = Psi(r{sys},s_r{sys}(T,:));
-            local_psi_prev = Psi_prev(r{sys},s_r{sys}(T,:));
+            local_phi = Phi(r{sys},s_r{sys}(tFIR,:));
+            local_psi = Psi(r{sys},s_r{sys}(tFIR,:));
+            local_psi_prev = Psi_prev(r{sys},s_r{sys}(tFIR,:));
 
             local_conv1 = norm(local_phi-local_psi,'fro');
             local_conv2 = norm(local_psi-local_psi_prev,'fro');
@@ -267,13 +197,13 @@ for t = 1:Tsim
     end
     
     if t > 1
-        iter(index) = iter(index) + count;
+        iters(index) = iters(index) + count;
     end
     
     %% Dynamics
     
     % Compute the control action (in a localized way)
-    u(:,t) = Phi(1+Nx*T:Nx*T+Nu,:)*xi;
+    u(:,t) = Phi(1+Nx*tFIR:Nx*tFIR+Nu,:)*xi;
     
     % Simulate what the dynamics are given that action
     x(:,t+1) = Phi(1+Nx:2*Nx,:)*xi; % Since there is no noise x_ref = x
@@ -282,15 +212,15 @@ for t = 1:Tsim
     xi = x(:,t+1);
     
 end
-time(index) = time(index)/(Tsim-1);
-iter(index) = iter(index)/(Tsim-1);
+times(index) = times(index)/(tSim-1);
+iters(index) = iters(index)/(tSim-1);
 
 %% Validation
 
 x_VAL(:,1) = x0;
 xi = x0;
 
-for k = 1:Tsim
+for k = 1:tSim
     
     clear LocalityR LocalityM
     
@@ -298,7 +228,7 @@ for k = 1:Tsim
     LocalityR = Comms_Adj^(d-1)>0;
     
     count = 0;
-    for t = 1:T
+    for t = 1:tFIR
         Rsupport{t} = LocalityR>0;
         Msupport{t} = (abs(B)'*Rsupport{t})>0;
         count = count + sum(sum(Rsupport{t}))+sum(sum(Msupport{t}));
@@ -311,13 +241,13 @@ for k = 1:Tsim
     cvx_solver_settings('dumpfile','file2getruntime')
     
     variable X(count)
-    expression Rs(Nx,Nx,T)
-    expression Ms(Nu,Nx,T)
+    expression Rs(Nx,Nx, tFIR)
+    expression Ms(Nu,Nx, tFIR)
     
     % Populate decision variables
     % Locality constraints automatically enforced by limiting support of R and M
     spot = 0;
-    for t = 1:T
+    for t = 1:tFIR
         R{t} = Rs(:,:,t);
         supp = find(Rsupport{t});
         num = sum(sum(Rsupport{t}));
@@ -333,7 +263,7 @@ for k = 1:Tsim
     
     % Set up objective function
     objective = 0;
-    for t = 1:T
+    for t = 1:tFIR
         vect = vec([R{t};M{t}]*xi);
         objective = objective + vect'*vect;
     end
@@ -343,17 +273,15 @@ for k = 1:Tsim
     subject to
     % Achievability constraints
     R{1} == eye(Nx);
-    for t= 1:T-1
+    for t= 1:tFIR-1
         R{t+1} == A*R{t} + B*M{t};
     end
     cvx_end
-%     toc
-%     time_centr(index) = time_centr(index) + toc;
     
     if t>1
         load('file2getruntime.mat')
-        runtime = getfield(res,'runtime');
-        time_centr(index) = time_centr(index) + runtime;
+        runtime = getfield(info,'cputime');
+        timeCents(index) = timeCents(index) + runtime;
     end
     
     %% Dynamics
@@ -367,22 +295,22 @@ for k = 1:Tsim
     % Update the initial condition
     xi = x_VAL(:,k+1);
 end
-time_centr(index) = time_centr(index)/(Tsim-1);
+timeCents(index) = timeCents(index)/(tSim-1);
 end
 
 %% Plot
 
 figure (1)
 subplot(1,2,1)
-plot(cases,time,'m-s','LineWidth',2)
+plot(cases,times,'m-s','LineWidth',2)
 hold on
-plot(cases,time_centr,'b-s','LineWidth',2)
+plot(cases,timeCents,'b-s','LineWidth',2)
 xlabel('$$Number\ of\ pendulums\ in\ the\ network$$','Interpreter','latex','Fontsize', 16)
 ylabel('$$Average\ runtime\ per\ MPC\ iteration\ for\ each\ state\ (seconds)$$','Interpreter','latex','Fontsize', 16)
 leg4 = legend('$$Localized\ ADMM\ Solution$$', '$$Centralized\ Solution$$');
 set(leg4,'Interpreter','latex','Fontsize', 12);
 
 subplot(1,2,2)
-plot(cases,iter,'m-s','LineWidth',2)
+plot(cases,iters,'m-s','LineWidth',2)
 xlabel('$$Number\ of\ pendulums\ in\ the\ network$$','Interpreter','latex','Fontsize', 16)
 ylabel('$$Average\ number\ of\ ADMM\ iterations\ per\ MPC\ iteration\ for\ each\ state\ (seconds)$$','Interpreter','latex','Fontsize', 16)
