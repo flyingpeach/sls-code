@@ -13,9 +13,9 @@ tSim = 30; % simulation time
 tFIR = 20; % FIR time horizon
 
 %% plant setup
-m = 1; k = 1; g = 10; l = 1;
-block_off_diag  = [0    0; k*l/m  d/(m*l)];
-block_diag      = [0 1; -g-2*k*l/m -2*d/(m*l)];
+m = 1; k = 1; f = 3; g = 10; l = 1;
+block_off_diag  = [0    0; k*l/m  f/(m*l)];
+block_diag      = [0 1; -g-2*k*l/m -2*f/(m*l)];
 
 Ac = zeros(Nx,Nx); j = 0; % A matrix (continuous time)
 for i = 1:2:Nx
