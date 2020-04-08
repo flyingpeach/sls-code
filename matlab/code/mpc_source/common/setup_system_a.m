@@ -1,6 +1,6 @@
 clear all; close all; clc;
 
-% general setup
+%% general setup
 rng(2020)
 d = 3; % locality (this is between states, not subsystems)
 n = 4; % number of pendulums
@@ -12,10 +12,9 @@ x0   = rand(Nx,1);
 tSim = 30; % simulation time
 tFIR = 20; % FIR time horizon
 
-% plant setup
+%% plant setup
 m = 1; k = 1; g = 10; l = 1;
 block_off_diag  = [0    0; k*l/m  d/(m*l)];
-block_diag_extr = [0 1; -g-k*l/m -d/(m*l)];
 block_diag      = [0 1; -g-2*k*l/m -2*d/(m*l)];
 
 Ac = zeros(Nx,Nx); j = 0; % A matrix (continuous time)
