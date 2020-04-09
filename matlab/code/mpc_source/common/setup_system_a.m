@@ -8,9 +8,10 @@ n = 4; % number of pendulums
 Nx = 2*n; 
 Nu = n;
 
-x0   = rand(Nx,1);
-tSim = 30; % simulation time
-tFIR = 20; % FIR time horizon
+tSim = 30; % time horizon
+tFIR = 20; % FIR time (i.e. order of controller)
+
+x0 = rand(Nx,1);
 
 %% plant setup
 m = 1; k = 1; f = 3; g = 10; l = 1;

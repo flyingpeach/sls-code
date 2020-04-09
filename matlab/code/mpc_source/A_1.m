@@ -5,20 +5,25 @@ setup_system_a;
 setup_sls_constr;
 setup_loc_constr;
 
-% Coupling weights and constraints
+% Weights
 Q = eye(Nx);
 S = diag(ones(Nu,1));
 
-%% Controller synthesis
+%% Distributed MPC
 
 % ADMM variables
-Phi = zeros(Nx*tFIR + Nu*(tFIR-1),Nx);
-Psi = zeros(Nx*tFIR + Nu*(tFIR-1),Nx);
+Phi    = zeros(Nx*tFIR + Nu*(tFIR-1),Nx);
+Psi    = zeros(Nx*tFIR + Nu*(tFIR-1),Nx);
 Lambda = zeros(Nx*tFIR + Nu*(tFIR-1),Nx);
 
-x_t = x0;
+% Keep track of state + control
+x       = zeros(Nx, tSim);
+u       = zeros(Nu, tSim);
+x(:, 1) = x0;
+
 for t = 1:tSim
     fprintf('Calculating time %d of %d\n', t, tSim); % display progress
+    x_t = x(:,t); % update initial condition
     
     % ADMM parameters
     rho   = 5; % admm parameter
@@ -29,8 +34,8 @@ for t = 1:tSim
     for iter=1:maxIters
         Psi_prev = Psi;
         
-        %% Row-wise separability
-        k = 0; % Separate the given matrices
+        % Separate into rows
+        k = 0;
         for i = 1:Nx
             if mod(i, Nx/Nu) == 0
                  k = k+1;
@@ -58,13 +63,12 @@ for t = 1:tSim
             Phi_loc{i} = rho*(Psi_loc_row{i}-Lambda_loc_row{i})*ADMM_matrix;
         end
         
-        % Build the big matrix
+        % Build Phi matrix
         for i = 1:Nx
             Phi(r{i},s_r{i}(tFIR,:)) = Phi_loc{i};
         end
                
-        %% Column-wise separability
-        % Separate the given matrices
+        % Separate into columns
         for i = 1:Nx
             Phi_loc_col{i} = Phi(s_c{i},c{i});
             Lambda_loc_col{i} = Lambda(s_c{i},c{i});
@@ -79,12 +83,12 @@ for t = 1:tSim
             Psi_loc{i} = (Phi_loc_col{i}+Lambda_loc_col{i})+AUX_matrix*(E1_loc-IZA_ZB_loc*(Phi_loc_col{i}+Lambda_loc_col{i}));
         end
          
-        % Build the big matrix
+        % Build Phi matrix
         for i = 1:Nx
             Psi(s_c{i},c{i}) = Psi_loc{i};
         end
                      
-        %% Lagrange multiplier
+        % Lagrange multiplier
         Lambda = Lambda + Phi - Psi;
         
         % Check convergence locally 
@@ -112,47 +116,39 @@ for t = 1:tSim
         fprintf('ADMM reached %d iters and did not converge\n', maxIters);
     end
     
-    %% Dynamics
-    % Compute the control action (in a localized way)
+    % Compute control + state
     u(:,t) = Phi(1+Nx*tFIR:Nx*tFIR+Nu,:)*x_t;
-    
-    % Simulate what the dynamics are given that action
-    x(:,t+1) = Phi(1+Nx:2*Nx,:)*x_t; % Since there is no noise x_ref = x
-    
-    % Update the initial condition
-    x_t = x(:,t+1);
-    
+    x(:,t+1) = Phi(1+Nx:2*Nx,:)*x_t; % since no noise, x_ref = x
 end
 
-%% Validation
+%% Centralized MPC (for validation + comparison)
 
-x_VAL(:,1) = x0;
-x_t = x0;
+xVal      = zeros(Nx, tSim);
+uVal      = zeros(Nu, tSim);
+xVal(:,1) = x0;
 
 for k = 1:tSim
-    
+    fprintf('Validating time %d of %d\n', k, tSim); % display progress
+    x_k = xVal(:,k);
+
     clear LocalityR LocalityM
-    
     Comms_Adj = abs(A)>0;
     LocalityR = Comms_Adj^(d-1)>0;
     
     count = 0;
     for t = 1:tFIR
-        % Rsupport{t} = min(Comms_Adj^(floor(max(0,comms*(t-ta)))),LocalityR)>0;
         Rsupport{t} = LocalityR>0;
         Msupport{t} = (abs(B)'*Rsupport{t})>0;
         count = count + sum(sum(Rsupport{t}))+sum(sum(Msupport{t}));
     end
     
-    cvx_begin
+    cvx_begin quiet
     cvx_precision low
     
     variable X(count)
     expression Rs(Nx,Nx,tFIR)
     expression Ms(Nu,Nx,tFIR)
     
-    % Populate decision variables
-    % Locality constraints automatically enforced by limiting support of R and M
     spot = 0;
     for t = 1:tFIR
         R{t} = Rs(:,:,t);
@@ -171,62 +167,46 @@ for k = 1:tSim
     % Set up objective function
     objective = 0;
     for t = 1:tFIR
-        vect = vec([Q zeros(Nx,Nu); zeros(Nu,Nx) S]*[R{t};M{t}]*x_t);
+        vect = vec([Q zeros(Nx,Nu); zeros(Nu,Nx) S]*[R{t};M{t}]*x_k);
         objective = objective + vect'*vect;
     end
-    
-    % Perform minimization
+
     minimize(objective)
     subject to
-    % Achievability constraints
-    R{1} == eye(Nx);
+
+    R{1} == eye(Nx); % Achievability constraints
     for t= 1:tFIR-1
         R{t+1} == A*R{t} + B*M{t};
     end
     cvx_end
     
-    %% Dynamics
-    
-    % Compute the control action
-    u_VAL(:,k) = M{1}*x_t;
-    
-    % Simulate what the dynamics are given that action
-    x_VAL(:,k+1) = R{2}*x_t; % Since there is no noise x_ref = x
-    
-    % Update the initial condition
-    x_t = x_VAL(:,k+1); 
-    
+    % Compute control + state
+    uVal(:,k) = M{1}*x_k;
+    xVal(:,k+1) = R{2}*x_k; % Since there is no noise x_ref = x 
 end
 
-%% Cost 
+%% Calculate costs + plot 
 
 obj=0;
-for t =1:tSim
-obj = obj + x(:,t)'*Q*x(:,t)+u(:,t)'*S*u(:,t);
+for t=1:tSim
+    obj = obj + x(:,t)'*Q*x(:,t)+u(:,t)'*S*u(:,t);
 end
 obj = obj + x(:,t+1)'*Q*x(:,t+1);
 
-
-obj_VAL=0;
-for t =1:tSim
-obj_VAL = obj_VAL + x_VAL(:,t)'*Q*x_VAL(:,t)+u_VAL(:,t)'*S*u_VAL(:,t);
+objVal=0;
+for t=1:tSim
+    objVal = objVal + xVal(:,t)'*Q*xVal(:,t)+uVal(:,t)'*S*uVal(:,t);
 end
-obj_VAL = obj_VAL + x_VAL(:,t+1)'*Q*x_VAL(:,t+1);
+objVal = objVal + xVal(:,t+1)'*Q*xVal(:,t+1);
 
-obj-obj_VAL
-
-% Output
-header1 = 'Distributed MPC';
-header2 = 'Centralized MPC!';
-fprintf([ header1 ' ' header2 'r\n']);
-fprintf('%f %f r\n', [obj obj_VAL]');
-
-%% Plot
+% Output costs
+fprintf('Distributed cost: %f\n', obj);
+fprintf('Centralized cost: %f\n', objVal);
 
 figure(1)
-plot(1:tSim+1,x_VAL(1,:),'b',1:tSim+1,x(1,:),'*b',1:tSim+1,x_VAL(3,:),'g',1:tSim+1,x(3,:),'*g')
-xlabel('$$Time$$','interpreter','latex','Fontsize', 16)
-ylabel('$$\theta_{1},\ \theta_{2}$$','Interpreter','Latex','Fontsize', 16)
+plot(1:tSim+1,xVal(1,:),'b',1:tSim+1,x(1,:),'*b',1:tSim+1,xVal(3,:),'g',1:tSim+1,x(3,:),'*g')
+xlabel('$$Time$$','interpreter','latex','Fontsize', 10)
+ylabel('$$\theta_{1},\ \theta_{2}$$','Interpreter','Latex','Fontsize', 10)
 leg1 = legend('$$\theta_{1}\ Centralized\ MPC$$', '$$\theta_{1}\ Localized\ MPC\ using\ ADMM$$','$$\theta_{2}\ Centralized\ MPC$$', '$$\theta_{2}\ Localized\ MPC\ using\ ADMM$$');
-set(leg1,'Interpreter','latex'); set(leg1, 'Fontsize', 10)
+set(leg1,'Interpreter','latex'); set(leg1, 'Fontsize', 8)
 title('Subsystems 1 and 2')
