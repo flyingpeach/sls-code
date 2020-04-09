@@ -1,5 +1,5 @@
-function [x, u] = mpc_algorithm1(Nx, Nu, A, B, d, tFIR, tSim, x0, ... % system
-                          eps_d, eps_p, rho, maxIters) % admm
+function [x, u, avgTime, avgIter] = mpc_algorithm1(Nx, Nu, A, B, d, tFIR, tSim, x0, ... % system
+                              eps_d, eps_p, rho, maxIters) % admm
 
 % ADMM variables
 Phi    = zeros(Nx*tFIR + Nu*(tFIR-1),Nx);
@@ -14,6 +14,10 @@ x(:, 1) = x0;
 % Set up constraints
 [E1, IZA_ZB] = get_sls_constraints(tFIR, Nx, Nu, A, B);
 [r, c, s_r, s_c, LocalityR, LocalityM] = get_locality_constraints(tFIR, Nx, Nu, A, B, d);
+
+% Track time / iterations
+totalTime = 0;
+totalIter = 0;
 
 for t = 1:tSim
     fprintf('Calculating time %d of %d\n', t, tSim); % display progress
@@ -49,8 +53,15 @@ for t = 1:tSim
         
         Phi_loc = cell(1, Nx);
         
-        % Solve for each row            
-        for i = 1:Nx
+        % Solve for each row
+        % for timing, separate first row
+        i = 1;
+        tic;
+        ADMM_matrix = inv(2*x_t(s_r{i}(tFIR,:))*x_t(s_r{i}(tFIR,:))'+rho*eye(size(s_r{i},2)));
+        Phi_loc{i} = rho*(Psi_loc_row{i}-Lambda_loc_row{i})*ADMM_matrix;
+        totalTime = totalTime + toc;
+        
+        for i = 2:Nx
             clear ADMM_matrix
             ADMM_matrix = inv(2*x_t(s_r{i}(tFIR,:))*x_t(s_r{i}(tFIR,:))'+rho*eye(size(s_r{i},2)));
             Phi_loc{i} = rho*(Psi_loc_row{i}-Lambda_loc_row{i})*ADMM_matrix;
@@ -72,7 +83,16 @@ for t = 1:tSim
         Psi_loc = cell(1, Nx);
         
         % Solve for each column
-        for i = 1:Nx
+        % for timing, separate first column
+        i = 1;
+        IZA_ZB_loc = IZA_ZB(:,s_c{i}); row_all_zeros = find(all(IZA_ZB_loc == 0,2)); keep_indices = setdiff(linspace(1,Nx*tFIR,Nx*tFIR),row_all_zeros);
+        IZA_ZB_loc = IZA_ZB(keep_indices,s_c{i}); E1_loc = E1(keep_indices,c{i}); 
+        tic;
+        AUX_matrix = IZA_ZB_loc'*pinv(IZA_ZB_loc*IZA_ZB_loc');
+        Psi_loc{i} = (Phi_loc_col{i}+Lambda_loc_col{i})+AUX_matrix*(E1_loc-IZA_ZB_loc*(Phi_loc_col{i}+Lambda_loc_col{i}));
+        totalTime = totalTime + toc;                
+
+        for i = 2:Nx
             clear AUX_matrix
             IZA_ZB_loc = IZA_ZB(:,s_c{i}); row_all_zeros = find(all(IZA_ZB_loc == 0,2)); keep_indices = setdiff(linspace(1,Nx*tFIR,Nx*tFIR),row_all_zeros);
             IZA_ZB_loc = IZA_ZB(keep_indices,s_c{i}); E1_loc = E1(keep_indices,c{i}); 
@@ -105,10 +125,14 @@ for t = 1:tSim
         end
 
         if ~criterion_failed
-            break; % convergence criterion passed, exit admm iterations
+            break; % convergence criterion passed, ex_tt admm iterations
         end
     end
 
+    if t > 1
+        totalIter = totalIter + iter;
+    end
+    
     if criterion_failed
         fprintf('ADMM reached %d iters and did not converge\n', maxIters);
     end
@@ -117,5 +141,8 @@ for t = 1:tSim
     u(:,t) = Phi(1+Nx*tFIR:Nx*tFIR+Nu,:)*x_t;
     x(:,t+1) = Phi(1+Nx:2*Nx,:)*x_t; % since no noise, x_ref = x
 end
+
+avgTime = totalTime / (tSim - 1);
+avgIter = totalIter / (tSim - 1);
 
 end

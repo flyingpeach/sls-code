@@ -1,8 +1,10 @@
-function [x, u] = mpc_centralized(Nx, Nu, A, B, d, Q, S, tFIR, tSim, x0)
+function [x, u, avgTime] = mpc_centralized(Nx, Nu, A, B, d, Q, S, tFIR, tSim, x0)
 
 x      = zeros(Nx, tSim);
 u      = zeros(Nu, tSim);
 x(:,1) = x0;
+
+totalTime = 0;
 
 for k = 1:tSim
     fprintf('Validating time %d of %d\n', k, tSim); % display progress
@@ -51,6 +53,7 @@ for k = 1:tSim
         objective = objective + vect'*vect;
     end
 
+    tic;
     minimize(objective)
     subject to
 
@@ -63,6 +66,12 @@ for k = 1:tSim
     % Compute control + state
     u(:,k) = M{1}*x_k;
     x(:,k+1) = R{2}*x_k; % Since there is no noise x_ref = x 
+    
+    if t > 1
+        totalTime = totalTime + toc;
+    end
 end
+
+avgTime = totalTime / (tSim - 1);
 
 end
