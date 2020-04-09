@@ -1,36 +1,36 @@
 % Algorithm I, System A
+
+%% Setup
 setup_system_a;
 setup_sls_constr;
 setup_loc_constr;
 
-%% Coupling weights and constraints
+% Coupling weights and constraints
 Q = eye(Nx);
 S = diag(ones(Nu,1));
 
-%% Syntheize the controller
+%% Controller synthesis
 
-x(:,1) = x0;
-xi = x0;
+% ADMM variables
+Phi = zeros(Nx*tFIR + Nu*(tFIR-1),Nx);
+Psi = zeros(Nx*tFIR + Nu*(tFIR-1),Nx);
+Lambda = zeros(Nx*tFIR + Nu*(tFIR-1),Nx);
 
-    Phi = zeros(Nx*tFIR + Nu*(tFIR-1),Nx);
-    Psi = zeros(Nx*tFIR + Nu*(tFIR-1),Nx);
-    Lambda = zeros(Nx*tFIR + Nu*(tFIR-1),Nx);
-
+x_t = x0;
 for t = 1:tSim
-    t
-
-    Psi_prev = ones(Nx*tFIR + Nu*(tFIR-1),Nx); % Just so the while doesn't break
+    fprintf('Calculating time %d of %d\n', t, tSim); % display progress
     
-    rho = 5;
+    % ADMM parameters
+    rho   = 5; % admm parameter
+    eps_d = 1e-3; % convergence criterion for ||Psi(k+1) - Psi(k)||
+    eps_p = 1e-4; % convergence criterion for ||Phi(k+1) - Psi(k+1)||
+    maxIters = 5000;
     
-    count = 0; conv = [1];
-    while norm(conv) ~= 0 %norm(Psi_prev-Psi)>10^(-3) || norm(Phi-Psi)>10^(-4)
-        
+    for iter=1:maxIters
         Psi_prev = Psi;
         
         %% Row-wise separability
-        % Separate the given matrices
-        k = 0;
+        k = 0; % Separate the given matrices
         for i = 1:Nx
             if mod(i, Nx/Nu) == 0
                  k = k+1;
@@ -54,7 +54,7 @@ for t = 1:tSim
         % Solve for each row            
         for i = 1:Nx
             clear ADMM_matrix
-            ADMM_matrix = inv(2*xi(s_r{i}(tFIR,:))*xi(s_r{i}(tFIR,:))'+rho*eye(size(s_r{i},2)));
+            ADMM_matrix = inv(2*x_t(s_r{i}(tFIR,:))*x_t(s_r{i}(tFIR,:))'+rho*eye(size(s_r{i},2)));
             Phi_loc{i} = rho*(Psi_loc_row{i}-Lambda_loc_row{i})*ADMM_matrix;
         end
         
@@ -87,50 +87,47 @@ for t = 1:tSim
         %% Lagrange multiplier
         Lambda = Lambda + Phi - Psi;
         
-        %% Convergence
-        
-        % Local convergence criterium
-        conv = [0];
-        
+        % Check convergence locally 
+        conv_criterion_failed = false;
         for sys = 1:Nx
             local_phi = Phi(r{sys},s_r{sys}(tFIR,:));
             local_psi = Psi(r{sys},s_r{sys}(tFIR,:));
             local_psi_prev = Psi_prev(r{sys},s_r{sys}(tFIR,:));
 
-            local_conv1 = norm(local_phi-local_psi,'fro');
-            local_conv2 = norm(local_psi-local_psi_prev,'fro');
+            local_diff_d = norm(local_psi-local_psi_prev,'fro');
+            local_diff_p = norm(local_phi-local_psi,'fro');
             
-            if local_conv1 > 10^(-4) || local_conv2 > 10^(-3)
-                 conv = [conv 1];
+            if local_diff_p > eps_p || local_diff_d > eps_d
+                conv_criterion_failed = true;
+                break; % if one fails, can stop checking the rest
             end
         end
         
-        % Number of iterations until convergence
-        count = count + 1;
-        if count >5000
-            disp ('ADMM did not converge')
-            break
+        if ~conv_criterion_failed
+            break; % convergence criterion passed, exit admm iterations
         end
-        
+    end
+
+    if conv_criterion_failed
+        fprintf('ADMM reached %d iters and did not converge\n', maxIters);
     end
     
     %% Dynamics
-    
     % Compute the control action (in a localized way)
-    u(:,t) = Phi(1+Nx*tFIR:Nx*tFIR+Nu,:)*xi;
+    u(:,t) = Phi(1+Nx*tFIR:Nx*tFIR+Nu,:)*x_t;
     
     % Simulate what the dynamics are given that action
-    x(:,t+1) = Phi(1+Nx:2*Nx,:)*xi; % Since there is no noise x_ref = x
+    x(:,t+1) = Phi(1+Nx:2*Nx,:)*x_t; % Since there is no noise x_ref = x
     
     % Update the initial condition
-    xi = x(:,t+1);
+    x_t = x(:,t+1);
     
 end
 
 %% Validation
 
 x_VAL(:,1) = x0;
-xi = x0;
+x_t = x0;
 
 for k = 1:tSim
     
@@ -174,7 +171,7 @@ for k = 1:tSim
     % Set up objective function
     objective = 0;
     for t = 1:tFIR
-        vect = vec([Q zeros(Nx,Nu); zeros(Nu,Nx) S]*[R{t};M{t}]*xi);
+        vect = vec([Q zeros(Nx,Nu); zeros(Nu,Nx) S]*[R{t};M{t}]*x_t);
         objective = objective + vect'*vect;
     end
     
@@ -191,13 +188,13 @@ for k = 1:tSim
     %% Dynamics
     
     % Compute the control action
-    u_VAL(:,k) = M{1}*xi;
+    u_VAL(:,k) = M{1}*x_t;
     
     % Simulate what the dynamics are given that action
-    x_VAL(:,k+1) = R{2}*xi; % Since there is no noise x_ref = x
+    x_VAL(:,k+1) = R{2}*x_t; % Since there is no noise x_ref = x
     
     % Update the initial condition
-    xi = x_VAL(:,k+1); 
+    x_t = x_VAL(:,k+1); 
     
 end
 
@@ -218,12 +215,11 @@ obj_VAL = obj_VAL + x_VAL(:,t+1)'*Q*x_VAL(:,t+1);
 
 obj-obj_VAL
 
-% Save to .txt
+% Output
 header1 = 'Distributed MPC';
 header2 = 'Centralized MPC!';
-fid=fopen('scenario1.txt','w');
-fprintf(fid, [ header1 ' ' header2 'r\n']);
-fprintf(fid, '%f %f r\n', [obj obj_VAL]');
+fprintf([ header1 ' ' header2 'r\n']);
+fprintf('%f %f r\n', [obj obj_VAL]');
 
 %% Plot
 
