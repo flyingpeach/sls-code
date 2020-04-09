@@ -92,27 +92,13 @@ for t = 1:tSim
         Lambda = Lambda + Phi - Psi;
         
         % Check convergence locally 
-        conv_criterion_failed = false;
-        for sys = 1:Nx
-            local_phi = Phi(r{sys},s_r{sys}(tFIR,:));
-            local_psi = Psi(r{sys},s_r{sys}(tFIR,:));
-            local_psi_prev = Psi_prev(r{sys},s_r{sys}(tFIR,:));
-
-            local_diff_d = norm(local_psi-local_psi_prev,'fro');
-            local_diff_p = norm(local_phi-local_psi,'fro');
-            
-            if local_diff_p > eps_p || local_diff_d > eps_d
-                conv_criterion_failed = true;
-                break; % if one fails, can stop checking the rest
-            end
-        end
-        
-        if ~conv_criterion_failed
+        check_conv;
+        if ~criterion_failed
             break; % convergence criterion passed, exit admm iterations
         end
     end
 
-    if conv_criterion_failed
+    if criterion_failed
         fprintf('ADMM reached %d iters and did not converge\n', maxIters);
     end
     
