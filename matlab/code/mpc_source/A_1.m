@@ -2,8 +2,6 @@
 
 %% Setup
 setup_system_a;
-setup_sls_constr;
-setup_loc_constr;
 
 % Weights
 Q = eye(Nx);
@@ -15,11 +13,11 @@ eps_d = 1e-3; % convergence criterion for ||Psi(k+1) - Psi(k)||
 eps_p = 1e-4; % convergence criterion for ||Phi(k+1) - Psi(k+1)||
 maxIters = 5000;
 
-[x, u] = alg1_fn(Nx, Nu, A, B, d, tFIR, tSim, x0, ...
+[x, u] = mpc_algorithm1(Nx, Nu, A, B, d, tFIR, tSim, x0, ...
                  eps_d, eps_p, rho, maxIters);
 
 %% Centralized MPC (for validation + comparison)
-[xVal, uVal] = cent_mpc_fn(Nx, Nu, A, B, d, Q, S, tFIR, tSim, x0);
+[xVal, uVal] = mpc_centralized(Nx, Nu, A, B, d, Q, S, tFIR, tSim, x0);
 
 %% Calculate costs + plot 
 obj    = get_cost_fn(Q, S, tSim, x, u);

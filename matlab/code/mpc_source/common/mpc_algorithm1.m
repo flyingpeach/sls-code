@@ -1,4 +1,4 @@
-function [x, u] = alg1_fn(Nx, Nu, A, B, d, tFIR, tSim, x0, ... % system
+function [x, u] = mpc_algorithm1(Nx, Nu, A, B, d, tFIR, tSim, x0, ... % system
                           eps_d, eps_p, rho, maxIters) % admm
 
 % ADMM variables
@@ -12,8 +12,8 @@ u       = zeros(Nu, tSim);
 x(:, 1) = x0;
 
 % Set up constraints
-[E1, IZA_ZB] = setup_sls_constr_fn(tFIR, Nx, Nu, A, B);
-[r, c, s_r, s_c, LocalityR, LocalityM] = setup_loc_constr_fn(tFIR, Nx, Nu, A, B, d);
+[E1, IZA_ZB] = get_sls_constraints(tFIR, Nx, Nu, A, B);
+[r, c, s_r, s_c, LocalityR, LocalityM] = get_locality_constraints(tFIR, Nx, Nu, A, B, d);
 
 for t = 1:tSim
     fprintf('Calculating time %d of %d\n', t, tSim); % display progress

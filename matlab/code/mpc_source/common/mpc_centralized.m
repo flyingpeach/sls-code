@@ -1,4 +1,4 @@
-function [x, u] = cent_mpc_fn(Nx, Nu, A, B, d, Q, S, tFIR, tSim, x0)
+function [x, u] = mpc_centralized(Nx, Nu, A, B, d, Q, S, tFIR, tSim, x0)
 
 x      = zeros(Nx, tSim);
 u      = zeros(Nu, tSim);

@@ -1,8 +1,16 @@
+function [r, c, s_r, s_c, LocalityR, LocalityM] = get_locality_constraints(tFIR, Nx, Nu, A, B, d)
+
+LocalityR = cell(1, tFIR);
+LocalityM = cell(1, tFIR);
+
 Comms_Adj = abs(A)>0;
 for t = 1:tFIR
     LocalityR{t} = Comms_Adj^(d-1)>0;
     LocalityM{t} = abs(B)'*LocalityR{t}>0;
 end
+
+c     = cell(1, Nx);
+s_c   = cell(1, Nx);
 
 % Separate by columns (see columnwise_separability.m for details)
 for i = 1:Nx
@@ -15,7 +23,6 @@ for i = 1:Nx
                 count = count +1;
                 s_c{i}(count) = find_locR(k)+(j-1)*Nx;
                 if j == tFIR
-                    s_c_T{i}(k) = count;
                 end
             end
         else
@@ -27,6 +34,9 @@ for i = 1:Nx
         end
     end
 end
+
+r     = cell(1, Nx);
+s_r   = cell(1, Nx);
 
 % Separate by rows (see rowwise_separability.m for details)
 k = 0;
