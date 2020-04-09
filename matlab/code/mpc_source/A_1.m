@@ -34,6 +34,9 @@ for t = 1:tSim
     for iter=1:maxIters
         Psi_prev = Psi;
         
+        Psi_loc_row    = cell(1, Nx);
+        Lambda_loc_row = cell(1, Nx);
+        
         % Separate into rows
         k = 0;
         for i = 1:Nx
@@ -56,6 +59,8 @@ for t = 1:tSim
             end
         end
         
+        Phi_loc = cell(1, Nx);
+        
         % Solve for each row            
         for i = 1:Nx
             clear ADMM_matrix
@@ -67,12 +72,16 @@ for t = 1:tSim
         for i = 1:Nx
             Phi(r{i},s_r{i}(tFIR,:)) = Phi_loc{i};
         end
-               
+        
+        Phi_loc_col    = cell(1, Nx);
+        Lambda_loc_col = cell(1, Nx);               
         % Separate into columns
         for i = 1:Nx
             Phi_loc_col{i} = Phi(s_c{i},c{i});
             Lambda_loc_col{i} = Lambda(s_c{i},c{i});
         end
+        
+        Psi_loc = cell(1, Nx);
         
         % Solve for each column
         for i = 1:Nx
@@ -134,6 +143,9 @@ for k = 1:tSim
     variable X(count)
     expression Rs(Nx,Nx,tFIR)
     expression Ms(Nu,Nx,tFIR)
+    
+    R = cell(1, tFIR);
+    M = cell(1, tFIR);
     
     spot = 0;
     for t = 1:tFIR
