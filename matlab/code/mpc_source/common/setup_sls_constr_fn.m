@@ -1,5 +1,4 @@
-
-
+function [E1, IZA_ZB] = setup_sls_constr_fn(tFIR, Nx, Nu, A, B)
 E1 = [eye(Nx);zeros(Nx*(tFIR-1),Nx)];
 
 I = kron(eye(tFIR),eye(Nx));
@@ -18,3 +17,5 @@ ZB = -Z*Bb;
 
 IZA_ZB = [IZAa ZB];
 IZA_ZB = IZA_ZB(:,1:end-Nu);
+
+end
