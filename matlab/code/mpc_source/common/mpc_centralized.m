@@ -18,19 +18,19 @@ x(:,1) = x0;
 
 totalTime = 0;
 
-for k = 1:tSim
-    fprintf('Validating time %d of %d\n', k, tSim); % display progress
-    x_k = x(:,k);
+for t = 1:tSim
+    fprintf('Validating time %d of %d\n', t, tSim); % display progress
+    x_t = x(:,t);
 
     clear LocalityR LocalityM
     Comms_Adj = abs(A)>0;
     LocalityR = Comms_Adj^(d-1)>0;
     
     count = 0;
-    for t = 1:tFIR
-        Rsupport{t} = LocalityR>0;
-        Msupport{t} = (abs(B)'*Rsupport{t})>0;
-        count = count + sum(sum(Rsupport{t}))+sum(sum(Msupport{t}));
+    for k = 1:tFIR
+        Rsupport{k} = LocalityR>0;
+        Msupport{k} = (abs(B)'*Rsupport{k})>0;
+        count = count + sum(sum(Rsupport{k}))+sum(sum(Msupport{k}));
     end
     
     cvx_begin quiet
@@ -44,24 +44,24 @@ for k = 1:tSim
     M = cell(1, tFIR);
     
     spot = 0;
-    for t = 1:tFIR
-        R{t} = Rs(:,:,t);
-        supp = find(Rsupport{t});
-        num = sum(sum(Rsupport{t}));
-        R{t}(supp) = X(spot+1:spot+num);
+    for k = 1:tFIR
+        R{k} = Rs(:,:,k);
+        supp = find(Rsupport{k});
+        num = sum(sum(Rsupport{k}));
+        R{k}(supp) = X(spot+1:spot+num);
         spot = spot + num;
         
-        M{t} = Ms(:,:,t);
-        supp = find(Msupport{t});
-        num = sum(sum(Msupport{t}));
-        M{t}(supp) = X(spot+1:spot+num);
+        M{k} = Ms(:,:,k);
+        supp = find(Msupport{k});
+        num = sum(sum(Msupport{k}));
+        M{k}(supp) = X(spot+1:spot+num);
         spot = spot + num;
     end
     
     % Set up objective function
     objective = 0;
-    for t = 1:tFIR
-        vect = vec([Q zeros(Nx,Nu); zeros(Nu,Nx) S]*[R{t};M{t}]*x_k);
+    for k = 1:tFIR
+        vect = vec([Q zeros(Nx,Nu); zeros(Nu,Nx) S]*[R{k};M{k}]*x_t);
         objective = objective + vect'*vect;
     end
 
@@ -70,22 +70,22 @@ for k = 1:tSim
     subject to
 
     R{1} == eye(Nx); % Achievability constraints
-    for t= 1:tFIR-1
-        R{t+1} == A*R{t} + B*M{t};
+    for k= 1:tFIR-1
+        R{k+1} == A*R{k} + B*M{k};
     end
     
     if ~isempty(up) && ~isempty(low) 
         if isempty(coupling)
             % Bounding constraints specified
-            for t = 1:tFIR
-                R{t}*x_k <= up*ones(Nx,1);
-                R{t}*x_k >= low*ones(Nx,1);
+            for k = 1:tFIR
+                R{k}*x_t <= up*ones(Nx,1);
+                R{k}*x_t >= low*ones(Nx,1);
             end
         else
             % Coupling constraints specified
             Ksmall = low; % ULTRA HACKY
-            for t = 3:tFIR
-                Ksmall*R{t}*x_k <= up*ones(2*Nx,1);
+            for k = 3:tFIR
+                Ksmall*R{k}*x_t <= up*ones(2*Nx,1);
             end
         end
     end
@@ -93,10 +93,10 @@ for k = 1:tSim
     cvx_end
     
     % Compute control + state
-    u(:,k) = M{1}*x_k;
-    x(:,k+1) = R{2}*x_k; % Since there is no noise x_ref = x 
+    u(:,t) = M{1}*x_t;
+    x(:,t+1) = R{2}*x_t; % Since there is no noise x_ref = x 
     
-    if t > 1
+    if k > 1
         totalTime = totalTime + toc;
     end
 end
