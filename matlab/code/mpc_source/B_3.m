@@ -365,107 +365,23 @@ end
 times(index) = times(index)/(tSim-1);
 
 
-%% Validation
-
-x_VAL(:,1) = x0;
-xi = x0;
-
-for k = 1:tSim
-    
-    clear LocalityR LocalityM
-    
-    Comms_Adj = abs(A)>0;
-    LocalityR = Comms_Adj^(d-1)>0;
-    
-    count = 0;
-    for t = 1:tFIR
-        Rsupport{t} = LocalityR>0;
-        Msupport{t} = (abs(B)'*Rsupport{t})>0;
-        count = count + sum(sum(Rsupport{t}))+sum(sum(Msupport{t}));
-    end
-    
-%     tic
-    cvx_begin
-    cvx_precision low
-    
-    cvx_solver_settings('dumpfile','file2getruntime')
-    
-    variable X(count)
-    expression Rs(Nx,Nx,tFIR)
-    expression Ms(Nu,Nx,tFIR)
-    
-    % Populate decision variables
-    % Locality constraints automatically enforced by limiting support of R and M
-    spot = 0;
-    for t = 1:tFIR
-        R{t} = Rs(:,:,t);
-        supp = find(Rsupport{t});
-        num = sum(sum(Rsupport{t}));
-        R{t}(supp) = X(spot+1:spot+num);
-        spot = spot + num;
-        
-        M{t} = Ms(:,:,t);
-        supp = find(Msupport{t});
-        num = sum(sum(Msupport{t}));
-        M{t}(supp) = X(spot+1:spot+num);
-        spot = spot + num;
-    end
-    
-    % Set up objective function
-    objective = 0;
-    for t = 1:tFIR
-        vect = vec([Q zeros(Nx,Nu); zeros(Nu,Nx) S]*[R{t};M{t}]*xi);
-        objective = objective + vect'*vect;
-    end
-    
-    % Perform minimization
-    minimize(objective)
-    subject to
-    % Achievability constraints
-    R{1} == eye(Nx);
-    for t= 1:tFIR-1
-        R{t+1} == A*R{t} + B*M{t};
-    end
-    cvx_end
-%     [~] = toc;
-%     time_centr(index) = time_centr(index) + toc;
-
-    if t>1
-        load('file2getruntime.mat')
-        runtime = getfield(info,'cputime');
-        timeCents(index) = timeCents(index) + runtime;
-    end
-    
-    %% Dynamics
-    
-    % Compute the control action
-    u_VAL(:,k) = M{1}*xi;
-    
-    % Simulate what the dynamics are given that action
-    x_VAL(:,k+1) = R{2}*xi; % Since there is no noise x_ref = x
-    
-    % Update the initial condition
-    xi = x_VAL(:,k+1); 
-    
-end
-timeCents(index) = timeCents(index)/(tSim-1);
-
-end
+%% Validation (include in main loop)
+% Centralized MPC (for validation + comparison)
+[xVal, uVal, timeCents(idx)] = mpc_centralized(Nx, Nu, A, B, d, ...
+    Q, S, tFIR, tSim, x0);
 
 %% Plot
-
-figure (1)
+figure(1)
 subplot(1,2,1)
-plot(cases,times,'m-s','LineWidth',2)
+plot(localities, times,'m-s','LineWidth',2)
 hold on
-plot(cases,timeCents,'b-s','LineWidth',2)
-xlabel('$$Number\ of\ pendulums\ in\ the\ network$$','Interpreter','latex','Fontsize', 16)
-ylabel('$$Average\ runtime\ per\ MPC\ iteration\ for\ each\ state\ (seconds)$$','Interpreter','latex','Fontsize', 16)
+plot(localities, timeCents,'b-s','LineWidth',2)
+xlabel('$$\#\ pendulums\ in\ the\ network$$','Interpreter','latex','Fontsize', 10)
+ylabel('$$Avg\ runtime\ per\ MPC\ iteration\ for\ each\ state\ (s)$$','Interpreter','latex','Fontsize', 10)
 leg4 = legend('$$Localized\ ADMM\ Solution$$', '$$Centralized\ Solution$$');
-set(leg4,'Interpreter','latex','Fontsize', 12);
+set(leg4,'Interpreter','latex','Fontsize', 8);
 
 subplot(1,2,2)
-plot(cases,iters,'m-s','LineWidth',2)
-xlabel('$$Number\ of\ pendulums\ in\ the\ network$$','Interpreter','latex','Fontsize', 16)
-ylabel('$$Average\ number\ of\ ADMM\ iterations\ per\ MPC\ iteration\ for\ each\ state\ (seconds)$$','Interpreter','latex','Fontsize', 16)
-
+plot(localities, iters,'m-s','LineWidth',2)
+xlabel('$$\#\ pendulums\ in\ the\ network$$','Interpreter','latex','Fontsize', 10)
+ylabel('$$Avg\ \#\ ADMM\ iters\ per\ MPC\ iteration\ for\ each\ state\ (s)$$','Interpreter','latex','Fontsize', 10)

@@ -535,19 +535,17 @@ timeCents(index) = timeCents(index)/(tSim-1);
 end
 
 %% Plot
-
-figure (1)
+figure(1)
 subplot(1,2,1)
-plot(cases,times,'m-s','LineWidth',2)
+plot(localities, times,'m-s','LineWidth',2)
 hold on
-plot(cases,timeCents,'b-s','LineWidth',2)
-xlabel('$$Number\ of\ pendulums\ in\ the\ network$$','Interpreter','latex','Fontsize', 16)
-ylabel('$$Average\ runtime\ per\ MPC\ iteration\ for\ each\ state\ (seconds)$$','Interpreter','latex','Fontsize', 16)
+plot(localities, timeCents,'b-s','LineWidth',2)
+xlabel('$$\#\ pendulums\ in\ the\ network$$','Interpreter','latex','Fontsize', 10)
+ylabel('$$Avg\ runtime\ per\ MPC\ iteration\ for\ each\ state\ (s)$$','Interpreter','latex','Fontsize', 10)
 leg4 = legend('$$Localized\ ADMM\ Solution$$', '$$Centralized\ Solution$$');
-set(leg4,'Interpreter','latex','Fontsize', 12);
+set(leg4,'Interpreter','latex','Fontsize', 8);
 
 subplot(1,2,2)
-plot(cases,iters,'m-s','LineWidth',2)
-xlabel('$$Number\ of\ pendulums\ in\ the\ network$$','Interpreter','latex','Fontsize', 16)
-ylabel('$$Average\ number\ of\ ADMM\ iterations\ per\ MPC\ iteration\ for\ each\ state$$','Interpreter','latex','Fontsize', 16)
-
+plot(localities, iters,'m-s','LineWidth',2)
+xlabel('$$\#\ pendulums\ in\ the\ network$$','Interpreter','latex','Fontsize', 10)
+ylabel('$$Avg\ \#\ ADMM\ iters\ per\ MPC\ iteration\ for\ each\ state\ (s)$$','Interpreter','latex','Fontsize', 10)
