@@ -394,37 +394,18 @@ for k = 1:tSim
     
 end
 
-%% VALIDATION
+%% Calculate costs + plot 
+obj    = get_cost_fn(Q, S, tSim, x, u);
+objVal = get_cost_fn(Q, S, tSim, xVal, uVal);
 
-obj=0;
-for t = 1:tSim
-obj = obj + x(:,t)'*Q*x(:,t)+u(:,t)'*S*u(:,t);
-end
-obj = obj + x(:,t+1)'*Q*x(:,t+1);
-
-obj_VAL=0;
-for t = 1:tSim
-obj_VAL = obj_VAL + x_VAL(:,t)'*Q*x_VAL(:,t)+u_VAL(:,t)'*S*u_VAL(:,t);
-end
-obj_VAL = obj_VAL + x_VAL(:,t+1)'*Q*x_VAL(:,t+1);
-
-obj-obj_VAL
-
-% Save to .txt
-
-header1 = 'Distributed MPC';
-header2 = 'Centralized MPC!';
-fid=fopen('Scenario3.txt','w');
-fprintf(fid, [ header1 ' ' header2 'r\n']);
-fprintf(fid, '%f %f r\n', [obj obj_VAL]');
-
-
-%% Plot
+% Output costs
+fprintf('Distributed cost: %f\n', obj);
+fprintf('Centralized cost: %f\n', objVal);
 
 figure(1)
-plot(1:tSim+1,x_VAL(1,:),'b',1:tSim+1,x(1,:),'*b',1:tSim+1,x_VAL(3,:),'g',1:tSim+1,x(3,:),'*g')
-xlabel('$$Time$$','interpreter','latex','Fontsize', 16)
-ylabel('$$\theta_{1},\ \theta_{2}$$','Interpreter','Latex','Fontsize', 16)
+plot(1:tSim+1,xVal(1,:),'b',1:tSim+1,x(1,:),'*b',1:tSim+1,xVal(3,:),'g',1:tSim+1,x(3,:),'*g')
+xlabel('$$Time$$','interpreter','latex','Fontsize', 10)
+ylabel('$$\theta_{1},\ \theta_{2}$$','Interpreter','Latex','Fontsize', 10)
 leg1 = legend('$$\theta_{1}\ Centralized\ MPC$$', '$$\theta_{1}\ Localized\ MPC\ using\ ADMM$$','$$\theta_{2}\ Centralized\ MPC$$', '$$\theta_{2}\ Localized\ MPC\ using\ ADMM$$');
-set(leg1,'Interpreter','latex'); set(leg1, 'Fontsize', 10)
+set(leg1,'Interpreter','latex'); set(leg1, 'Fontsize', 8)
 title('Subsystems 1 and 2')

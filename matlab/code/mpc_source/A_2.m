@@ -271,111 +271,21 @@ end
     
 end
 
-%% Validation
+%% Centralized MPC (for validation + comparison)
+[xVal, uVal, ~] = mpc_centralized(Nx, Nu, A, B, d, Q, S, tFIR, tSim, x0);
 
-x_VAL(:,1) = x0;
-xi = x0;
+%% Calculate costs + plot 
+obj    = get_cost_fn(Q, S, tSim, x, u);
+objVal = get_cost_fn(Q, S, tSim, xVal, uVal);
 
-for k = 1:tSim
-    
-    clear LocalityR LocalityM
-    
-    Comms_Adj = abs(A)>0;
-    LocalityR = Comms_Adj^(d-1)>0;
-    
-    count = 0;
-    for t = 1:tFIR
-        % Rsupport{t} = min(Comms_Adj^(floor(max(0,comms*(t-ta)))),LocalityR)>0;
-        Rsupport{t} = LocalityR>0;
-        Msupport{t} = (abs(B)'*Rsupport{t})>0;
-        count = count + sum(sum(Rsupport{t}))+sum(sum(Msupport{t}));
-    end
-    
-    cvx_begin
-    cvx_precision low
-    
-    variable X(count)
-    expression Rs(Nx,Nx,tFIR)
-    expression Ms(Nu,Nx,tFIR)
-    
-    % Populate decision variables
-    % Locality constraints automatically enforced by limiting support of R and M
-    spot = 0;
-    for t = 1:tFIR
-        R{t} = Rs(:,:,t);
-        supp = find(Rsupport{t});
-        num = sum(sum(Rsupport{t}));
-        R{t}(supp) = X(spot+1:spot+num);
-        spot = spot + num;
-        
-        M{t} = Ms(:,:,t);
-        supp = find(Msupport{t});
-        num = sum(sum(Msupport{t}));
-        M{t}(supp) = X(spot+1:spot+num);
-        spot = spot + num;
-    end
-    
-    % Set up objective function
-    objective = 0;
-    for t = 1:tFIR
-        vect = vec([Q zeros(Nx,Nu); zeros(Nu,Nx) S]*[R{t};M{t}]*xi);
-        objective = objective + vect'*vect;
-    end
-    
-    % Perform minimization
-    minimize(objective)
-    subject to
-    % Achievability constraints
-    R{1} == eye(Nx);
-    for t= 1:tFIR-1
-        R{t+1} == A*R{t} + B*M{t};
-    end
-    cvx_end
-    
-    %% Dynamics
-    
-    % Compute the control action
-    u_VAL(:,k) = M{1}*xi;
-    
-    % Simulate what the dynamics are given that action
-    x_VAL(:,k+1) = R{2}*xi; % Since there is no noise x_ref = x
-    
-    % Update the initial condition
-    xi = x_VAL(:,k+1); 
-    
-end
-
-%% VALIDATION
-
-obj=0;
-for t =1:tSim
-obj = obj + x(:,t)'*Q*x(:,t)+u(:,t)'*S*u(:,t);
-end
-obj = obj + x(:,t+1)'*Q*x(:,t+1);
-
-
-obj_VAL=0;
-for t =1:tSim
-obj_VAL = obj_VAL + x_VAL(:,t)'*Q*x_VAL(:,t)+u_VAL(:,t)'*S*u_VAL(:,t);
-end
-obj_VAL = obj_VAL + x_VAL(:,t+1)'*Q*x_VAL(:,t+1);
-
-obj-obj_VAL
-
-% Save to .txt
-
-header1 = 'Distributed MPC';
-header2 = 'Centralized MPC!';
-fid=fopen('Scenario2.txt','w');
-fprintf(fid, [ header1 ' ' header2 'r\n']);
-fprintf(fid, '%f %f r\n', [obj obj_VAL]');
-
-%% Plot
+% Output costs
+fprintf('Distributed cost: %f\n', obj);
+fprintf('Centralized cost: %f\n', objVal);
 
 figure(1)
-plot(1:tSim+1,x_VAL(1,:),'b',1:tSim+1,x(1,:),'*b',1:tSim+1,x_VAL(3,:),'g',1:tSim+1,x(3,:),'*g')
-xlabel('$$Time$$','interpreter','latex','Fontsize', 16)
-ylabel('$$\theta_{1},\ \theta_{2}$$','Interpreter','Latex','Fontsize', 16)
+plot(1:tSim+1,xVal(1,:),'b',1:tSim+1,x(1,:),'*b',1:tSim+1,xVal(3,:),'g',1:tSim+1,x(3,:),'*g')
+xlabel('$$Time$$','interpreter','latex','Fontsize', 10)
+ylabel('$$\theta_{1},\ \theta_{2}$$','Interpreter','Latex','Fontsize', 10)
 leg1 = legend('$$\theta_{1}\ Centralized\ MPC$$', '$$\theta_{1}\ Localized\ MPC\ using\ ADMM$$','$$\theta_{2}\ Centralized\ MPC$$', '$$\theta_{2}\ Localized\ MPC\ using\ ADMM$$');
-set(leg1,'Interpreter','latex'); set(leg1, 'Fontsize', 10)
+set(leg1,'Interpreter','latex'); set(leg1, 'Fontsize', 8)
 title('Subsystems 1 and 2')
