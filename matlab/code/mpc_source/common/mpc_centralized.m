@@ -1,11 +1,16 @@
 function [x, u, avgTime] = mpc_centralized(Nx, Nu, A, B, d, ...
                                Q, S, tFIR, tSim, x0, ...
-                               varargin) %up, low
-up=[]; low=[];
+                               varargin) %up, low/Ksmall, coupling
+up=[]; low=[]; coupling=[];
 try 
     up  = varargin{1};
+end
+try
     low = varargin{2};
-end       
+end
+try 
+    coupling = varargin{3};
+end
                            
 x      = zeros(Nx, tSim);
 u      = zeros(Nu, tSim);
@@ -69,10 +74,19 @@ for k = 1:tSim
         R{t+1} == A*R{t} + B*M{t};
     end
     
-    if ~isempty(up) && ~isempty(low) % Bounding constraints specified
-        for t = 1:tFIR
-            R{t}*x_k <= up*ones(Nx,1);
-            R{t}*x_k >= low*ones(Nx,1);
+    if ~isempty(up) && ~isempty(low) 
+        if isempty(coupling)
+            % Bounding constraints specified
+            for t = 1:tFIR
+                R{t}*x_k <= up*ones(Nx,1);
+                R{t}*x_k >= low*ones(Nx,1);
+            end
+        else
+            % Coupling constraints specified
+            Ksmall = low; % ULTRA HACKY
+            for t = 3:tFIR
+                Ksmall*R{t}*x_k <= up*ones(2*Nx,1);
+            end
         end
     end
     

@@ -438,100 +438,11 @@ end
 end
 times(index) = times(index)/(tSim-1);
 
-%% Validation
-
-x_VAL(:,1) = x0;
-xi = x0;
-
-for k = 1:tSim
-    
-    clear LocalityR LocalityM
-    
-    Comms_Adj = abs(A)>0;
-    LocalityR = Comms_Adj^(d-1)>0;
-    
-    count = 0;
-    for t = 1:tFIR
-        Rsupport{t} = LocalityR>0;
-        Msupport{t} = (abs(B)'*Rsupport{t})>0;
-        count = count + sum(sum(Rsupport{t}))+sum(sum(Msupport{t}));
-    end
-    
-%     if t > 1
-%     tic
-%     end
-    cvx_begin 
-    cvx_precision low
-    
-    cvx_solver_settings('dumpfile','file2getruntime')
-    
-    variable X(count)
-    expression Rs(Nx,Nx,tFIR)
-    expression Ms(Nu,Nx,tFIR)
-    
-    % Populate decision variables
-    % Locality constraints automatically enforced by limiting support of R and M
-    spot = 0;
-    for t = 1:tFIR
-        R{t} = Rs(:,:,t);
-        supp = find(Rsupport{t});
-        num = sum(sum(Rsupport{t}));
-        R{t}(supp) = X(spot+1:spot+num);
-        spot = spot + num;
-        
-        M{t} = Ms(:,:,t);
-        supp = find(Msupport{t});
-        num = sum(sum(Msupport{t}));
-        M{t}(supp) = X(spot+1:spot+num);
-        spot = spot + num;
-    end
-    
-    % Set up objective function
-    objective = 0;
-    for t = 1:tFIR
-        vect = vec([Q zeros(Nx,Nu); zeros(Nu,Nx) S]*[R{t};M{t}]*xi);
-        objective = objective + vect'*vect;
-    end
-    
-    % Perform minimization
-    minimize(objective)
-    subject to
-    % Achievability constraints
-    R{1} == eye(Nx);
-    for t = 1:tFIR-1
-        R{t+1} == A*R{t} + B*M{t};
-    end
-    % Coupling constraints
-    for t = 3:tFIR
-        Ksmall*R{t}*xi <= up*ones(2*Nx,1);
-    end
-    
-    cvx_end
-%     if t > 1
-%     [~] = toc;
-%     time_centr(index) = time_centr(index) + toc;
-%     end
-
-    if t>1
-        load('file2getruntime.mat')
-        runtime = getfield(info,'cputime');
-        timeCents(index) = timeCents(index) + runtime;
-    end
-    
-    %% Dynamics
-    
-    % Compute the control action
-    u_VAL(:,k) = M{1}*xi;
-    
-    % Simulate what the dynamics are given that action
-    x_VAL(:,k+1) = R{2}*xi; % Since there is no noise x_ref = x
-    
-    % Update the initial condition
-    xi = x_VAL(:,k+1); 
-    
-end
-timeCents(index) = timeCents(index)/(tSim-1);
-    
+%% Validation (include in loop)
+% Centralized MPC (for validation + comparison)
+coupling = true;
+[xVal, uVal, ~] = mpc_centralized(Nx, Nu, A, B, d, Q, S, tFIR, tSim, x0, up, KSmall, coupling);
+   
 end
 
 %% Plot
