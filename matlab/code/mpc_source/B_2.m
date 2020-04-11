@@ -27,7 +27,7 @@ for idx=1:numLocs
                  eps_d, eps_p, rho, maxIters, up, low);
     
     % Centralized MPC (for validation + comparison)
-    [xVal, uVal, timeCents(idx)] = mpc_centralized_bounded(Nx, Nu, A, B, d, ...
+    [xVal, uVal, timeCents(idx)] = mpc_centralized(Nx, Nu, A, B, d, ...
         Q, S, tFIR, tSim, x0, up, low);
 end
 

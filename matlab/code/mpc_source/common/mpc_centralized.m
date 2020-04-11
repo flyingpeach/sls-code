@@ -1,5 +1,12 @@
-function [x, u, avgTime] = mpc_centralized(Nx, Nu, A, B, d, Q, S, tFIR, tSim, x0)
-
+function [x, u, avgTime] = mpc_centralized(Nx, Nu, A, B, d, ...
+                               Q, S, tFIR, tSim, x0, ...
+                               varargin) %up, low
+up=[]; low=[];
+try 
+    up  = varargin{1};
+    low = varargin{2};
+end       
+                           
 x      = zeros(Nx, tSim);
 u      = zeros(Nu, tSim);
 x(:,1) = x0;
@@ -61,6 +68,14 @@ for k = 1:tSim
     for t= 1:tFIR-1
         R{t+1} == A*R{t} + B*M{t};
     end
+    
+    if ~isempty(up) && ~isempty(low) % Bounding constraints specified
+        for t = 1:tFIR
+            R{t}*x_k <= up*ones(Nx,1);
+            R{t}*x_k >= low*ones(Nx,1);
+        end
+    end
+    
     cvx_end
     
     % Compute control + state
