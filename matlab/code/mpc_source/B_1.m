@@ -27,7 +27,7 @@ for idx=1:numLocs
 end
 
 %% Plot
-figure (1)
+figure(1)
 subplot(1,2,1)
 plot(localities, times,'m-s','LineWidth',2)
 hold on
