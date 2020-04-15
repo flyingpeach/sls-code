@@ -1,9 +1,9 @@
 % Algorithm II, System A
-setup_system_a;
-setup_sls_constr;
-setup_loc_constr;
 
-%% Coupling weights and constraints
+%% Setup
+setup_system_a;
+
+% Weights
 Q = zeros(Nx,Nx);
 for i = 1:2:Nx
     Q(i,i) = 1;
@@ -17,25 +17,24 @@ for i = 1:2:Nx
         Q(i+1,i+1) = .01;
     end
 end
-S = diag(ones(Nu,1));
+S = eye(Nu);
 
-% Build the big cost matrix
+% Build cost matrix
 C = [];
 for t = 0:tFIR-1
-    C =  [C; zeros(Nx,t*Nx) Q zeros(Nx,(tFIR-t-1)*Nx+(tFIR-1)*Nu)];
+    C = blkdiag(C, Q);
 end
 for t = 0:tFIR-2
-    C =  [C;zeros(Nu,tFIR*Nx+t*Nu) S zeros(Nu,(tFIR-t-2)*Nu)];
-end
+    C = blkdiag(C, S);
+end    
 
 % Coupling
-for i = 1:Nx*tFIR+Nu*(tFIR-1)
-    indices{i} = [];
-    for j = 1:Nx*tFIR+Nu*(tFIR-1)
+indices = cell(1, length(C));
+for i = 1:length(C)
+    for j = 1:length(C)
         if C(i,j) ~= 0
             indices{i} = [indices{i} j];
         end
-        indices{i} = unique(indices{i});
     end
 end
 %% ADMM
