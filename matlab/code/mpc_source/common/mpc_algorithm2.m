@@ -142,7 +142,7 @@ for t = 1:tSim
                     for j = indices{i}
                         average(j) = Z_admm{j};
                     end
-                    primal(i) = norm(X{i}-average);
+                    primal(i) = norm(X{i}-average, 'fro');
                 end
             end
             primalRes = max(primal); % primal residue
@@ -150,7 +150,7 @@ for t = 1:tSim
             dual = zeros(1, Nx);
             for sys = 1:Nx
                 for j = r{sys}
-                    dual(j) = norm(Z_admm{j}-Z_old{j});
+                    dual(j) = norm(Z_admm{j}-Z_old{j}, 'fro');
                 end
             end
             dualRes = max(dual); % dual residue
