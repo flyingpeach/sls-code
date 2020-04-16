@@ -17,6 +17,8 @@ params.rho_      = 5;
 params.eps_d_    = 1e-3;
 params.eps_p_    = 1e-4;
 
+params.solnMode_ = MPCSolMode.ClosedForm;
+
 % Weights
 Q = eye(Nx);
 S = eye(Nu);
