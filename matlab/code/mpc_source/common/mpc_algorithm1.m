@@ -1,4 +1,4 @@
-function [x, u, avgTime, avgIter] = mpc_algorithm1(Nx, Nu, A, B, d, tFIR, tSim, x0, ... % system
+function [x, u, avgTime, avgIter] = mpc_algorithm1(Nx, Nu, A, B, d, tFIR, tSim, x0, ... % sysIdxtem
                               eps_d, eps_p, rho, maxIters) % admm
 
 % ADMM variables
@@ -110,10 +110,10 @@ for t = 1:tSim
         
         % Check convergence locally 
         criterion_failed = false;
-        for sys = 1:Nx
-              local_phi = Phi(r{sys},s_r{sys}(tFIR,:));
-              local_psi = Psi(r{sys},s_r{sys}(tFIR,:));
-              local_psi_prev = Psi_prev(r{sys},s_r{sys}(tFIR,:));
+        for sysIdx = 1:Nx
+              local_phi = Phi(r{sysIdx},s_r{sysIdx}(tFIR,:));
+              local_psi = Psi(r{sysIdx},s_r{sysIdx}(tFIR,:));
+              local_psi_prev = Psi_prev(r{sysIdx},s_r{sysIdx}(tFIR,:));
 
               local_diff_d = norm(local_psi-local_psi_prev,'fro');
               local_diff_p = norm(local_phi-local_psi,'fro');

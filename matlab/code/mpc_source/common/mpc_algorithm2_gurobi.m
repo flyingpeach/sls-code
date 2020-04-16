@@ -1,4 +1,4 @@
-function [x, u, avgTime, avgIter] = mpc_algorithm2_gurobi(Nx, Nu, A, B, d, tFIR, tSim, x0, ... % system
+function [x, u, avgTime, avgIter] = mpc_algorithm2_gurobi(Nx, Nu, A, B, d, tFIR, tSim, x0, ... % sysIdxtem
                               eps_d, eps_p, rho, maxIters, ...
                               indices, eps_pres, eps_dres, mu, ...
                               maxConsensusIters, C, up, K)
@@ -45,18 +45,18 @@ for t = 1:tSim
         
         % Separate into rows
         k = 0;
-        for sys = 1:Nx
-            if mod(sys, Nx/Nu) == 0
+        for sysIdx = 1:Nx
+            if mod(sysIdx, Nx/Nu) == 0
                 k = k+1;
             end
-            for i = r{sys}
-                j = find(r{sys}==i);
+            for i = r{sysIdx}
+                j = find(r{sysIdx}==i);
                 if j<=tFIR
-                    Psi_loc_row{i} = Psi(i,s_r{sys}(j,1:max(length(find(LocalityR{j}(sys,:))))));
-                    Lambda_loc_row{i} = Lambda(i,s_r{sys}(j,1:max(length(find(LocalityR{j}(sys,:))))));
+                    Psi_loc_row{i} = Psi(i,s_r{sysIdx}(j,1:max(length(find(LocalityR{j}(sysIdx,:))))));
+                    Lambda_loc_row{i} = Lambda(i,s_r{sysIdx}(j,1:max(length(find(LocalityR{j}(sysIdx,:))))));
                 else
-                    Psi_loc_row{i} = Psi(i,s_r{sys}(j,1:max(length(find(LocalityM{j-tFIR}(k,:))))));
-                    Lambda_loc_row{i} = Lambda(i,s_r{sys}(j,1:max(length(find(LocalityM{j-tFIR}(k,:))))));
+                    Psi_loc_row{i} = Psi(i,s_r{sysIdx}(j,1:max(length(find(LocalityM{j-tFIR}(k,:))))));
+                    Lambda_loc_row{i} = Lambda(i,s_r{sysIdx}(j,1:max(length(find(LocalityM{j-tFIR}(k,:))))));
                 end
             end
         end    
@@ -68,17 +68,17 @@ for t = 1:tSim
             X       = cell(Nx*tFIR + Nu*(tFIR-1));
 
             % Update Phi and X           
-            for sys = 1:Nx
-                for i = r{sys}
+            for sysIdx = 1:Nx
+                for i = r{sysIdx}
 
-                    n = max(length(s_r{sys}(find(r{sys}==i),:)));
+                    n = max(length(s_r{sysIdx}(find(r{sysIdx}==i),:)));
 
                     % Define parameters
                     m_j = max(length(indices{i}));
                     C_proxi = C(i,indices{i});
                     M1 = [eye(n) zeros(n,m_j-1)];
                     Id = eye(m_j-1);
-                    xi_i = x_t(s_r{sys}(find(r{sys}==i),:));
+                    xi_i = x_t(s_r{sysIdx}(find(r{sysIdx}==i),:));
 
                     i_new = find(indices{i} == i);
 
@@ -127,7 +127,7 @@ for t = 1:tSim
                     X{i} = zeros(Nx*tFIR+Nu*(tFIR-1),1); X{i}(indices{i}) = X_i;
                 end
                 
-                if sys == 1
+                if sysIdx == 1
                     totalTime = totalTime + result.runtime;
                 end
                     
@@ -135,40 +135,40 @@ for t = 1:tSim
 
             % Update Z
             Z_old = Z_admm;
-            for sys = 1:Nx
-                if t > 1 && sys == 1
+            for sysIdx = 1:Nx
+                if t > 1 && sysIdx == 1
                     tic;
                 end
-                for j = r{sys}
+                for j = r{sysIdx}
                     Z_admm{j} = 0;
                     for i = indices{j}
                         Z_admm{j} = Z_admm{j} + (X{i}(j)+Y{i}{j})/length(indices{j});
                     end
                 end
-                if t > 1 && sys == 1
+                if t > 1 && sysIdx == 1
                     totalTime = totalTime + toc;
                 end
             end
         
             % Lagrange multiplier
-            for sys = 1:Nx
-                if t > 1 && sys == 1
+            for sysIdx = 1:Nx
+                if t > 1 && sysIdx == 1
                     tic;
                 end
-                for i = r{sys}
+                for i = r{sysIdx}
                     for j = indices{i}
                         Y{i}{j} = Y{i}{j} + X{i}(j) - Z_admm{j};
                     end
                 end
-                if t > 1 && sys == 1
+                if t > 1 && sysIdx == 1
                     totalTime = totalTime + toc;
                 end
             end
             
             % Consensus convergence criterium
             primal = zeros(1, Nx);
-            for sys = 1:Nx
-                for i = r{sys}
+            for sysIdx = 1:Nx
+                for i = r{sysIdx}
                     average = zeros(Nx*tFIR+Nu*(tFIR-1),1);
                     for j = indices{i}
                         average(j) = Z_admm{j};
@@ -179,8 +179,8 @@ for t = 1:tSim
             primalRes = max(primal); % primal residue
 
             dual = zeros(1, Nx);
-            for sys = 1:Nx
-                for j = r{sys}
+            for sysIdx = 1:Nx
+                for j = r{sysIdx}
                     dual(j) = norm(Z_admm{j}-Z_old{j}, 'fro');
                 end
             end
@@ -205,9 +205,9 @@ for t = 1:tSim
         end
 
         % Build the big matrix
-        for sys = 1:Nx
-            for i = r{sys}
-                Phi(i,s_r{sys}(find(r{sys}==i),:)) = Phi_loc{i};
+        for sysIdx = 1:Nx
+            for i = r{sysIdx}
+                Phi(i,s_r{sysIdx}(find(r{sysIdx}==i),:)) = Phi_loc{i};
             end
         end
 
@@ -244,10 +244,10 @@ for t = 1:tSim
             
         % Check convergence locally 
         criterion_failed = false;
-        for sys = 1:Nx
-              local_phi = Phi(r{sys},s_r{sys}(tFIR,:));
-              local_psi = Psi(r{sys},s_r{sys}(tFIR,:));
-              local_psi_prev = Psi_prev(r{sys},s_r{sys}(tFIR,:));
+        for sysIdx = 1:Nx
+              local_phi = Phi(r{sysIdx},s_r{sysIdx}(tFIR,:));
+              local_psi = Psi(r{sysIdx},s_r{sysIdx}(tFIR,:));
+              local_psi_prev = Psi_prev(r{sysIdx},s_r{sysIdx}(tFIR,:));
 
               local_diff_d = norm(local_psi-local_psi_prev,'fro');
               local_diff_p = norm(local_phi-local_psi,'fro');
