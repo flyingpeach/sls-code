@@ -1,4 +1,6 @@
-function [Phi_cols, Lambda_cols] = separate_cols(c, s_c, Nx)
+function [Phi_cols, Lambda_cols] = separate_cols(sys, c, s_c, Phi, Lambda)
+
+Nx = sys.Nx; Nu = sys.Nu;
 
 Phi_cols    = cell(1, Nx);
 Lambda_cols = cell(1, Nx);               

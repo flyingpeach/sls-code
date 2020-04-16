@@ -1,4 +1,6 @@
-function [c, s_c] = get_column_locality(r_loc, m_loc, tFIR)
+function [c, s_c] = get_column_locality(sys, tFIR, r_loc, m_loc)
+
+Nx = sys.Nx; Nu = sys.Nu;
 
 c     = cell(1, Nx);
 s_c   = cell(1, Nx);

@@ -2,13 +2,13 @@ classdef MPCParams < matlab.mixin.Copyable
     % Contains parameters for MPC problems
     
     properties
-        d_;        % locality
+        locality_;  % locality (d)
         
-        tFIR_;     % order of controller (# spectral components)
-        tHorizon_; % MPC time horizon
+        tFIR_;      % order of controller (# spectral components)
+        tHorizon_;  % MPC time horizon
                 
-        maxIters_; % maximum allowed iterations for ADMM 
-        rho_;      % ADMM update step size
+        maxIters_;  % maximum allowed iterations for ADMM 
+        rho_;       % ADMM update step size
         
         % determines exit conditions at Step 9 (Alg1) / Step 14 (Alg2)
         eps_p_; % convergence criterion for ||Phi(k+1) - Psi(k+1)|| 
@@ -26,7 +26,7 @@ classdef MPCParams < matlab.mixin.Copyable
     
     methods
       function sanity_check_alg_1(obj)
-          e1 = isempty(obj.d_);
+          e1 = isempty(obj.locality_);
           e2 = isempty(obj.tFIR_);
           e3 = isempty(obj.tHorizon_);
           e4 = isempty(obj.maxIters_);

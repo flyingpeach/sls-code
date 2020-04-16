@@ -78,10 +78,7 @@ classdef LTISystem < matlab.mixin.Copyable
       end
       
       function sanity_check_mpc(obj)
-        mpcMsg = 'Note: current MPC code only supports state feedback with no noise\n' + ...
-                 '      only info for A, B2, Nx, and Nu will be used';          
-        fprintf(mpcMsg);
-                % sanity check that dimensions are consistent
+        % sanity check that dimensions are consistent
         if size(obj.A,1) ~= obj.Nx || size(obj.A,2) ~= obj.Nx
             sls_error('A matrix has incorrect dimensions')
         end

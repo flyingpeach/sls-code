@@ -1,25 +1,33 @@
 % Algorithm I, System A
 
 %% Setup
-setup_system_a;
+setup_plant_a;
+
+rng(2020);
+x0 = rand(sys.Nx, 1);
+
+%% Distributed MPC
+params = MPCParams();
+
+params.locality_ = 3;
+params.tFIR_     = 20;
+params.tHorizon_ = 30;
+params.maxIters_ = 5000;
+params.rho_      = 5;
+params.eps_d_    = 1e-3;
+params.eps_p_    = 1e-4;
 
 % Weights
 Q = eye(Nx);
 S = eye(Nu);
 
-%% Distributed MPC
-rho   = 5; % admm parameter
-eps_d = 1e-3; % convergence criterion for ||Psi(k+1) - Psi(k)||
-eps_p = 1e-4; % convergence criterion for ||Phi(k+1) - Psi(k+1)||
-maxIters = 5000;
-
-[x, u, ~] = mpc_algorithm1(Nx, Nu, A, B, d, tFIR, tSim, x0, ...
-                 eps_d, eps_p, rho, maxIters);
+[x, u, ~] = mpc_algorithm_1(sys, x0, params);
 
 %% Centralized MPC (for validation + comparison)
-[xVal, uVal, ~] = mpc_centralized(Nx, Nu, A, B, d, Q, S, tFIR, tSim, x0);
+[xVal, uVal, ~] = mpc_centralized(sys, params.locality_, Q, S, params.tFIR_, params.tHorizon_, x0);
 
 %% Calculate costs + plot 
+tSim = params.tHorizon_;
 obj    = get_cost_fn(Q, S, tSim, x, u);
 objVal = get_cost_fn(Q, S, tSim, xVal, uVal);
 

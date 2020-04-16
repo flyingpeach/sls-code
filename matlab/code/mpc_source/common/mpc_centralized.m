@@ -1,5 +1,4 @@
-function [x, u, avgTime] = mpc_centralized(Nx, Nu, A, B, d, ...
-                               Q, S, tFIR, tSim, x0, ...
+function [x, u, avgTime] = mpc_centralized(sys, d, Q, S, tFIR, tSim, x0, ...
                                varargin) %up, low/Ksmall, coupling
 up=[]; low=[]; coupling=[];
 try 
@@ -11,7 +10,9 @@ end
 try 
     coupling = varargin{3};
 end
-                           
+            
+Nx = sys.Nx; Nu = sys.Nu; A = sys.A; B = sys.B2;
+
 x      = zeros(Nx, tSim);
 u      = zeros(Nu, tSim);
 x(:,1) = x0;

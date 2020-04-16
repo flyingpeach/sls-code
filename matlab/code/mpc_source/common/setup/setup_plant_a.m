@@ -1,18 +1,9 @@
 clear all; close all; clc;
 
-%% general setup
-rng(2020)
-d = 3; % locality (this is between states, not subsystems)
-n = 4; % number of pendulums
-
+n  = 4; % number of pendulums
 Nx = 2*n; 
 Nu = n;
 
-x0 = rand(Nx,1);
-tSim = 30; % time horizon
-tFIR = 20; % FIR time (i.e. order of controller)
-
-%% plant setup
 m = 1; k = 1; f = 3; g = 10; l = 1;
 block_off_diag  = [0    0; k*l/m  f/(m*l)];
 block_diag      = [0 1; -g-2*k*l/m -2*f/(m*l)];

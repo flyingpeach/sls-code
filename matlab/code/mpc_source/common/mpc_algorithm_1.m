@@ -19,6 +19,7 @@ params.sanity_check_alg_1();
 
 % For ease of notation
 Nx = sys.Nx; Nu = sys.Nu;
+locality = params.locality_;
 tFIR     = params.tFIR_;
 tHorizon = params.tHorizon_;
 maxIters = params.maxIters_;
@@ -44,9 +45,9 @@ totalIter = 0;
 Eye = [eye(Nx); zeros(Nx*(tFIR-1),Nx)];
 ZAB = get_sls_constraint(sys, tFIR);
 
-[r_loc, m_loc] = get_r_m_locality(sys, tFIR);
-[c, s_c]       = get_column_locality(r_loc, m_loc, tFIR);
-[r, s_r]       = get_row_locality(r_loc, m_loc, tFIR);
+[r_loc, m_loc] = get_r_m_locality(sys, locality, tFIR);
+[c, s_c]       = get_column_locality(sys, tFIR, r_loc, m_loc);
+[r, s_r]       = get_row_locality(sys, tFIR, r_loc, m_loc);
 
 %% MPC
 for t = 1:tHorizon
@@ -56,7 +57,10 @@ for t = 1:tHorizon
     for iter=1:maxIters % ADMM loop
         Psi_prev = Psi;
         
-        [Psi_rows, Lambda_rows] = separate_rows(r, s_r, r_loc, m_loc, tFIR, Nx);
+        % Separate Psi, Lambda into rows
+        [Psi_rows, Lambda_rows] = separate_rows(sys, tFIR, ...
+                                                r, s_r, r_loc, m_loc, ...
+                                                Psi, Lambda);
        
         % Step 4: Solve (16a) to get local Phi
         Phi_locs = cell(1, Nx);
@@ -73,15 +77,22 @@ for t = 1:tHorizon
         for i = 1:Nx
             Phi(r{i},s_r{i}(tFIR,:)) = Phi_locs{i};
         end
-
-        [Phi_cols, Lambda_cols] = separate_cols(c, s_c, Nx);
+        
+        % Separate Phi, Lambda into columns
+        [Phi_cols, Lambda_cols] = separate_cols(sys, c, s_c, Phi, Lambda);
         
         % Step 6: Solve (16b) to get local Psi
         Psi_locs = cell(1, Nx);
         for i = 1:Nx
             if t > 1 && i == 1; tic; end
 
-            Psi_locs{i} = eqn_16b(c{i}, s_c{i}, Phi_cols{i}, Lambda_cols{i}, ZAB, Eye);
+            ZABi     = ZAB(:, s_c{i});
+            zeroRow  = find(all(ZABi == 0, 2));
+            keepIdxs = setdiff(linspace(1,Nx*tFIR,Nx*tFIR), zeroRow);
+            ZABi     = ZAB(keepIdxs, s_c{i}); 
+            Eyei     = Eye(keepIdxs, c{i});
+
+            Psi_locs{i} = eqn_16b(Phi_cols{i}, Lambda_cols{i}, ZABi, Eyei);
 
             if t > 1 && i == 1; totalTime = totalTime + toc; end            
         end
