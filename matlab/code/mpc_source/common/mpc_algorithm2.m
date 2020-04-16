@@ -66,8 +66,54 @@ for t = 1:tSim
             
             Phi_loc = cell(1, Nx*tFIR + Nu*(tFIR-1));
             X       = cell(Nx*tFIR + Nu*(tFIR-1));
-            % Update Phi and X           
-            for sys = 1:Nx
+            % Update Phi and X    
+            sys = 1;
+            tic;
+            for i = r{sys}
+                n = max(length(s_r{sys}(find(r{sys}==i),:)));
+
+                % Define parameters
+                m_j = max(length(indices{i}));
+                C_proxi = C(i,indices{i});
+                M1 = [eye(n) zeros(n,m_j-1)];
+                Id = eye(m_j-1);
+                xi_i = x_t(s_r{sys}(find(r{sys}==i),:));
+
+                i_new = find(indices{i} == i);
+
+                M2 = [zeros(i_new-1,n) Id(1:i_new-1,:); xi_i' zeros(1,m_j-1); zeros(m_j-i_new,n) Id(i_new:end,:)];
+                a = Psi_loc_row{i}-Lambda_loc_row{i};
+
+                Mj_sum = 0; Mjb_sum = 0;
+                   
+                M = cell(1, m_j);
+                for j = 1:m_j
+
+                    if j < i_new
+                        M{j} = zeros(1,m_j+n-1); M{j}(n+j) = 1;
+                    elseif j == i_new
+                        M{j} = [xi_i' zeros(1,m_j-1)];
+                    elseif j>i_new
+                        M{j} = zeros(1,m_j+n-1); M{j}(n+j-1) = 1;
+                    end
+
+                    Mj_sum = Mj_sum + (M{j}'*M{j});
+
+                    k = indices{i}(j);
+                    b = Z_admm{k}-Y{i}{k};
+                    Mjb_sum = Mjb_sum + M{j}'*b;
+                end
+
+                W = pinv(2*((C_proxi*M2)'*C_proxi*M2)+rho*(M1'*M1)+mu*Mj_sum)*(rho*M1'*a'+mu*Mjb_sum);
+
+                Phi_loc{i} = (M1*W)';
+
+                X_i = M2*W;
+                X{i} = zeros(Nx*tFIR+Nu*(tFIR-1),1); X{i}(indices{i}) = X_i;
+            end
+            totalTime = totalTime + toc;
+            
+            for sys = 2:Nx
                 for i = r{sys}
 
                     n = max(length(s_r{sys}(find(r{sys}==i),:)));
@@ -116,7 +162,18 @@ for t = 1:tSim
             
             % Update Z
             Z_old = Z_admm;
-            for sys = 1:Nx
+            
+            sys = 1;
+            tic;
+            for j = r{sys}
+                Z_admm{j} = 0;
+                for i = indices{j}
+                    Z_admm{j} = Z_admm{j} + (X{i}(j)+Y{i}{j})/length(indices{j});
+                end
+            end 
+            totalTime = totalTime + toc;            
+            
+            for sys = 2:Nx
                 for j = r{sys}
                     Z_admm{j} = 0;
                     for i = indices{j}
@@ -126,7 +183,16 @@ for t = 1:tSim
             end
         
             % Lagrange multiplier
-            for sys = 1:Nx
+            sys = 1;
+            tic;
+            for i = r{sys}
+                for j = indices{i}
+                    Y{i}{j} = Y{i}{j} + X{i}(j) - Z_admm{j};
+                end
+            end
+            totalTime = totalTime + toc;
+            
+            for sys = 2:Nx
                 for i = r{sys}
                     for j = indices{i}
                         Y{i}{j} = Y{i}{j} + X{i}(j) - Z_admm{j};
@@ -164,11 +230,15 @@ for t = 1:tSim
                 break;
             end
         end
-        
+                
         if consCriterion_failed        
             fprintf('ADMM consensus reached %d iters and did not converge\n', maxConsensusIters);
         end
 
+        if t > 1
+            totalIter = totalIter + consIter;
+        end
+        
         % Build the big matrix
         for sys = 1:Nx
             for i = r{sys}
@@ -185,7 +255,16 @@ for t = 1:tSim
         end
 
         Psi_loc = cell(1, Nx);
-        for i = 1:Nx
+        
+        i = 1;
+        IZA_ZB_loc = IZA_ZB(:,s_c{i}); row_all_zeros = find(all(IZA_ZB_loc == 0,2)); keep_indices = setdiff(linspace(1,Nx*tFIR,Nx*tFIR),row_all_zeros);
+        IZA_ZB_loc = IZA_ZB(keep_indices,s_c{i}); E1_loc = E1(keep_indices,c{i}); 
+        tic;
+        AUX_matrix = IZA_ZB_loc'*pinv(IZA_ZB_loc*IZA_ZB_loc');
+        Psi_loc{i} = (Phi_loc_col{i}+Lambda_loc_col{i})+AUX_matrix*(E1_loc-IZA_ZB_loc*(Phi_loc_col{i}+Lambda_loc_col{i}));
+        totalTime = totalTime + toc;
+        
+        for i = 2:Nx
             clear AUX_matrix
             IZA_ZB_loc = IZA_ZB(:,s_c{i}); row_all_zeros = find(all(IZA_ZB_loc == 0,2)); keep_indices = setdiff(linspace(1,Nx*tFIR,Nx*tFIR),row_all_zeros);
             IZA_ZB_loc = IZA_ZB(keep_indices,s_c{i}); E1_loc = E1(keep_indices,c{i}); 

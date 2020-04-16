@@ -17,6 +17,7 @@ up  =  1.2;
 low = -0.2;
 
 numPendula = 3;
+
 for idx=1:numLocs
     locality = localities(idx);
     setup_system_b;
