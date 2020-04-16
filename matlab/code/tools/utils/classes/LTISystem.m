@@ -74,7 +74,20 @@ classdef LTISystem < matlab.mixin.Copyable
             if size(obj.D22,1) ~= obj.Ny || size(obj.D22,2) ~= obj.Nu
                 sls_error('D22 matrix has incorrect dimensions')
             end
-        end    
+        end
+      end
+      
+      function sanity_check_mpc(obj)
+        mpcMsg = 'Note: current MPC code only supports state feedback with no noise\n' + ...
+                 '      only info for A, B2, Nx, and Nu will be used';          
+        fprintf(mpcMsg);
+                % sanity check that dimensions are consistent
+        if size(obj.A,1) ~= obj.Nx || size(obj.A,2) ~= obj.Nx
+            sls_error('A matrix has incorrect dimensions')
+        end
+        if size(obj.B2,1) ~= obj.Nx || size(obj.B2,2) ~= obj.Nu
+            sls_error('B2 matrix has incorrect dimensions')
+        end
       end
     end
 end

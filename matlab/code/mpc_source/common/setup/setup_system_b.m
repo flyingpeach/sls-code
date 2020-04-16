@@ -36,7 +36,13 @@ for i = 1:2:Nx
     Bc (i:i+1,j) = [0; 1];
 end
 
-% Discretize 
+% Discretize + set up system
 Ts = .1;
-A  = (eye(Nx)+Ac*Ts);
-B  = Ts*Bc;
+
+sys     = LTISystem();
+sys.Nx  = Nx;
+sys.Nu  = Nu;
+sys.A   = (eye(Nx)+Ac*Ts);
+sys.B2  = Ts*Bc;
+
+sys.sanity_check_mpc();

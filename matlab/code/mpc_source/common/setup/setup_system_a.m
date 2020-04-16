@@ -8,10 +8,9 @@ n = 4; % number of pendulums
 Nx = 2*n; 
 Nu = n;
 
+x0 = rand(Nx,1);
 tSim = 30; % time horizon
 tFIR = 20; % FIR time (i.e. order of controller)
-
-x0 = rand(Nx,1);
 
 %% plant setup
 m = 1; k = 1; f = 3; g = 10; l = 1;
@@ -41,7 +40,13 @@ for i = 1:2:Nx
     Bc (i:i+1,j) = [0; 1];
 end
 
-% Discretize 
+% Discretize + set up system
 Ts = .1;
-A  = (eye(Nx)+Ac*Ts);
-B  = Ts*Bc;
+
+sys     = LTISystem();
+sys.Nx  = Nx;
+sys.Nu  = Nu;
+sys.A   = (eye(Nx)+Ac*Ts);
+sys.B2  = Ts*Bc;
+
+sys.sanity_check_mpc();
