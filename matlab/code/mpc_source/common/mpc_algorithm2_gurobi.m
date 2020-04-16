@@ -126,25 +126,42 @@ for t = 1:tSim
                     X_i = M2*W;
                     X{i} = zeros(Nx*tFIR+Nu*(tFIR-1),1); X{i}(indices{i}) = X_i;
                 end
+                
+                if sys == 1
+                    totalTime = totalTime + result.runtime;
+                end
+                    
             end
 
             % Update Z
             Z_old = Z_admm;
             for sys = 1:Nx
+                if t > 1 && sys == 1
+                    tic;
+                end
                 for j = r{sys}
                     Z_admm{j} = 0;
                     for i = indices{j}
                         Z_admm{j} = Z_admm{j} + (X{i}(j)+Y{i}{j})/length(indices{j});
                     end
-                end 
+                end
+                if t > 1 && sys == 1
+                    totalTime = totalTime + toc;
+                end
             end
         
             % Lagrange multiplier
             for sys = 1:Nx
+                if t > 1 && sys == 1
+                    tic;
+                end
                 for i = r{sys}
                     for j = indices{i}
                         Y{i}{j} = Y{i}{j} + X{i}(j) - Z_admm{j};
                     end
+                end
+                if t > 1 && sys == 1
+                    totalTime = totalTime + toc;
                 end
             end
             
@@ -183,6 +200,10 @@ for t = 1:tSim
             fprintf('ADMM consensus reached %d iters and did not converge\n', maxConsensusIters);
         end
 
+        if t > 1 
+            totalIter = totalIter + consIter;
+        end
+
         % Build the big matrix
         for sys = 1:Nx
             for i = r{sys}
@@ -200,11 +221,17 @@ for t = 1:tSim
 
         Psi_loc = cell(1, Nx);
         for i = 1:Nx
+            if i == 1 && t > 1 
+                tic;
+            end
             clear AUX_matrix
             IZA_ZB_loc = IZA_ZB(:,s_c{i}); row_all_zeros = find(all(IZA_ZB_loc == 0,2)); keep_indices = setdiff(linspace(1,Nx*tFIR,Nx*tFIR),row_all_zeros);
             IZA_ZB_loc = IZA_ZB(keep_indices,s_c{i}); E1_loc = E1(keep_indices,c{i}); 
             AUX_matrix = IZA_ZB_loc'*pinv(IZA_ZB_loc*IZA_ZB_loc');
             Psi_loc{i} = (Phi_loc_col{i}+Lambda_loc_col{i})+AUX_matrix*(E1_loc-IZA_ZB_loc*(Phi_loc_col{i}+Lambda_loc_col{i}));
+            if i == 1 && t > 1
+                totalTime = totalTime + toc;
+            end
         end
 
         % Build the big matrix
