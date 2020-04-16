@@ -1,4 +1,4 @@
-function IZA_ZB = get_sls_constraints(sys, tFIR)
+function ZAB = get_sls_constraint(sys, tFIR)
 
 Nx = sys.Nx; Nu = sys.Nu;
 
@@ -13,6 +13,6 @@ B_repmat = repmat({sys.B2},tFIR,1);
 A_block  = blkdiag(A_repmat{:});
 B_block  = blkdiag(B_repmat{:});
 
-IZA_ZB = [I - Z*A_block, -Z*B_block];
-IZA_ZB = IZA_ZB(:,1:end-Nu);
+ZAB = [I - Z*A_block, -Z*B_block];
+ZAB = ZAB(:,1:end-Nu);
 end
