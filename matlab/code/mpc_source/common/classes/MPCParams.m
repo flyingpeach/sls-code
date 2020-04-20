@@ -27,8 +27,8 @@ classdef MPCParams < matlab.mixin.Copyable
      
         % Optional params -----------------------------------------
         couplingMtx_;    % leave empty if no coupling
-        state_upperbnd_; % upper bound on state
-        state_lowerbnd_; % lower bound on state
+        stateUpperbnd_; % upper bound on state
+        stateLowerbnd_; % lower bound on state
     end
     
     methods

@@ -11,7 +11,7 @@ function [Phi_loc, time] = eqn_16a_solver(x_ri, psi_rowi, lamb_rowi, n, mParams)
     % s.t. x_ri'*Phi < upperbnd
     %      x_ri'*Phi > lowerbnd
     model.A     = sparse([x_ri'; x_ri']);
-    model.rhs   = [mParams.state_upperbnd_, mParams.state_lowerbnd_];
+    model.rhs   = [mParams.stateUpperbnd_, mParams.stateLowerbnd_];
     model.sense = '<>';
     
     % default lower bound is 0; override

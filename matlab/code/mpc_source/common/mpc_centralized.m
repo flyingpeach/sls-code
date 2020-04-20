@@ -68,20 +68,20 @@ for t = 1:tHorizon
         R{k+1} == A*R{k} + B*M{k};
     end
     
-    if ~isempty(params.state_upperbnd_)
+    if ~isempty(params.stateUpperbnd_)
         for k=1:tFIR
-            R{k}*x_t <= params.state_upperbnd_*ones(Nx,1);
+            R{k}*x_t <= params.stateUpperbnd_*ones(Nx,1);
         end
     end    
-    if ~isempty(params.state_lowerbnd)
+    if ~isempty(params.stateLowerbnd)
         for k=1:tFIR
-            R{k}*x_t >= params.state_lowerbnd_*ones(Nx,1);
+            R{k}*x_t >= params.stateLowerbnd_*ones(Nx,1);
         end
     end
 
     if ~isempty(params.couplingMtx_)
         for k = 3:tFIR % TODO: why 3?
-            params.couplingMtx_*R{k}*x_t <= params.state_upperbnd*ones(2*Nx,1);
+            params.couplingMtx_*R{k}*x_t <= params.stateUpperbnd*ones(2*Nx,1);
         end
     end
    
