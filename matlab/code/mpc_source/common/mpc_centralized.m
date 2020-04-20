@@ -1,31 +1,24 @@
-function [x, u, avgTime] = mpc_centralized(sys, d, Q, S, tFIR, tSim, x0, ...
-                               varargin) %up, low/Ksmall, coupling
-up=[]; low=[]; coupling=[];
-try 
-    up  = varargin{1};
-end
-try
-    low = varargin{2};
-end
-try 
-    coupling = varargin{3};
-end
-            
+function [x, u, avgTime] = mpc_centralized(sys, x0, params, Q, S)
+
 Nx = sys.Nx; Nu = sys.Nu; A = sys.A; B = sys.B2;
 
-x      = zeros(Nx, tSim);
-u      = zeros(Nu, tSim);
+locality = params.locality_;
+tFIR     = params.tFIR_;   
+tHorizon = params.tHorizon_;          
+
+x      = zeros(Nx, tHorizon);
+u      = zeros(Nu, tHorizon);
 x(:,1) = x0;
 
 totalTime = 0;
 
-for t = 1:tSim
-    fprintf('Validating time %d of %d\n', t, tSim); % display progress
+for t = 1:tHorizon
+    fprintf('Validating time %d of %d\n', t, tHorizon); % display progress
     x_t = x(:,t);
 
     clear LocalityR LocalityM
     Comms_Adj = abs(A)>0;
-    LocalityR = Comms_Adj^(d-1)>0;
+    LocalityR = Comms_Adj^(locality-1)>0;
     
     count = 0;
     for k = 1:tFIR
@@ -71,26 +64,27 @@ for t = 1:tSim
     subject to
 
     R{1} == eye(Nx); % Achievability constraints
-    for k= 1:tFIR-1
+    for k=1:tFIR-1
         R{k+1} == A*R{k} + B*M{k};
     end
     
-    if ~isempty(up) && ~isempty(low) 
-        if isempty(coupling)
-            % Bounding constraints specified
-            for k = 1:tFIR
-                R{k}*x_t <= up*ones(Nx,1);
-                R{k}*x_t >= low*ones(Nx,1);
-            end
-        else
-            % Coupling constraints specified
-            Ksmall = low; % ULTRA HACKY
-            for k = 3:tFIR
-                Ksmall*R{k}*x_t <= up*ones(2*Nx,1);
-            end
+    if ~isempty(params.state_upperbnd_)
+        for k=1:tFIR
+            R{k}*x_t <= params.state_upperbnd_*ones(Nx,1);
+        end
+    end    
+    if ~isempty(params.state_lowerbnd)
+        for k=1:tFIR
+            R{k}*x_t >= params.state_lowerbnd_*ones(Nx,1);
         end
     end
-    
+
+    if ~isempty(params.couplingMtx_)
+        for k = 3:tFIR % TODO: why 3?
+            params.couplingMtx_*R{k}*x_t <= params.state_upperbnd*ones(2*Nx,1);
+        end
+    end
+   
     cvx_end
     
     % Compute control + state
@@ -102,6 +96,6 @@ for t = 1:tSim
     end
 end
 
-avgTime = totalTime / (tSim - 1);
+avgTime = totalTime / (tHorizon - 1);
 
 end

@@ -26,6 +26,7 @@ classdef MPCParams < matlab.mixin.Copyable
         eps_z_; % convergence criterion for ||Z(n+1) - Z(n)||
      
         % Optional params -----------------------------------------
+        couplingMtx_;    % leave empty if no coupling
         state_upperbnd_; % upper bound on state
         state_lowerbnd_; % lower bound on state
     end
@@ -58,8 +59,6 @@ classdef MPCParams < matlab.mixin.Copyable
               sls_error('One or more required parameters is missing!')
           end 
       end
-      
-      function closed_form(obj)
-          
+                
     end
 end

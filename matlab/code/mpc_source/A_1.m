@@ -1,12 +1,13 @@
 % Algorithm I, System A
+clear all; close all; clc;
 
-%% Setup
+%% Setup plant
 setup_plant_a;
 
 rng(2020);
 x0 = rand(sys.Nx, 1);
 
-%% Distributed MPC
+%% MPC Parameters
 params = MPCParams();
 
 params.locality_ = 3;
@@ -16,17 +17,16 @@ params.maxIters_ = 5000;
 params.rho_      = 5;
 params.eps_d_    = 1e-3;
 params.eps_p_    = 1e-4;
-
 params.solnMode_ = MPCSolMode.ClosedForm;
 
-% Weights
 Q = eye(Nx);
 S = eye(Nu);
 
+%% Distributed MPC
 [x, u, ~] = mpc_algorithm_1(sys, x0, params);
 
 %% Centralized MPC (for validation + comparison)
-[xVal, uVal, ~] = mpc_centralized(sys, params.locality_, Q, S, params.tFIR_, params.tHorizon_, x0);
+[xVal, uVal, ~] = mpc_centralized(sys, x0, params, Q, S);
 
 %% Calculate costs + plot 
 tSim = params.tHorizon_;
