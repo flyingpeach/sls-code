@@ -41,10 +41,11 @@ x(:, 1) = x0;
 totalTime = 0;
 totalIter = 0;
 
-% Other setup
+% SLS constraints
 Eye = [eye(Nx); zeros(Nx*(tFIR-1),Nx)];
 ZAB = get_sls_constraint(sys, tFIR);
 
+% Locality setup
 [r_loc, m_loc] = get_r_m_locality(sys, locality, tFIR);
 [c, s_c]       = get_column_locality(sys, tFIR, r_loc, m_loc);
 [r, s_r]       = get_row_locality(sys, tFIR, r_loc, m_loc);
@@ -59,11 +60,11 @@ for t = 1:tHorizon
         
         % Separate Psi, Lambda into rows
         if params.solnMode_ == MPCSolMode.ClosedForm
-            [Psi_rows, Lambda_rows] = separate_rows_closed(sys, tFIR, r, s_r, r_loc, m_loc, Psi, Lambda);
+            [Psi_rows, Lambda_rows] = separate_rows_1(sys, tFIR, r, s_r, r_loc, m_loc, Psi, Lambda);
         elseif params.solnMode_ == MPCSolMode.Explicit
             % TODO
         elseif params.solnMode_ == MPCSolMode.UseSolver
-            [Psi_rows, Lambda_rows] = separate_rows_solver(sys, tFIR, r, s_r, r_loc, m_loc, Psi, Lambda);
+            [Psi_rows, Lambda_rows] = separate_rows_2(sys, tFIR, r, s_r, r_loc, m_loc, Psi, Lambda);
         end
         
         % Step 4: Solve (16a) to get local Phi
