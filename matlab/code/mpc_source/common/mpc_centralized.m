@@ -73,7 +73,7 @@ for t = 1:tHorizon
             R{k}*x_t <= params.stateUpperbnd_*ones(Nx,1);
         end
     end    
-    if ~isempty(params.stateLowerbnd)
+    if ~isempty(params.stateLowerbnd_)
         for k=1:tFIR
             R{k}*x_t >= params.stateLowerbnd_*ones(Nx,1);
         end

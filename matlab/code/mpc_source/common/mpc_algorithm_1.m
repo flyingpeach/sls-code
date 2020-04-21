@@ -72,8 +72,9 @@ for t = 1:tHorizon
             for i = 1:Nx
                 if t > 1 && i == 1; tic; end
 
+                n           = size(s_r{i}, 2);
                 x_ri        = x_t(s_r{i}(tFIR, :)); % local state
-                Phi_locs{i} = eqn_16a_closed(s_r{i}, x_ri, Psi_rows{i}, Lambda_rows{i}, rho);
+                Phi_locs{i} = eqn_16a_closed(x_ri, Psi_rows{i}, Lambda_rows{i}, n, rho);
 
                 if t > 1 && i == 1; totalTime = totalTime + toc; end
             end
@@ -86,9 +87,9 @@ for t = 1:tHorizon
                     x_ri = x_t(s_r{i_}(find(r{i_}==i),:));
 
                     if i <= Nx*tFIR
-                        [Phi_locs{i}, time] = eqn_16a_solver(x_ri, Psi_rows{i}, Lambda_rows{i}, n, mParams);                
+                        [Phi_locs{i}, time] = eqn_16a_solver(x_ri, Psi_rows{i}, Lambda_rows{i}, n, params);                
                     else
-                        Phi_locs{i} = eqn_16a_closed(s_r{i}, x_ri, Psi_rows{i}, Lambda_rows{i}, rho); 
+                        Phi_locs{i} = eqn_16a_closed(x_ri, Psi_rows{i}, Lambda_rows{i}, n, rho); 
                     end
                 end
                 

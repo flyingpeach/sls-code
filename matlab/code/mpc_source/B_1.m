@@ -1,29 +1,41 @@
 % Algorithm I, System B
 clear all; close all; clc;
 
+%% Setup plant + sweep variables
+setup_plant_b;
+
+rng(2020);
+x0 = rand(sys.Nx, 1);
+
 localities = [3 5 7 10];
 numLocs    = length(localities);
 times      = zeros(1, numLocs);
 timeCents  = zeros(1, numLocs);
 iters      = zeros(1, numLocs);
 
-rho   = 5; % admm parameter
-eps_d = 1e-3; % convergence criterion for ||Psi(k+1) - Psi(k)||
-eps_p = 1e-4; % convergence criterion for ||Phi(k+1) - Psi(k+1)||
-maxIters = 5000;
+%% MPC parameters
+params = MPCParams();
 
-numPendula = 3;
-for idx=1:numLocs
-    locality = localities(idx);
-    setup_system_b;
-    Q = eye(Nx);
-    S = eye(Nu);
+params.tFIR_     = 5;
+params.tHorizon_ = 10;
+params.maxIters_ = 5000;
+params.rho_      = 5;
+params.eps_d_    = 1e-3;
+params.eps_p_    = 1e-4;
+params.solnMode_ = MPCSolMode.ClosedForm;
+
+Q = eye(sys.Nx);
+S = eye(sys.Nu);
+
+%% Sweep over locality sizes
+for i=1:numLocs
+    params.locality_ = localities(i);
+    
     % Distributed MPC
-    [x, u, times(idx), iters(idx)] = mpc_algorithm1(Nx, Nu, A, B, d, tFIR, tSim, x0, ...
-                 eps_d, eps_p, rho, maxIters);
+    [x, u, times(i), iters(i)] = mpc_algorithm_1(sys, x0, params);
     
     % Centralized MPC (for validation + comparison)
-    [xVal, uVal, timeCents(idx)] = mpc_centralized(Nx, Nu, A, B, d, Q, S, tFIR, tSim, x0);
+    [xVal, uVal, timeCents(i)] = mpc_centralized(sys, x0, params, Q, S);   
 end
 
 %% Plot

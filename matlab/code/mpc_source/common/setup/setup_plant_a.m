@@ -1,5 +1,3 @@
-clear all; close all; clc;
-
 n  = 4; % number of pendulums
 Nx = 2*n; 
 Nu = n;

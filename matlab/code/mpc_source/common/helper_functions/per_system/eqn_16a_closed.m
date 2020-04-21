@@ -1,6 +1,6 @@
-function Phi_loc = eqn_16a_closed(s_ri, x_ri, psi_rowi, lamb_rowi, rho)
+function Phi_loc = eqn_16a_closed(x_ri, psi_rowi, lamb_rowi, n, rho)
 
-M       = inv(2 * x_ri * x_ri' + rho * eye(size(s_ri, 2)));
+M       = inv(2 * x_ri * x_ri' + rho * eye(n));
 Phi_loc = rho * (psi_rowi - lamb_rowi) * M;
 
 end

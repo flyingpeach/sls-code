@@ -1,18 +1,7 @@
-% do not clear variables; takes numPendula, locality as input
-
-%% general setup
-rng(2020)
-d = locality;
-n = numPendula;
-
+n  = 10; % number of pendulums
 Nx = 2*n; 
 Nu = n;
 
-x0   = rand(Nx,1);
-tSim = 10; % simulation time
-tFIR = 5; % FIR time horizon
-
-%% plant setup
 Ac = zeros(Nx,Nx); j = 0; % A matrix (continuous)
 for i = 1:2:Nx
     j = j+1;
@@ -29,7 +18,7 @@ for i = 1:2:Nx
     end
 end
 
-% B matrix
+% B matrix (continuous time)
 Bc = zeros(Nx,Nu); j = 0;
 for i = 1:2:Nx
     j = j+1;
