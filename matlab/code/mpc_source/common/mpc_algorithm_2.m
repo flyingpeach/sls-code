@@ -1,5 +1,4 @@
-function [x, u, avgTime, avgIter] = mpc_algorithm_2(sys, x0, params, ...
-                                    indices, C)
+function [x, u, avgTime, avgIter] = mpc_algorithm_2(sys, x0, params)
 % Inputs
 %   sys     : LTISystem containing system matrices (A, B2) and Nx, Nu 
 %   x0      : Initial system state
@@ -40,6 +39,25 @@ Psi    = zeros(Nx*tFIR + Nu*(tFIR-1),Nx);
 Lambda = zeros(Nx*tFIR + Nu*(tFIR-1),Nx);
 Y_locs = cell(1, Nx*tFIR+Nu*(tFIR-1));
 Z_locs = cell(1, Nx*tFIR+Nu*(tFIR-1));
+
+% Build cost matrix (block diagonal)
+C = [];
+for t = 0:tFIR-1
+    C = blkdiag(C, params.Q_);
+end
+for t = 0:tFIR-2
+    C = blkdiag(C, params.R_);
+end    
+
+% Coupling (indices = neighbors)
+indices = cell(1, length(C));
+for i = 1:length(C)
+    for j = 1:length(C)
+        if C(i,j) ~= 0
+            indices{i} = [indices{i} j];
+        end
+    end
+end
 
 for i = 1:Nx*tFIR+Nu*(tFIR-1) % Initialize Y, Z
     if ~isempty(indices{i})
@@ -101,10 +119,10 @@ for t = 1:tHorizon
                         n     = max(length((s_r{i_}(find(r{i_}==i),:))));
                         x_ri  = x_t(s_r{i_}(find(r{i_}==i),:));
                         i_new = find(indices{i} == i);
-                        ci    = C(i, indices{i})
+                        ci    = C(i, indices{i});
                         
                         [Phi_locs{i}, X_locs{i}] = eqn_20a_closed(x_ri, Psi_rows{i}, Lambda_rows{i}, ...
-                                                                  Z_locs, y_rowi, indices{i}, i_new, ci, n, rho);                        
+                                                                  Z_locs, Y_locs{i}, indices{i}, i_new, ci, n, rho, mu);                        
                     end
                     if t > 1 && i_ == 1; totalTime = totalTime + toc; end
                 end
@@ -146,7 +164,7 @@ for t = 1:tHorizon
                         z_av(j) = Z_locs{j};
                     end
                     
-                    if ~check_convergence_cons(z_av, X_locs{i}, Z_locs{i}, Z_prev_locs{i}, eps_x, eps_z);
+                    if ~check_convergence_cons(z_av, X_locs{i}, Z_locs{i}, Z_prev_locs{i}, eps_x, eps_z)
                         converged = false;
                         break; % if one fails, can stop checking the rest
                     end
@@ -161,7 +179,7 @@ for t = 1:tHorizon
         if t > 1; totalIter = totalIter + consIter; end
                 
         if ~converged    
-            fprintf('ADMM consensus reached %d iters and did not converge\n', maxConsensusIters);
+            fprintf('ADMM consensus reached %d iters and did not converge\n', maxItersCons);
         end
 
         % Step 10: Build entire Phi matrix        
@@ -205,7 +223,7 @@ for t = 1:tHorizon
               psi_loc      = Psi(r{i},s_r{i}(tFIR,:));
               psi_prev_loc = Psi_prev(r{i},s_r{i}(tFIR,:));
 
-              if ~check_convergence(phi_loc, psi_loc, psi_prev_loc, eps_p, eps_d);
+              if ~check_convergence(phi_loc, psi_loc, psi_prev_loc, eps_p, eps_d)
                   converged = false;
                   break; % if one fails, can stop checking the rest
               end

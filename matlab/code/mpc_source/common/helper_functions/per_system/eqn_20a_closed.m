@@ -33,7 +33,9 @@ end
 W = pinv(2*((ci*M2)'*ci*M2)+rho*(M1'*M1)+mu*Mj_sum)*(rho*M1'*a'+mu*Mjb_sum);
 
 Phi_loc         = (M1*W)';
-X_loc           = zeros(Nx*tFIR+Nu*(tFIR-1),1); 
+
+% TODO: slightly hacky, but avoids passing in more things
+X_loc           = zeros(length(Z_locs)); 
 X_loc(indicesi) = M2*W;
 
 end
