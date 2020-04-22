@@ -15,8 +15,8 @@ params.tFIR_     = 20;
 params.tHorizon_ = 30;
 params.maxIters_ = 5000;
 params.rho_      = 5;
-params.eps_d_    = 1e-3;
 params.eps_p_    = 1e-4;
+params.eps_d_    = 1e-3;
 params.solnMode_ = MPCSolMode.ClosedForm;
 
 Q = eye(Nx);

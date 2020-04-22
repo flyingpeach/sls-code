@@ -20,8 +20,8 @@ params.tFIR_     = 5;
 params.tHorizon_ = 10;
 params.maxIters_ = 10000;
 params.rho_      = 10;
-params.eps_d_    = 1e-3;
 params.eps_p_    = 1e-4;
+params.eps_d_    = 1e-3;
 params.solnMode_ = MPCSolMode.UseSolver;
 
 params.stateUpperbnd_ = 1.2;
