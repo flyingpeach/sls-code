@@ -147,7 +147,7 @@ for t = 1:tHorizon
               psi_loc      = Psi(r{i},s_r{i}(tFIR,:));
               psi_prev_loc = Psi_prev(r{i},s_r{i}(tFIR,:));
 
-              if ~check_convergence(phi_loc, psi_loc, psi_prev_loc, eps_p, eps_d);
+              if ~check_convergence(phi_loc, psi_loc, psi_prev_loc, eps_p, eps_d)
                   converged = false;
                   break; % if one fails, can stop checking the rest
               end
