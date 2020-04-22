@@ -74,7 +74,7 @@ for t = 1:tHorizon
     fprintf('Calculating time %d of %d\n', t, tHorizon); % display progress
     x_t = x(:,t); % update initial condition
     
-    for iter=1:maxIters % ADMM outer loop
+    for iter=1:maxIters % ADMM (outer loop)
         Psi_prev = Psi;
         
         % Separate Psi, Lambda into rows
@@ -86,7 +86,7 @@ for t = 1:tHorizon
             % TODO
         end
         
-        for consIter=1:maxItersCons
+        for consIter=1:maxItersCons % ADMM consensus (inner loop)
             Z_prev_locs = Z_locs;
 
             % Step 4: Solve (20a) to get local Phi, X            
@@ -137,128 +137,96 @@ for t = 1:tHorizon
                 if t > 1 && i_ == 1; totalTime = totalTime + toc; end
             end
             
-            % Step 9: Check convergence of inner loop
-            converged = true;
-            
-            
-            % uncleaned code below this line --------------------
-            
-            
-            % Consensus convergence criterium
-            primal = zeros(1, Nx);
+            % Step 9: Check convergence of ADMM consensus
+            converged = true;           
             for i_ = 1:Nx
                 for i = r{i_}
-                    average = zeros(Nx*tFIR+Nu*(tFIR-1),1);
+                    z_av = zeros(Nx*tFIR+Nu*(tFIR-1),1);
                     for j = indices{i}
-                        average(j) = Z_locs{j};
+                        z_av(j) = Z_locs{j};
                     end
-                    primal(i) = norm(X_locs{i}-average, 'fro');
+                    
+                    if ~check_convergence_cons(z_av, X_locs{i}, Z_locs{i}, Z_prev_locs{i}, eps_x, eps_z);
+                        converged = false;
+                        break; % if one fails, can stop checking the rest
+                    end
                 end
-            end
-            primalRes = max(primal); % primal residue
-
-            dual = zeros(1, Nx);
-            for i_ = 1:Nx
-                for j = r{i_}
-                    dual(j) = norm(Z_locs{j}-Z_prev_locs{j}, 'fro');
-                end
-            end
-            dualRes = max(dual); % dual residue
-
-            consCriterion_failed = false;
-            if primalRes > eps_x || dualRes > eps_z
-                consCriterion_failed = true;
             end
             
-            if ~consCriterion_failed
-                break;
+            if converged
+                break; % exit ADMM consensus iterations
             end
         end
+        
+        if t > 1; totalIter = totalIter + consIter; end
                 
-        if consCriterion_failed        
+        if ~converged    
             fprintf('ADMM consensus reached %d iters and did not converge\n', maxConsensusIters);
         end
 
-        if t > 1
-            totalIter = totalIter + consIter;
-        end
-        
-        % Build the big matrix
+        % Step 10: Build entire Phi matrix        
         for i_ = 1:Nx
             for i = r{i_}
                 Phi(i,s_r{i_}(find(r{i_}==i),:)) = Phi_locs{i};
             end
         end
 
-        % Separate into columns
-        Phi_loc_col = cell(1, Nx);
-        Lambda_loc_col = cell(1, Nx);
-        for i = 1:Nx
-            Phi_loc_col{i} = Phi(s_c{i},c{i});
-            Lambda_loc_col{i} = Lambda(s_c{i},c{i});
-        end
-
-        Psi_loc = cell(1, Nx);
+        % Separate Phi, Lambda into columns
+        [Phi_cols, Lambda_cols] = separate_cols(sys, c, s_c, Phi, Lambda);
         
-        i = 1;
-        IZA_ZB_loc = IZA_ZB(:,s_c{i}); row_all_zeros = find(all(IZA_ZB_loc == 0,2)); keep_indices = setdiff(linspace(1,Nx*tFIR,Nx*tFIR),row_all_zeros);
-        IZA_ZB_loc = IZA_ZB(keep_indices,s_c{i}); E1_loc = E1(keep_indices,c{i}); 
-        tic;
-        AUX_matrix = IZA_ZB_loc'*pinv(IZA_ZB_loc*IZA_ZB_loc');
-        Psi_loc{i} = (Phi_loc_col{i}+Lambda_loc_col{i})+AUX_matrix*(E1_loc-IZA_ZB_loc*(Phi_loc_col{i}+Lambda_loc_col{i}));
-        totalTime = totalTime + toc;
-        
-        for i = 2:Nx
-            clear AUX_matrix
-            IZA_ZB_loc = IZA_ZB(:,s_c{i}); row_all_zeros = find(all(IZA_ZB_loc == 0,2)); keep_indices = setdiff(linspace(1,Nx*tFIR,Nx*tFIR),row_all_zeros);
-            IZA_ZB_loc = IZA_ZB(keep_indices,s_c{i}); E1_loc = E1(keep_indices,c{i}); 
-            AUX_matrix = IZA_ZB_loc'*pinv(IZA_ZB_loc*IZA_ZB_loc');
-            Psi_loc{i} = (Phi_loc_col{i}+Lambda_loc_col{i})+AUX_matrix*(E1_loc-IZA_ZB_loc*(Phi_loc_col{i}+Lambda_loc_col{i}));
-        end
-
-        % Build the big matrix
+        % Step 11: Solve (16b) to get local Psi
+        Psi_locs = cell(1, Nx);
         for i = 1:Nx
-            Psi(s_c{i},c{i}) = Psi_loc{i};
+            if t > 1 && i == 1; tic; end
+
+            ZABi     = ZAB(:, s_c{i});
+            zeroRow  = find(all(ZABi == 0, 2));
+            keepIdxs = setdiff(linspace(1,Nx*tFIR,Nx*tFIR), zeroRow);
+            ZABi     = ZAB(keepIdxs, s_c{i}); 
+            Eyei     = Eye(keepIdxs, c{i});
+
+            Psi_locs{i} = eqn_16b(Phi_cols{i}, Lambda_cols{i}, ZABi, Eyei);
+
+            if t > 1 && i == 1; totalTime = totalTime + toc; end            
+        end
+        
+        % Step 12: Build entire Psi matrix
+        for i = 1:Nx
+            Psi(s_c{i},c{i}) = Psi_locs{i};
         end
 
-        % Lagrange multiplier
+        % Step 13: Update Lambda
         Lambda = Lambda + Phi - Psi; 
             
-        % Check convergence locally 
-        criterion_failed = false;
-        for i_ = 1:Nx
-              local_phi = Phi(r{i_},s_r{i_}(tFIR,:));
-              local_psi = Psi(r{i_},s_r{i_}(tFIR,:));
-              local_psi_prev = Psi_prev(r{i_},s_r{i_}(tFIR,:));
+        % Step 14: Check convergence of ADMM (outer loop)
+        converged = true;
+        for i = 1:Nx
+              phi_loc      = Phi(r{i},s_r{i}(tFIR,:));
+              psi_loc      = Psi(r{i},s_r{i}(tFIR,:));
+              psi_prev_loc = Psi_prev(r{i},s_r{i}(tFIR,:));
 
-              local_diff_d = norm(local_psi-local_psi_prev,'fro');
-              local_diff_p = norm(local_phi-local_psi,'fro');
-
-              if local_diff_p > eps_p || local_diff_d > eps_d
-                  criterion_failed = true;
+              if ~check_convergence(phi_loc, psi_loc, psi_prev_loc, eps_p, eps_d);
+                  converged = false;
                   break; % if one fails, can stop checking the rest
               end
         end
-
-        if ~criterion_failed
-            break; % convergence criterion passed, exit admm iterations
+        
+        if converged
+            break; % exit ADMM iterations
         end
     end
 
-    if t > 1
-        totalIter = totalIter + iter;
-    end
+    if t > 1; totalIter = totalIter + iter; end
     
-    if criterion_failed
+    if ~converged
         fprintf('ADMM reached %d iters and did not converge\n', maxIters);
     end
     
     % Compute control + state
-    u(:,t) = Phi(1+Nx*tFIR:Nx*tFIR+Nu,:)*x_t;
+    u(:,t)   = Phi(1+Nx*tFIR:Nx*tFIR+Nu,:)*x_t;
     x(:,t+1) = Phi(1+Nx:2*Nx,:)*x_t; % since no noise, x_ref = x
 end
 
 avgTime = totalTime / (tHorizon - 1);
 avgIter = totalIter / (tHorizon - 1);
-
 end
