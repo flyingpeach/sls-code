@@ -29,7 +29,7 @@ params.R_ = eye(Nu);
 [xVal, uVal, ~] = mpc_centralized(sys, x0, params);
 
 %% Calculate costs + plot 
-tSim = params.tHorizon_;
+tSim   = params.tHorizon_;
 obj    = get_cost_fn(params, x, u);
 objVal = get_cost_fn(params, xVal, uVal);
 

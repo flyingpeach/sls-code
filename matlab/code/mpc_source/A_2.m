@@ -45,7 +45,8 @@ params.R_ = eye(Nu);
  %% Centralized MPC (for validation + comparison)
 [xVal, uVal, ~] = mpc_centralized(sys, x0, params);
 
-%% Calculate costs + plot 
+%% Calculate costs + plot
+tSim   = params.tHorizon_;
 obj    = get_cost_fn(params, x, u);
 objVal = get_cost_fn(params, xVal, uVal);
 
