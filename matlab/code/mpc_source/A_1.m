@@ -19,19 +19,19 @@ params.eps_p_    = 1e-4;
 params.eps_d_    = 1e-3;
 params.solnMode_ = MPCSolMode.ClosedForm;
 
-Q = eye(Nx);
-S = eye(Nu);
+params.Q_ = eye(Nx);
+params.R_ = eye(Nu);
 
 %% Distributed MPC
 [x, u, ~] = mpc_algorithm_1(sys, x0, params);
 
 %% Centralized MPC (for validation + comparison)
-[xVal, uVal, ~] = mpc_centralized(sys, x0, params, Q, S);
+[xVal, uVal, ~] = mpc_centralized(sys, x0, params);
 
 %% Calculate costs + plot 
 tSim = params.tHorizon_;
-obj    = get_cost_fn(Q, S, tSim, x, u);
-objVal = get_cost_fn(Q, S, tSim, xVal, uVal);
+obj    = get_cost_fn(params, x, u);
+objVal = get_cost_fn(params, xVal, uVal);
 
 % Output costs
 fprintf('Distributed cost: %f\n', obj);

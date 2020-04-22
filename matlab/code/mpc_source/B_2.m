@@ -27,8 +27,8 @@ params.solnMode_ = MPCSolMode.UseSolver;
 params.stateUpperbnd_ = 1.2;
 params.stateLowerbnd_ = -0.2;
 
-Q = eye(sys.Nx);
-S = eye(sys.Nu);
+params.Q_ = eye(sys.Nx);
+params.R_ = eye(sys.Nu);
 
 %% Sweep over locality sizes
 for i=1:numLocs
@@ -38,7 +38,7 @@ for i=1:numLocs
     [x, u, times(i), iters(i)] = mpc_algorithm_1(sys, x0, params);
 
     % Centralized MPC (for validation + comparison)
-    [xVal, uVal, timeCents(i)] = mpc_centralized(sys, x0, params, Q, S); 
+    [xVal, uVal, timeCents(i)] = mpc_centralized(sys, x0, params); 
 end
 
 %% Plot

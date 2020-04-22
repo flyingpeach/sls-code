@@ -16,6 +16,9 @@ classdef MPCParams < matlab.mixin.Copyable
         eps_d_; % convergence criterion for ||Psi(k+1) - Psi(k)||
 
         solnMode_; % MPCSolnMode indicating solution mode
+        
+        Q_; % penalty for state
+        R_; % penalty for input
 
         % Algorithm 2 only ----------------------------------------
         maxItersCons_; % maximum allowed iterations for ADMM consensus
@@ -33,16 +36,18 @@ classdef MPCParams < matlab.mixin.Copyable
     
     methods
       function sanity_check_alg_1(obj)
-          e1 = isempty(obj.locality_);
-          e2 = isempty(obj.tFIR_);
-          e3 = isempty(obj.tHorizon_);
-          e4 = isempty(obj.maxIters_);
-          e5 = isempty(obj.rho_);
-          e6 = isempty(obj.eps_p_);
-          e7 = isempty(obj.eps_d_);
-          e8 = isempty(obj.solnMode_);
+          e1  = isempty(obj.locality_);
+          e2  = isempty(obj.tFIR_);
+          e3  = isempty(obj.tHorizon_);
+          e4  = isempty(obj.maxIters_);
+          e5  = isempty(obj.rho_);
+          e6  = isempty(obj.eps_p_);
+          e7  = isempty(obj.eps_d_);
+          e8  = isempty(obj.solnMode_);
+          e9  = isempty(obj.Q_);
+          e10 = isempty(obj.R_);
           
-          if (e1 || e2 || e3 || e4 || e5 || e6 || e7 || e8)
+          if (e1 || e2 || e3 || e4 || e5 || e6 || e7 || e8 || e9 || e10)
               sls_error('One or more required parameters is missing!')
           end
       end

@@ -1,9 +1,9 @@
-function obj = get_cost_fn(Q, S, tHorizon, x, u)
+function obj = get_cost_fn(params, x, u)
 
 obj=0;
-for t=1:tHorizon
-    obj = obj + x(:,t)'*Q*x(:,t)+u(:,t)'*S*u(:,t);
+for t=1:params.tHorizon_
+    obj = obj + x(:,t)'*params.Q_*x(:,t)+u(:,t)'*params.R_*u(:,t);
 end
-obj = obj + x(:,t+1)'*Q*x(:,t+1);
+obj = obj + x(:,t+1)'*params.Q_*x(:,t+1);
 
 end

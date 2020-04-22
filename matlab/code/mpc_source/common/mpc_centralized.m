@@ -1,10 +1,13 @@
-function [x, u, avgTime] = mpc_centralized(sys, x0, params, Q, S)
+function [x, u, avgTime] = mpc_centralized(sys, x0, params)
 
 Nx = sys.Nx; Nu = sys.Nu; A = sys.A; B = sys.B2;
 
 locality = params.locality_;
 tFIR     = params.tFIR_;   
 tHorizon = params.tHorizon_;          
+
+Q = params.Q_;
+S = params.R_; % use different letter to avoid confusion with SLS R
 
 x      = zeros(Nx, tHorizon);
 u      = zeros(Nu, tHorizon);
