@@ -71,7 +71,7 @@ for t = 1:tHorizon
         R{k+1} == A*R{k} + B*M{k};
     end
     
-    if ~isempty(params.stateUpperbnd_)
+    if ~isempty(params.stateUpperbnd_) && isempty(params.constraintMtx_) %TODO: hacky
         for k=1:tFIR
             R{k}*x_t <= params.stateUpperbnd_*ones(Nx,1);
         end
@@ -82,9 +82,17 @@ for t = 1:tHorizon
         end
     end
 
-    if ~isempty(params.couplingMtx_)
+    if ~isempty(params.constraintMtx_)
+        Ksmall  = params.constraintMtx_;
+        % Build the big constraint matrix
+        K = [zeros(size(Ksmall)) zeros(2*Nx,(tFIR-1)*Nx)];
+        K = [K; zeros(2*Nx,Nx) zeros(size(Ksmall)) zeros(2*Nx,(tFIR-2)*Nx)];
+        for t = 2:tFIR-1
+            K = [K; zeros(2*Nx,t*Nx) Ksmall zeros(2*Nx,(tFIR-t-1)*Nx)];
+        end
+
         for k = 3:tFIR % TODO: why 3?
-            params.couplingMtx_*R{k}*x_t <= params.stateUpperbnd*ones(2*Nx,1);
+            K*R{k}*x_t <= params.stateUpperbnd*ones(2*Nx,1);
         end
     end
    

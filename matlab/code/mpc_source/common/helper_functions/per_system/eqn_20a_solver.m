@@ -1,6 +1,6 @@
 function [Phi_loc, X_loc, time] = eqn_20a_solver(x_ri, psi_rowi, lamb_rowi, ...
                                                  Z_locs, y_rowi, ki, ...
-                                                 indicesi, i_new, ci, n, rho, mu)
+                                                 indicesi, i_new, ci, n, rho, mu, up)
 
 m_j = max(length(indicesi));
 a   = psi_rowi - lamb_rowi;

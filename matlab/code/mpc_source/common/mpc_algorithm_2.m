@@ -33,7 +33,6 @@ mu           = params.mu_;
 eps_x        = params.eps_x_;
 eps_z        = params.eps_z_;
 
-K  = params.constraintMtx_;
 up = params.stateUpperbnd_;
 
 % ADMM variables
@@ -42,6 +41,14 @@ Psi    = zeros(Nx*tFIR + Nu*(tFIR-1),Nx);
 Lambda = zeros(Nx*tFIR + Nu*(tFIR-1),Nx);
 Y_locs = cell(1, Nx*tFIR+Nu*(tFIR-1));
 Z_locs = cell(1, Nx*tFIR+Nu*(tFIR-1));
+
+Ksmall  = params.constraintMtx_;
+% Build the big constraint matrix
+K = [zeros(size(Ksmall)) zeros(2*Nx,(tFIR-1)*Nx)];
+K = [K; zeros(2*Nx,Nx) zeros(size(Ksmall)) zeros(2*Nx,(tFIR-2)*Nx)];
+for t = 2:tFIR-1
+    K = [K; zeros(2*Nx,t*Nx) Ksmall zeros(2*Nx,(tFIR-t-1)*Nx)];
+end
 
 % Build cost matrix (block diagonal)
 C = [];
@@ -139,7 +146,7 @@ for t = 1:tHorizon
 
                         if i <= Nx*tFIR && i >= Nx*2
                             [Phi_locs{i}, X_locs{i}, time] = eqn_20a_solver(x_ri, Psi_rows{i}, Lambda_rows{i}, ...
-                                                                            Z_locs, Y_locs{i}, ki, indices{i}, i_new, ci, n, rho, mu);
+                                                                            Z_locs, Y_locs{i}, ki, indices{i}, i_new, ci, n, rho, mu, up);
                         else
                             [Phi_locs{i}, X_locs{i}] = eqn_20a_closed(x_ri, Psi_rows{i}, Lambda_rows{i}, ...
                                                                       Z_locs, Y_locs{i}, indices{i}, i_new, ci, n, rho, mu);
