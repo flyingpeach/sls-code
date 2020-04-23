@@ -11,7 +11,7 @@ params = MPCParams();
 
 params.locality_ = 3;
 params.tFIR_     = 20;
-params.tHorizon_ = 1;
+params.tHorizon_ = 60;
 params.eps_p_    = 1e-4;
 params.eps_d_    = 1e-3;
 
