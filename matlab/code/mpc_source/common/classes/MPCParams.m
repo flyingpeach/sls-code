@@ -29,7 +29,7 @@ classdef MPCParams < matlab.mixin.Copyable
         eps_z_; % convergence criterion for ||Z(n+1) - Z(n)||
      
         % Optional params -----------------------------------------
-        couplingMtx_;    % leave empty if no coupling
+        constraintMtx_; 
         stateUpperbnd_; % upper bound on state
         stateLowerbnd_; % lower bound on state
     end

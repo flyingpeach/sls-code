@@ -33,6 +33,9 @@ mu           = params.mu_;
 eps_x        = params.eps_x_;
 eps_z        = params.eps_z_;
 
+K  = params.constraintMtx_;
+up = params.stateUpperbnd_;
+
 % ADMM variables
 Phi    = zeros(Nx*tFIR + Nu*(tFIR-1),Nx);
 Psi    = zeros(Nx*tFIR + Nu*(tFIR-1),Nx);
@@ -49,7 +52,8 @@ for t = 0:tFIR-2
     C = blkdiag(C, params.R_);
 end    
 
-% Coupling (indices = neighbors)
+% Note: only coupling from cost matrix is considered
+%       coupling from constraints is ignored
 indices = cell(1, length(C));
 for i = 1:length(C)
     for j = 1:length(C)
@@ -96,13 +100,7 @@ for t = 1:tHorizon
         Psi_prev = Psi;
         
         % Separate Psi, Lambda into rows
-        if params.solnMode_ == MPCSolMode.ClosedForm
-            [Psi_rows, Lambda_rows] = separate_rows_2(sys, tFIR, r, s_r, r_loc, m_loc, Psi, Lambda);
-        elseif params.solnMode_ == MPCSolMode.Explicit
-            % TODO
-        elseif params.solnMode_ == MPCSolMode.UseSolver
-            % TODO
-        end
+        [Psi_rows, Lambda_rows] = separate_rows_2(sys, tFIR, r, s_r, r_loc, m_loc, Psi, Lambda);
         
         for consIter=1:maxItersCons % ADMM consensus (inner loop)
             Z_prev_locs = Z_locs;
@@ -129,7 +127,26 @@ for t = 1:tHorizon
             elseif params.solnMode_ == MPCSolMode.Explicit
                 % TODO
             elseif params.solnMode_ == MPCSolMode.UseSolver
-                % TODO
+                for i_ = 1:Nx
+                    if t > 1 && i_ == 1; tic; end
+
+                    for i = r{i_}
+                        n     = max(length((s_r{i_}(find(r{i_}==i),:))));
+                        x_ri  = x_t(s_r{i_}(find(r{i_}==i),:));
+                        i_new = find(indices{i} == i);
+                        ci    = C(i, indices{i});
+                        ki    = K(2*i-1:2*i, indices{i});
+
+                        if i <= Nx*tFIR && i >= Nx*2
+                            [Phi_locs{i}, X_locs{i}, time] = eqn_20a_solver(x_ri, Psi_rows{i}, Lambda_rows{i}, ...
+                                                                            Z_locs, Y_locs{i}, ki, indices{i}, i_new, ci, n, rho, mu);
+                        else
+                            [Phi_locs{i}, X_locs{i}] = eqn_20a_closed(x_ri, Psi_rows{i}, Lambda_rows{i}, ...
+                                                                      Z_locs, Y_locs{i}, indices{i}, i_new, ci, n, rho, mu);
+                        end
+                    end
+                    if t > 1 && i_ == 1; totalTime = totalTime + time; end
+                end                
             end
             
             % Step 6: Update Z (Step 5 implicitly done in this step)
