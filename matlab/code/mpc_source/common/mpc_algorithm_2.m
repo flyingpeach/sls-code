@@ -104,6 +104,7 @@ for t = 1:tHorizon
     x_t = x(:,t); % update initial condition
     
     for iter=1:maxIters % ADMM (outer loop)
+        iter
         Psi_prev = Psi;
         
         % Separate Psi, Lambda into rows
@@ -142,9 +143,9 @@ for t = 1:tHorizon
                         x_ri  = x_t(s_r{i_}(find(r{i_}==i),:));
                         i_new = find(indices{i} == i);
                         ci    = C(i, indices{i});
-                        ki    = K(2*i-1:2*i, indices{i});
 
                         if i <= Nx*tFIR && i >= Nx*2
+                            ki = K(2*i-1:2*i, indices{i});
                             [Phi_locs{i}, X_locs{i}, time] = eqn_20a_solver(x_ri, Psi_rows{i}, Lambda_rows{i}, ...
                                                                             Z_locs, Y_locs{i}, ki, indices{i}, i_new, ci, n, rho, mu, up);
                         else
