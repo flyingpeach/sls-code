@@ -66,7 +66,7 @@ params.constraintMtx_ = Ksmall;
 
 %% Validation
 coupling = true;
-[xVal, uVal, ~] = mpc_centralized(Nx, Nu, A, B, d, Q_, S, tFIR, tSim, x0, up, KSmall, coupling);
+[xVal, uVal, ~] = mpc_centralized(sys, x0, params);
 
 %% Calculate costs + plot 
 tSim   = params.tHorizon_;
