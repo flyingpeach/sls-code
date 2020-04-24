@@ -1,4 +1,4 @@
-function ctrller = find_ctrller(sys, clMaps, params, eqnErrCoeff)
+function ctrller = refine_ctrller(sys, clMaps, params, eqnErrCoeff)
 % Find alternate implementation, returned in ctrller
 % Returns
 %    ctrller     : Ctrller containing implementation matrices (Rc, Mc)

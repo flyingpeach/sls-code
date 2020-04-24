@@ -50,7 +50,7 @@ slsParams.objectives_  = {}; % reset objectives
 slsParams.stabCoeff_ = 1; % stability objective
 eqnErrCoeff            = 1; % equation error penalty
 slsParams.add_objective(SLSObjective.L1, 1); % L1 objective
-ctrller2Step = find_ctrller(sys, clMapsCent, slsParams, eqnErrCoeff); 
+ctrller2Step = refine_ctrller(sys, clMapsCent, slsParams, eqnErrCoeff); 
 
 %% calculate + print stats for comparison
 tTotal = 200;
