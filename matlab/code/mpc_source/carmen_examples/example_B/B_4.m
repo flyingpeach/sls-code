@@ -29,7 +29,7 @@ params.mu_           = 50;
 params.eps_x_        = 1e-3;
 params.eps_z_        = 1e-4;
 
-params.stateUpperbnd_ = 0.5;
+params.constrUpperbnd_ = 0.5;
 
 params.Q_ = diag(ones(Nx,1)) + diag(-1/2*ones(Nx-2,1),2) + diag(-1/2*ones(Nx-2,1),-2);
 params.R_ = eye(sys.Nu);
@@ -53,7 +53,7 @@ for i = 1:2*Nx
     end
 end
 
-params.constraintMtx_ = Ksmall;
+params.constrMtx_ = Ksmall;
 
 %% Sweep over locality sizes
 for i=1:numLocs
