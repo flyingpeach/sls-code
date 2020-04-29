@@ -33,7 +33,7 @@ mu           = params.mu_;
 eps_x        = params.eps_x_;
 eps_z        = params.eps_z_;
 
-up = params.stateUpperbnd_;
+up = params.constrUpperbnd_;
 
 % ADMM variables
 Phi    = zeros(Nx*tFIR + Nu*(tFIR-1),Nx);
@@ -42,7 +42,7 @@ Lambda = zeros(Nx*tFIR + Nu*(tFIR-1),Nx);
 Y_locs = cell(1, Nx*tFIR+Nu*(tFIR-1));
 Z_locs = cell(1, Nx*tFIR+Nu*(tFIR-1));
 
-Ksmall  = params.constraintMtx_;
+Ksmall  = params.constrMtx_;
 % Build the big constraint matrix
 K = [zeros(size(Ksmall)) zeros(2*Nx,(tFIR-1)*Nx)];
 K = [K; zeros(2*Nx,Nx) zeros(size(Ksmall)) zeros(2*Nx,(tFIR-2)*Nx)];
@@ -104,7 +104,6 @@ for t = 1:tHorizon
     x_t = x(:,t); % update initial condition
     
     for iter=1:maxIters % ADMM (outer loop)
-        iter
         Psi_prev = Psi;
         
         % Separate Psi, Lambda into rows

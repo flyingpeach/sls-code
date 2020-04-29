@@ -36,7 +36,7 @@ end
 model.Q   = sparse((ci*M2)'*(ci*M2) + rho/2*(M1'*M1) + mu/2*(Mj_sum));
 model.obj = -rho*a*M1 -mu*Mjb_sum';
 
-model.A     = sparse(ki*M2); 
+model.A     = sparse(ki*M2);
 model.rhs   = [up up]; 
 model.sense = '<';
 

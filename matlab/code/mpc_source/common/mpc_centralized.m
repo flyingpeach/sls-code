@@ -83,16 +83,9 @@ for t = 1:tHorizon
     end
 
     if ~isempty(params.constrMtx_)
-        Ksmall  = params.constrMtx_;
-        % Build the big constraint matrix
-        K = [zeros(size(Ksmall)) zeros(2*Nx,(tFIR-1)*Nx)];
-        K = [K; zeros(2*Nx,Nx) zeros(size(Ksmall)) zeros(2*Nx,(tFIR-2)*Nx)];
-        for t = 2:tFIR-1
-            K = [K; zeros(2*Nx,t*Nx) Ksmall zeros(2*Nx,(tFIR-t-1)*Nx)];
-        end
-
+        K = params.constrMtx_;
         for k = 3:tFIR % TODO: why 3?
-            K*R{k}*x_t <= params.stateUpperbnd*ones(2*Nx,1);
+            K*R{k}*x_t <= params.constrUpperbnd_*ones(2*Nx,1);
         end
     end
    
