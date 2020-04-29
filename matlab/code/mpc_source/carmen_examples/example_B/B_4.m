@@ -1,17 +1,6 @@
 % Algorithm II, System B
 clear all; close all; clc;
-
-%% Setup plant + sweep variables
-setup_plant_b;
-
 rng(2020);
-x0 = rand(sys.Nx, 1);
-
-localities = [3 5 7 10];
-numLocs    = length(localities);
-times      = zeros(1, numLocs);
-timeCents  = zeros(1, numLocs);
-iters      = zeros(1, numLocs);
 
 %% MPC parameters
 params = MPCParams();
@@ -31,53 +20,105 @@ params.eps_z_        = 1e-4;
 
 params.constrUpperbnd_ = 0.5;
 
+%% Sweep over locality sizes
+numPendula = 10;
+sys        = setup_plant_b(numPendula);
+x0         = rand(sys.Nx, 1);
+
+localities   = [3 5 7 10];
+numLocs      = length(localities);
+times_l      = zeros(1, numLocs);
+timeCents_l  = zeros(1, numLocs);
+iters_l      = zeros(1, numLocs);
+
+Nx        = sys.Nx;
 params.Q_ = diag(ones(Nx,1)) + diag(-1/2*ones(Nx-2,1),2) + diag(-1/2*ones(Nx-2,1),-2);
 params.R_ = eye(sys.Nu);
 
 % Constraints
-for i = 1:2:2*(Nx-1)
-    K1(i,i)     = 1; 
-    K1(i,i+2)   = -1;
-    K1(i+1,i)   = -1; 
-    K1(i+1,i+2) = 1;
+for j = 1:2:2*(Nx-1)
+    K1(j,j)     = 1; 
+    K1(j,j+2)   = -1;
+    K1(j+1,j)   = -1; 
+    K1(j+1,j+2) = 1;
 end
 K1            = K1(1:Nx,1:Nx); 
 K1(Nx-1:Nx,:) = zeros(2,Nx);
   
 Ksmall = zeros(2*Nx,Nx); j = 0;
-for i = 1:2*Nx
-    if mod(i,4) == 1 || mod(i,4) == 2
+for j = 1:2*Nx
+    if mod(j,4) == 1 || mod(j,4) == 2
         j = j + 1;
-        Ksmall(i,:) = K1(j,:);
+        Ksmall(j,:) = K1(j,:);
     else
     end
 end
-
 params.constrMtx_ = Ksmall;
 
-%% Sweep over locality sizes
-for i=1:numLocs
-    params.locality_ = localities(i);
+for j=1:numLocs
+    params.locality_ = localities(j);
 
     % Distributed MPC
-    [x, u, times(i), iters(i)] = mpc_algorithm_2(sys, x0, params);
+    [x, u, times_l(j), iters_l(j)] = mpc_algorithm_2(sys, x0, params);
 
     % Centralized MPC (for validation + comparison)
-    [xVal, uVal, timeCents(i)] = mpc_centralized(sys, x0, params); 
+    [xVal, uVal, timeCents_l(j)] = mpc_centralized(sys, x0, params); 
 end
 
-%% Plot
-figure(1)
-subplot(1,2,1)
-plot(localities, times,'m-s','LineWidth',2)
-hold on
-plot(localities, timeCents,'b-s','LineWidth',2)
-xlabel('$$\#\ pendulums\ in\ the\ network$$','Interpreter','latex','Fontsize', 10)
-ylabel('$$Avg\ runtime\ per\ MPC\ iteration\ for\ each\ state\ (s)$$','Interpreter','latex','Fontsize', 10)
-leg4 = legend('$$Localized\ ADMM\ Solution$$', '$$Centralized\ Solution$$');
-set(leg4,'Interpreter','latex','Fontsize', 8);
+%% Plot sweep over locality sizes
+localityBool = 1;
+plot_b(localities, times_l, timeCents_l, iters_l, localityBool);
 
-subplot(1,2,2)
-plot(localities, iters,'m-s','LineWidth',2)
-xlabel('$$\#\ pendulums\ in\ the\ network$$','Interpreter','latex','Fontsize', 10)
-ylabel('$$Avg\ \#\ ADMM\ iters\ per\ MPC\ iteration\ for\ each\ state\ (s)$$','Interpreter','latex','Fontsize', 10)
+%% Sweep over network sizes
+params.locality_ = 3;
+
+sizes       = [10 50 100 200];
+numSizes    = length(sizes);
+times_n     = zeros(1, numSizes);
+timeCents_n = zeros(1, numSizes);
+iters_n     = zeros(1, numSizes);
+
+% index 1 of both sweeps have exactly the same parameters; don't rerun mpc
+times_n(1)     = times_l(1);
+iters_n(1)     = iters_l(1);
+timeCents_n(1) = timeCents_l(1);
+
+for i=2:numSizes
+    numPendula = sizes(i);
+    sys        = setup_plant_b(numPendula);
+    x0         = rand(sys.Nx, 1);
+
+    Nx        = sys.Nx;
+    params.Q_ = diag(ones(Nx,1)) + diag(-1/2*ones(Nx-2,1),2) + diag(-1/2*ones(Nx-2,1),-2);
+    params.R_ = eye(sys.Nu);
+
+    % Constraints
+    for j = 1:2:2*(Nx-1)
+        K1(j,j)     = 1; 
+        K1(j,j+2)   = -1;
+        K1(j+1,j)   = -1; 
+        K1(j+1,j+2) = 1;
+    end
+    K1            = K1(1:Nx,1:Nx); 
+    K1(Nx-1:Nx,:) = zeros(2,Nx);
+
+    Ksmall = zeros(2*Nx,Nx); j = 0;
+    for j = 1:2*Nx
+        if mod(j,4) == 1 || mod(j,4) == 2
+            j = j + 1;
+            Ksmall(j,:) = K1(j,:);
+        else
+        end
+    end
+    params.constrMtx_ = Ksmall;
+    
+    % Distributed MPC
+    [x, u, times_n(i), iters_n(i)] = mpc_algorithm_1(sys, x0, params);
+    
+    % Centralized MPC (for validation + comparison)
+    [xVal, uVal, timeCents_n(i)] = mpc_centralized(sys, x0, params);   
+end
+
+%% Plot sweep over network sizes
+localityBool = 0;
+plot_b(sizes, times_n, timeCents_n, iters_n, localityBool);

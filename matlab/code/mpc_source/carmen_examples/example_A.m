@@ -1,7 +1,8 @@
 clear all; close all; clc;
 
 %% Setup plant
-setup_plant_a;
+sys = setup_plant_a();
+Nu = sys.Nu; Nx = sys.Nx; % for reduced notation
 
 rng(2020);
 x0 = rand(sys.Nx, 1);

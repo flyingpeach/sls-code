@@ -1,4 +1,6 @@
-n  = 10; % number of pendulums
+function sys = setup_plant_b(numPendula)
+
+n  = numPendula;
 Nx = 2*n; 
 Nu = n;
 
@@ -35,3 +37,4 @@ sys.A   = (eye(Nx)+Ac*Ts);
 sys.B2  = Ts*Bc;
 
 sys.sanity_check_mpc();
+end
