@@ -71,6 +71,10 @@ classdef MPCParams < matlab.mixin.Copyable
           e3 = isempty(obj.eps_x_);
           e4 = isempty(obj.eps_z_);
           
+          if obj.solnMode_ == MPCSolMode.Explicit
+              sls_error('Explicit solver mode not available for Algorithm 2!')
+          end
+          
           if (e1 || e2 || e3 || e4)
               sls_error('One or more required parameters is missing!')
           end 

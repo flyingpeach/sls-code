@@ -131,8 +131,6 @@ for t = 1:tHorizon
                     end
                     if t > 1 && i_ == 1; totalTime = totalTime + toc; end
                 end
-            elseif params.solnMode_ == MPCSolMode.Explicit
-                % TODO
             elseif params.solnMode_ == MPCSolMode.UseSolver
                 for i_ = 1:Nx
                     if t > 1 && i_ == 1; tic; end

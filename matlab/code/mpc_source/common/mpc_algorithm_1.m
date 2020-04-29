@@ -61,9 +61,7 @@ for t = 1:tHorizon
         % Separate Psi, Lambda into rows
         if params.solnMode_ == MPCSolMode.ClosedForm
             [Psi_rows, Lambda_rows] = separate_rows_1(sys, tFIR, r, s_r, r_loc, m_loc, Psi, Lambda);
-        elseif params.solnMode_ == MPCSolMode.Explicit
-            % TODO
-        elseif params.solnMode_ == MPCSolMode.UseSolver
+        else
             [Psi_rows, Lambda_rows] = separate_rows_2(sys, tFIR, r, s_r, r_loc, m_loc, Psi, Lambda);
         end
         
@@ -80,7 +78,20 @@ for t = 1:tHorizon
                 if t > 1 && i == 1; totalTime = totalTime + toc; end
             end
         elseif params.solnMode_ == MPCSolMode.Explicit
-            % TODO
+            for i_ = 1:Nx
+                for i = r{i_}
+                    n    = max(length((s_r{i_}(find(r{i_}==i),:))));
+                    x_ri = x_t(s_r{i_}(find(r{i_}==i),:));
+
+                    if i <= Nx*tFIR
+                        Phi_locs{i} = eqn_16a_explicit(x_ri, Psi_rows{i}, Lambda_rows{i}, n, params);                
+                    else
+                        Phi_locs{i} = eqn_16a_closed(x_ri, Psi_rows{i}, Lambda_rows{i}, n, rho); 
+                    end
+                end
+                
+                if t > 1 && i_ == 1; totalTime = totalTime + time; end
+            end            
         elseif params.solnMode_ == MPCSolMode.UseSolver
             for i_ = 1:Nx
                 for i = r{i_}
@@ -106,9 +117,9 @@ for t = 1:tHorizon
         elseif params.solnMode_ == MPCSolMode.Explicit
             % TODO
         elseif params.solnMode_ == MPCSolMode.UseSolver 
-            for sysIdx = 1:Nx
-                for i = r{sysIdx}
-                    Phi(i,s_r{sysIdx}(find(r{sysIdx}==i),:)) = Phi_locs{i};
+            for i_ = 1:Nx
+                for i = r{i_}
+                    Phi(i,s_r{i_}(find(r{i_}==i),:)) = Phi_locs{i};
                 end
             end
         end
