@@ -29,13 +29,24 @@ classdef MPCParams < matlab.mixin.Copyable
         eps_z_; % convergence criterion for ||Z(n+1) - Z(n)||
      
         % Optional params -----------------------------------------
-        constraintMtx_; 
-        stateUpperbnd_; % upper bound on state
-        stateLowerbnd_; % lower bound on state
+        constrMtx_;
+        
+        constrUpperbnd_; % upper bound on constrMtx * [state; input]
+        constrLowerbnd_; % lower bound on constrMtx * [state; input]
+        
+        stateUpperbnd_; % upper bound on state (x)
+        stateLowerbnd_; % lower bound on state (x)
+        
+        inputUpperbnd_; % upper bound on input (u)
+        inputLowerbnd_; % lower bound on input (u)
+        
     end
     
     methods
       function sanity_check_alg_1(obj)
+          sanity_check_constr(obj);
+          sanity_check_mode(obj);
+          
           e1  = isempty(obj.locality_);
           e2  = isempty(obj.tFIR_);
           e3  = isempty(obj.tHorizon_);
@@ -64,6 +75,41 @@ classdef MPCParams < matlab.mixin.Copyable
               sls_error('One or more required parameters is missing!')
           end 
       end
-                
+      
+      function sanity_check_constr(obj)
+          e1 = isempty(obj.constrMtx_);
+          e2 = isempty(obj.constrUpperbnd_);
+          e3 = isempty(obj.constrLowerbnd_);
+          
+          if (~e1 && e2 && e3)
+              sls_warning('Constraint matrix specified but no bounds specified! Ignoring')
+          elseif (e1 && ~e2 && ~e3)
+              sls_warning('Constraint bounds specified but no matrix specified! Ignoring')
+          end
+      end
+      
+      function sanity_check_mode(obj)
+          e1 = isempty(obj.constrMtx_);
+          e2 = isempty(obj.constrUpperbnd_);
+          e3 = isempty(obj.constrLowerbnd_);
+          e4 = isempty(obj.stateUpperbnd_);
+          e5 = isempty(obj.stateLowerbnd_);
+          e6 = isempty(obj.inputUpperbnd_);
+          e7 = isempty(obj.inputLowerbnd_);
+          
+          constr = (~e1 && ~e2) || (~e1 && ~e3);
+          constr = constr || ~e4 || ~e5 || ~e6 || ~e7;
+          
+          if obj.solnMode_ == MPCSolMode.UseSolver
+              if ~constr
+                  sls_warning('No constraints were specified, are you sure you want to use solver?')
+                  sls_warning('Closed form would be much, much faster.')
+              end              
+          elseif obj.solnMode_ == MPCSolMode.ClosedForm
+              if constr
+                  sls_error('Constraints were specified, cannot use closed form')
+              end
+          end
+      end
     end
 end
