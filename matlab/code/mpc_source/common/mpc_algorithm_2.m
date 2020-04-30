@@ -116,44 +116,26 @@ for t = 1:tHorizon
             Phi_locs = cell(1, Nx*tFIR + Nu*(tFIR-1));
             X_locs   = cell(1, Nx*tFIR + Nu*(tFIR-1));
 
-            if params.solnMode_ == MPCSolMode.ClosedForm
-                for i_ = 1:Nx
-                    if t > 1 && i_ == 1; tic; end
-
-                    for i = r{i_}
-                        n     = max(length((s_r{i_}(find(r{i_}==i),:))));
-                        x_ri  = x_t(s_r{i_}(find(r{i_}==i),:));
-                        i_new = find(indices{i} == i);
-                        ci    = C(i, indices{i});
-                        
+            for i_ = 1:Nx
+                if t > 1 && i_ == 1; tic; end
+                
+                for i = r{i_}
+                    n     = max(length((s_r{i_}(find(r{i_}==i),:))));
+                    x_ri  = x_t(s_r{i_}(find(r{i_}==i),:));
+                    i_new = find(indices{i} == i);
+                    ci    = C(i, indices{i});
+                    
+                    if params.solnMode_ == MPCSolMode.UseSolver && i <= Nx*tFIR && i >= Nx*2
+                        ki = K(2*i-1:2*i, indices{i});
+                        [Phi_locs{i}, X_locs{i}] = eqn_20a_solver(x_ri, Psi_rows{i}, Lambda_rows{i}, ...
+                                                                        Z_locs, Y_locs{i}, ki, indices{i}, i_new, ci, n, rho, mu, up);              
+                    else
                         [Phi_locs{i}, X_locs{i}] = eqn_20a_closed(x_ri, Psi_rows{i}, Lambda_rows{i}, ...
-                                                                  Z_locs, Y_locs{i}, indices{i}, i_new, ci, n, rho, mu);                        
+                                                                  Z_locs, Y_locs{i}, indices{i}, i_new, ci, n, rho, mu);                      
                     end
-                    if t > 1 && i_ == 1; totalTime = totalTime + toc; end
                 end
-            elseif params.solnMode_ == MPCSolMode.UseSolver
-                for i_ = 1:Nx
-                    if t > 1 && i_ == 1; tic; end
-
-                    for i = r{i_}
-                        n     = max(length((s_r{i_}(find(r{i_}==i),:))));
-                        x_ri  = x_t(s_r{i_}(find(r{i_}==i),:));
-                        i_new = find(indices{i} == i);
-                        ci    = C(i, indices{i});
-
-                        if i <= Nx*tFIR && i >= Nx*2
-                            ki = K(2*i-1:2*i, indices{i});
-                            [Phi_locs{i}, X_locs{i}, time] = eqn_20a_solver(x_ri, Psi_rows{i}, Lambda_rows{i}, ...
-                                                                            Z_locs, Y_locs{i}, ki, indices{i}, i_new, ci, n, rho, mu, up);
-                        else
-                            [Phi_locs{i}, X_locs{i}] = eqn_20a_closed(x_ri, Psi_rows{i}, Lambda_rows{i}, ...
-                                                                      Z_locs, Y_locs{i}, indices{i}, i_new, ci, n, rho, mu);
-                        end
-                    end
-                    if t > 1 && i_ == 1; totalTime = totalTime + time; end
-                end                
             end
-            
+               
             % Step 6: Update Z (Step 5 implicitly done in this step)
             for i_ = 1:Nx
                 if t > 1 && i_ == 1; tic; end

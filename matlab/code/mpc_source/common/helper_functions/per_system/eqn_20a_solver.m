@@ -1,4 +1,4 @@
-function [Phi_loc, X_loc, time] = eqn_20a_solver(x_ri, psi_rowi, lamb_rowi, ...
+function [Phi_loc, X_loc] = eqn_20a_solver(x_ri, psi_rowi, lamb_rowi, ...
                                                  Z_locs, y_rowi, ki, ...
                                                  indicesi, i_new, ci, n, rho, mu, up)
 
@@ -47,7 +47,6 @@ model.lb = MPC_LB*ones(m_j+n-1,1);
 % solve QP
 gParams.outputflag = 0;
 result = gurobi(model, gParams);
-time   = result.runtime;
 W      = result.x(:); 
 
 Phi_loc         = (M1*W)';

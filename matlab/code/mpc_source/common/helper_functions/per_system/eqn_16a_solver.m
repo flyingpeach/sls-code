@@ -1,4 +1,4 @@
-function [Phi_loc, time] = eqn_16a_solver(x_ri, psi_rowi, lamb_rowi, n, mParams)
+function [Phi_loc] = eqn_16a_solver(x_ri, psi_rowi, lamb_rowi, n, mParams)
 
     rho = mParams.rho_;
     
@@ -21,6 +21,5 @@ function [Phi_loc, time] = eqn_16a_solver(x_ri, psi_rowi, lamb_rowi, n, mParams)
     % solve QP    
     gParams.outputflag = 0;
     result  = gurobi(model, gParams);
-    time    = result.runtime;
     Phi_loc = result.x(:);
 end
