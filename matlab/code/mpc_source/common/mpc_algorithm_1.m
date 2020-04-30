@@ -79,6 +79,7 @@ for t = 1:tHorizon
             end
         elseif params.solnMode_ == MPCSolMode.Explicit
             for i_ = 1:Nx
+                if t > 1 && i == 1; tic; end
                 for i = r{i_}
                     n    = max(length((s_r{i_}(find(r{i_}==i),:))));
                     x_ri = x_t(s_r{i_}(find(r{i_}==i),:));
@@ -90,7 +91,7 @@ for t = 1:tHorizon
                     end
                 end
                 
-                if t > 1 && i_ == 1; totalTime = totalTime + time; end
+                if t > 1 && i == 1; totalTime = totalTime + toc; end
             end            
         elseif params.solnMode_ == MPCSolMode.UseSolver
             for i_ = 1:Nx
@@ -114,9 +115,7 @@ for t = 1:tHorizon
             for i = 1:Nx
                 Phi(r{i},s_r{i}(tFIR,:)) = Phi_locs{i};
             end
-        elseif params.solnMode_ == MPCSolMode.Explicit
-            % TODO
-        elseif params.solnMode_ == MPCSolMode.UseSolver 
+        else
             for i_ = 1:Nx
                 for i = r{i_}
                     Phi(i,s_r{i_}(find(r{i_}==i),:)) = Phi_locs{i};

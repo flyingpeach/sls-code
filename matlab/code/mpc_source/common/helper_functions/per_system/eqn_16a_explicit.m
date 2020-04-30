@@ -9,6 +9,7 @@ function [Phi_loc] = eqn_16a_explicit(x_ri, psi_rowi, lamb_rowi, n, mParams)
 
     crit  = rho*a*M*x_ri;
 
+    lamb = 0;
     if crit - b1 > 0
         lamb = (crit - b1) / (x_ri'*M*x_ri);
     elseif crit - b2 < 0
