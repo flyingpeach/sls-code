@@ -1,27 +1,15 @@
-function [Psi_rows, Lambda_rows] = separate_rows_2(sys, tFIR, ...
-                                                        r, s_r, r_loc, m_loc, ...
-                                                        Psi, Lambda)
+function [Psi_rows, Lambda_rows] = separate_rows_2(sys, tFIR, r, s_r, Psi, Lambda)
 Nx = sys.Nx; Nu = sys.Nu;
+nRows = Nx*tFIR + Nu*(tFIR-1);
 
-Psi_rows    = cell(1, Nx);
-Lambda_rows = cell(1, Nx);
+Psi_rows    = cell(nRows, 1);
+Lambda_rows = cell(nRows, 1);
                 
-% Separate the given matrices
-k = 0;
-for i_ = 1:Nx
-    if mod(i_, Nx/Nu) == 0
-        k = k+1;
-    end
-    
-    for i = r{i_}
-        j = find(r{i_}==i);
-        if j<=tFIR
-            Psi_rows{i} = Psi(i,s_r{i_}(j,1:max(length(find(r_loc(i_,:))))));
-            Lambda_rows{i} = Lambda(i,s_r{i_}(j,1:max(length(find(r_loc(i_,:))))));
-        else
-            Psi_rows{i} = Psi(i,s_r{i_}(j,1:max(length(find(m_loc(k,:))))));
-            Lambda_rows{i} = Lambda(i,s_r{i_}(j,1:max(length(find(m_loc(k,:))))));
-        end
+for i = 1:Nx
+    for j = 1:length(r{i})
+        row = r{i}(j);    
+        Psi_rows{row}    = Psi(row, s_r{i}(j, :));
+        Lambda_rows{row} = Lambda(row, s_r{i}(j, :));
     end
 end
 
