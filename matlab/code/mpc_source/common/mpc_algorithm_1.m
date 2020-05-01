@@ -24,11 +24,11 @@ tFIR     = params.tFIR_;
 tHorizon = params.tHorizon_;
 maxIters = params.maxIters_;
 
-nRows    = Nx*tFIR + Nu*(tFIR-1);
+nVals  = Nx*tFIR + Nu*(tFIR-1);
 % ADMM variables
-Phi    = zeros(nRows, Nx); % first Nx*tFIR rows are R; next rows are M
-Psi    = zeros(nRows, Nx);
-Lambda = zeros(nRows, Nx);
+Phi    = zeros(nVals, Nx);
+Psi    = zeros(nVals, Nx);
+Lambda = zeros(nVals, Nx);
 
 % State + control
 x       = zeros(Nx, tHorizon);
@@ -43,7 +43,7 @@ totalIter = 0;
 Eye = [eye(Nx); zeros(Nx*(tFIR-1),Nx)];
 ZAB = get_sls_constraint(sys, tFIR);
 
-% Locality setup
+% Get indices corresponding to rows / columns / localities
 [r_loc, m_loc] = get_r_m_locality(sys, locality);
 [c, s_c]       = get_col_locality(sys, tFIR, r_loc, m_loc);
 [r, s_r]       = get_row_locality(sys, tFIR, r_loc, m_loc);
@@ -61,7 +61,7 @@ for t = 1:tHorizon
         Lambda_rows = separate_rows(sys, tFIR, r, s_r, Lambda);
       
         % Step 4: Solve (16a) to get local rows of Phi
-        Phi_rows = cell(nRows, 1);
+        Phi_rows = cell(nVals, 1);
         
         for i = 1:Nx
             if t > 1 && i == 1; tic; end
@@ -84,12 +84,8 @@ for t = 1:tHorizon
         end
         
         % Step 5: Build entire Phi matrix
-        for i = 1:Nx
-          for j = 1:length(r{i})
-              Phi(r{i}(j), s_r{i}{j}) = Phi_rows{r{i}(j)};
-          end
-        end
-       
+        Phi = build_from_rows(sys, r, s_r, Phi_rows, size(Phi));
+
         % Separate Phi, Lambda into columns
         Phi_cols    = separate_cols(sys, c, s_c, Phi);
         Lambda_cols = separate_cols(sys, c, s_c, Lambda);

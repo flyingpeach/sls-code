@@ -35,46 +35,24 @@ eps_z        = params.eps_z_;
 
 up = params.constrUpperbnd_;
 
+nVals = Nx*tFIR + Nu*(tFIR-1);
 % ADMM variables
-Phi    = zeros(Nx*tFIR + Nu*(tFIR-1),Nx);
-Psi    = zeros(Nx*tFIR + Nu*(tFIR-1),Nx);
-Lambda = zeros(Nx*tFIR + Nu*(tFIR-1),Nx);
-Y_locs = cell(1, Nx*tFIR+Nu*(tFIR-1));
-Z_locs = cell(1, Nx*tFIR+Nu*(tFIR-1));
+Phi    = zeros(nVals, Nx);
+Psi    = zeros(nVals, Nx);
+Lambda = zeros(nVals, Nx);
+Y_rows = cell(nVals, 1);
+Z_rows = cell(nVals, 1);
 
-Ksmall  = params.constrMtx_;
-% Build the big constraint matrix
-K = [zeros(size(Ksmall)) zeros(2*Nx,(tFIR-1)*Nx)];
-K = [K; zeros(2*Nx,Nx) zeros(size(Ksmall)) zeros(2*Nx,(tFIR-2)*Nx)];
-for t = 2:tFIR-1
-    K = [K; zeros(2*Nx,t*Nx) Ksmall zeros(2*Nx,(tFIR-t-1)*Nx)];
-end
+% Constraints, costs, and coupling info
+K     = build_constr_mtx(sys, params);
+C     = build_cost_mtx(params);
+cpIdx = get_coupling_indices(C);
 
-% Build cost matrix (block diagonal)
-C = [];
-for t = 0:tFIR-1
-    C = blkdiag(C, params.Q_);
-end
-for t = 0:tFIR-2
-    C = blkdiag(C, params.R_);
-end    
-
-% Note: only coupling from cost matrix is considered
-%       coupling from constraints is ignored
-indices = cell(1, length(C));
-for i = 1:length(C)
-    for j = 1:length(C)
-        if C(i,j) ~= 0
-            indices{i} = [indices{i} j];
-        end
-    end
-end
-
-for i = 1:Nx*tFIR+Nu*(tFIR-1) % Initialize Y, Z
-    if ~isempty(indices{i})
-        Z_locs{i} = 0;
-        for j = indices{i}
-            Y_locs{i}{j} = 0;
+for row = 1:nVals % Initialize Y, Z
+    if ~isempty(cpIdx{row})
+        Z_rows{row} = 0;
+        for k = cpIdx{row}
+            Y_rows{row}{k} = 0;
         end
     else
     end
@@ -93,9 +71,9 @@ totalIter = 0;
 Eye = [eye(Nx); zeros(Nx*(tFIR-1),Nx)];
 ZAB = get_sls_constraint(sys, tFIR);
 
-% Locality setup
-[r_loc, m_loc] = get_r_m_locality(sys, locality, tFIR);
-[c, s_c]       = get_column_locality(sys, tFIR, r_loc, m_loc);
+% Get indices corresponding to rows / columns / localities
+[r_loc, m_loc] = get_r_m_locality(sys, locality);
+[c, s_c]       = get_col_locality(sys, tFIR, r_loc, m_loc);
 [r, s_r]       = get_row_locality(sys, tFIR, r_loc, m_loc);
 
 %% MPC
@@ -106,69 +84,73 @@ for t = 1:tHorizon
     for iter=1:maxIters % ADMM (outer loop)
         Psi_prev = Psi;
         
-        % Separate Psi, Lambda into rows
-        [Psi_rows, Lambda_rows] = separate_rows_2(sys, tFIR, r, s_r, r_loc, m_loc, Psi, Lambda);
+        % Separate Psi, Lambda into rows (with sparsity)
+        Psi_rows    = separate_rows(sys, tFIR, r, s_r, Psi);
+        Lambda_rows = separate_rows(sys, tFIR, r, s_r, Lambda);
         
         for consIter=1:maxItersCons % ADMM consensus (inner loop)
-            Z_prev_locs = Z_locs;
+            Z_prev_rows = Z_rows;
 
             % Step 4: Solve (20a) to get local Phi, X            
-            Phi_locs = cell(1, Nx*tFIR + Nu*(tFIR-1));
-            X_locs   = cell(1, Nx*tFIR + Nu*(tFIR-1));
-
-            for i_ = 1:Nx
-                if t > 1 && i_ == 1; tic; end
+            Phi_rows = cell(nVals, 1);
+            X_rows   = cell(nVals, 1);
+            
+            for i = 1:Nx
+                if t > 1 && i == 1; tic; end
                 
-                for i = r{i_}
-                    n     = max(length((s_r{i_}(find(r{i_}==i),:))));
-                    x_ri  = x_t(s_r{i_}(find(r{i_}==i),:));
-                    i_new = find(indices{i} == i);
-                    ci    = C(i, indices{i});
-                    
-                    if params.solnMode_ == MPCSolMode.UseSolver && i <= Nx*tFIR && i >= Nx*2
-                        ki = K(2*i-1:2*i, indices{i});
-                        [Phi_locs{i}, X_locs{i}] = eqn_20a_solver(x_ri, Psi_rows{i}, Lambda_rows{i}, ...
-                                                                        Z_locs, Y_locs{i}, ki, indices{i}, i_new, ci, n, rho, mu, up);              
+                for j = 1:length(r{i})
+                    row   = r{i}(j);
+                    x_loc = x_t(s_r{i}{j}); % observe local state
+                    i_    = find(cpIdx{row} == row);
+                    c_    = C(row, cpIdx{row});                   
+
+                    % TODO: hacky: doesn't tolerate input constraints
+                    if params.solnMode_ == MPCSolMode.UseSolver && row >= Nx*2 && row <= Nx*tFIR
+                        k_ = K(2*row-1:2*row, cpIdx{row});
+                        [Phi_rows{row}, X_rows{row}] = eqn_20a_solver(x_loc, Psi_rows{row}, Lambda_rows{row}, Y_rows{row}, Z_rows, ...
+                                                                      k_, c_, cpIdx{row}, i_, params);
                     else
-                        [Phi_locs{i}, X_locs{i}] = eqn_20a_closed(x_ri, Psi_rows{i}, Lambda_rows{i}, ...
-                                                                  Z_locs, Y_locs{i}, indices{i}, i_new, ci, n, rho, mu);                      
+                        [Phi_rows{row}, X_rows{row}] = eqn_20a_closed(x_loc, Psi_rows{row}, Lambda_rows{row}, Y_rows{row}, Z_rows, ...
+                                                                      c_, cpIdx{row}, i_, params);
                     end
                 end
+                
+                if t > 1 && i == 1; totalTime = totalTime + toc; end             
             end
                
             % Step 6: Update Z (Step 5 implicitly done in this step)
-            for i_ = 1:Nx
-                if t > 1 && i_ == 1; tic; end
-                for i = r{i_}
-                    Z_locs{i} = 0;
-                    for j = indices{i}
-                        Z_locs{i} = Z_locs{i} + (X_locs{j}(i)+Y_locs{j}{i})/length(indices{i});
+            for i = 1:Nx
+                if t > 1 && i == 1; tic; end
+                for row = r{i}
+                    Z_rows{row} = 0;
+                    for k = cpIdx{row}
+                        Z_rows{row} = Z_rows{row} + (X_rows{k}(row)+Y_rows{k}{row})/length(cpIdx{row});
                     end
-                end 
-                if t > 1 && i_ == 1; totalTime = totalTime + toc; end
+                end
+                if t > 1 && i == 1; totalTime = totalTime + toc; end
             end
        
             % Step 8: Update Y (Step 7 implicitly done in this step)            
-            for i_ = 1:Nx
-                if t > 1 && i_ == 1; tic; end
-                for i = r{i_}
-                    for j = indices{i}
-                        Y_locs{i}{j} = Y_locs{i}{j} + X_locs{i}(j) - Z_locs{j};
+            for i = 1:Nx
+                if t > 1 && i == 1; tic; end
+                for row = r{i}
+                    for k = cpIdx{row}
+                        Y_rows{row}{k} = Y_rows{row}{k} + X_rows{row}(k) - Z_rows{k};
                     end
                 end
-                if t > 1 && i_ == 1; totalTime = totalTime + toc; end
+                if t > 1 && i == 1; totalTime = totalTime + toc; end
             end
             
             % Step 9: Check convergence of ADMM consensus
             converged = true;           
-            for i_ = 1:Nx
-                for i = r{i_}
-                    z_av = zeros(Nx*tFIR+Nu*(tFIR-1),1);
-                    for j = indices{i}
-                        z_av(j) = Z_locs{j};
+            for i = 1:Nx
+                for row = r{i}
+                    z_cp = zeros(nVals, 1);
+                    for k = cpIdx{row}
+                        z_cp(k) = Z_rows{k};
                     end
                     
-                    if ~check_convergence_cons(z_av, X_locs{i}, Z_locs{i}, Z_prev_locs{i}, eps_x, eps_z)
+                    if ~check_convergence_cons(z_cp, X_rows{row}, Z_rows{row}, Z_prev_rows{row}, params)
                         converged = false;
                         break; % if one fails, can stop checking the rest
                     end
@@ -186,35 +168,33 @@ for t = 1:tHorizon
             fprintf('ADMM consensus reached %d iters and did not converge\n', maxItersCons);
         end
 
-        % Step 10: Build entire Phi matrix        
-        for i_ = 1:Nx
-            for i = r{i_}
-                Phi(i,s_r{i_}(find(r{i_}==i),:)) = Phi_locs{i};
-            end
-        end
+        % Step 10: Build entire Phi matrix 
+        Phi = build_from_rows(sys, r, s_r, Phi_rows, size(Phi));
 
         % Separate Phi, Lambda into columns
-        [Phi_cols, Lambda_cols] = separate_cols(sys, c, s_c, Phi, Lambda);
-        
+        Phi_cols    = separate_cols(sys, c, s_c, Phi);
+        Lambda_cols = separate_cols(sys, c, s_c, Lambda);
+                
         % Step 11: Solve (16b) to get local Psi
-        Psi_locs = cell(1, Nx);
+        Psi_cols = cell(Nx, 1);
         for i = 1:Nx
             if t > 1 && i == 1; tic; end
 
-            ZABi     = ZAB(:, s_c{i});
-            zeroRow  = find(all(ZABi == 0, 2));
-            keepIdxs = setdiff(linspace(1,Nx*tFIR,Nx*tFIR), zeroRow);
-            ZABi     = ZAB(keepIdxs, s_c{i}); 
-            Eyei     = Eye(keepIdxs, c{i});
+            % Reduce computation by eliminating zero rows
+            zab_     = ZAB(:, s_c{i});
+            zeroRows = find(all(zab_ == 0, 2));
+            keepRows = setdiff(1:tFIR*Nx, zeroRows);           
+            zab_     = ZAB(keepRows, s_c{i}); 
+            eye_     = Eye(keepRows, c{i});
 
-            Psi_locs{i} = eqn_16b(Phi_cols{i}, Lambda_cols{i}, ZABi, Eyei);
+            Psi_cols{i} = eqn_16b(Phi_cols{i}, Lambda_cols{i}, zab_, eye_);
 
             if t > 1 && i == 1; totalTime = totalTime + toc; end            
         end
-        
+
         % Step 12: Build entire Psi matrix
         for i = 1:Nx
-            Psi(s_c{i},c{i}) = Psi_locs{i};
+            Psi(s_c{i}, c{i}) = Psi_cols{i};
         end
 
         % Step 13: Update Lambda
@@ -223,14 +203,22 @@ for t = 1:tHorizon
         % Step 14: Check convergence of ADMM (outer loop)
         converged = true;
         for i = 1:Nx
-              phi_loc      = Phi(r{i},s_r{i}(tFIR,:));
-              psi_loc      = Psi(r{i},s_r{i}(tFIR,:));
-              psi_prev_loc = Psi_prev(r{i},s_r{i}(tFIR,:));
-
-              if ~check_convergence(phi_loc, psi_loc, psi_prev_loc, eps_p, eps_d)
-                  converged = false;
-                  break; % if one fails, can stop checking the rest
-              end
+            phi_      = [];
+            psi_      = [];
+            psi_prev_ = [];
+            for j = 1:length(r{i})
+                % Due to dimensionality issues, not stacking rows
+                % Instead, just make one huge row
+                % (since we're checking Frob norm, doesn't matter)
+                phi_      = [phi_, Phi(r{i}(j), s_r{i}{j})];
+                psi_      = [psi_, Psi(r{i}(j), s_r{i}{j})];
+                psi_prev_ = [psi_prev_, Psi_prev(r{i}(j), s_r{i}{j})];
+            end
+            
+            if ~check_convergence(phi_, psi_, psi_prev_, params)
+                converged = false;
+                break; % if one fails, can stop checking the rest
+            end
         end
         
         if converged
