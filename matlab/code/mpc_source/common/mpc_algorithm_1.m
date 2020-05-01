@@ -60,55 +60,41 @@ for t = 1:tHorizon
     for iter=1:maxIters % ADMM loop
         Psi_prev = Psi;
         
-        % Separate Psi, Lambda into rows
-        if params.solnMode_ == MPCSolMode.ClosedForm
-            [Psi_rows, Lambda_rows] = separate_rows_grouped(sys, r, s_r, Psi, Lambda);
-        else
-            [Psi_rows, Lambda_rows] = separate_rows(sys, tFIR, r, s_r, Psi, Lambda);
-        end
+        % Separate Psi, Lambda into rows (with sparsity)
+        [Psi_rows, Lambda_rows] = separate_rows(sys, tFIR, r, s_r, Psi, Lambda);        
 
         % Step 4: Solve (16a) to get local Phi
-        Phi_locs = cell(1, Nx);
+        Phi_rows = cell(nRows, 1);
+        
         for i_ = 1:Nx
             if t > 1 && i_ == 1; tic; end
             
-            if params.solnMode_ == MPCSolMode.ClosedForm
-                n           = size(s_r{i_}, 2);
-                x_ri        = x_t(s_r{i_}(tFIR, :));
-                Phi_locs{i_} = eqn_16a_closed(x_ri, Psi_rows{i_}, Lambda_rows{i_}, n, rho);
-            else
                 for i = r{i_}
                     n    = max(length((s_r{i_}(find(r{i_}==i),:))));
                     x_ri = x_t(s_r{i_}(find(r{i_}==i),:));
                     
-                    if i <= Nx*tFIR
+                    if params.solnMode_ == MPCSolMode.ClosedForm || i > Nx * tFIR
+                        Phi_rows{i} = eqn_16a_closed(x_ri, Psi_rows{i}, Lambda_rows{i}, n, rho); 
+                    else                    
                         if params.solnMode_ == MPCSolMode.Explicit
-                            Phi_locs{i} = eqn_16a_explicit(x_ri, Psi_rows{i}, Lambda_rows{i}, n, params);
+                            Phi_rows{i} = eqn_16a_explicit(x_ri, Psi_rows{i}, Lambda_rows{i}, n, params);
                         elseif params.solnMode_ == MPCSolMode.UseSolver
-                            Phi_locs{i} = eqn_16a_solver(x_ri, Psi_rows{i}, Lambda_rows{i}, n, params); 
+                            Phi_rows{i} = eqn_16a_solver(x_ri, Psi_rows{i}, Lambda_rows{i}, n, params); 
                         end 
-                    else % i > Nx*tFIR
-                        Phi_locs{i} = eqn_16a_closed(x_ri, Psi_rows{i}, Lambda_rows{i}, n, rho); 
                     end
                 end
-            end
-
+            
             if t > 1 && i_ == 1; totalTime = totalTime + toc; end 
         end
         
         % Step 5: Build entire Phi matrix
-        if params.solnMode_ == MPCSolMode.ClosedForm
-            for i = 1:Nx
-                Phi(r{i},s_r{i}(tFIR,:)) = Phi_locs{i};
-            end
-        else
+       
             for i_ = 1:Nx
                 for i = r{i_}
-                    Phi(i,s_r{i_}(find(r{i_}==i),:)) = Phi_locs{i};
+                    Phi(i,s_r{i_}(find(r{i_}==i),:)) = Phi_rows{i};
                 end
             end
-        end
-
+       
         % Separate Phi, Lambda into columns
         [Phi_cols, Lambda_cols] = separate_cols(sys, c, s_c, Phi, Lambda);
         
