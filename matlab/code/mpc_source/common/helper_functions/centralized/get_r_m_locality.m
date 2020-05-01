@@ -1,12 +1,9 @@
-function [r_loc, m_loc] = get_r_m_locality(sys, locality, tFIR)
-
-r_loc = cell(1, tFIR);
-m_loc = cell(1, tFIR);
+function [r_loc, m_loc] = get_r_m_locality(sys, locality)
+% r_loc and m_loc contain sparsity patterns on R, M dictated by locality
+% in the locality-only case, r_loc{k} is the same for all k
 
 Comms_Adj = abs(sys.A)>0;
-for t = 1:tFIR
-    r_loc{t} = Comms_Adj^(locality-1)>0;
-    m_loc{t} = abs(sys.B2)'*r_loc{t}>0;
-end
+r_loc     = Comms_Adj^(locality-1) > 0;
+m_loc     = abs(sys.B2)'*r_loc > 0;
 
 end

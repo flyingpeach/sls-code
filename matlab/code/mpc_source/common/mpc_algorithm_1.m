@@ -27,10 +27,12 @@ rho      = params.rho_;
 eps_d    = params.eps_d_;
 eps_p    = params.eps_p_;
 
+nRows    = Nx*tFIR + Nu*(tFIR-1);
+
 % ADMM variables
-Phi    = zeros(Nx*tFIR + Nu*(tFIR-1),Nx);
-Psi    = zeros(Nx*tFIR + Nu*(tFIR-1),Nx);
-Lambda = zeros(Nx*tFIR + Nu*(tFIR-1),Nx);
+Phi    = zeros(nRows, Nx); % first Nx*tFIR rows are R; next rows are M
+Psi    = zeros(nRows, Nx);
+Lambda = zeros(nRows, Nx);
 
 % State + control
 x       = zeros(Nx, tHorizon);
@@ -46,7 +48,7 @@ Eye = [eye(Nx); zeros(Nx*(tFIR-1),Nx)];
 ZAB = get_sls_constraint(sys, tFIR);
 
 % Locality setup
-[r_loc, m_loc] = get_r_m_locality(sys, locality, tFIR);
+[r_loc, m_loc] = get_r_m_locality(sys, locality);
 [c, s_c]       = get_column_locality(sys, tFIR, r_loc, m_loc);
 [r, s_r]       = get_row_locality(sys, tFIR, r_loc, m_loc);
 

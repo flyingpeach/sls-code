@@ -13,17 +13,17 @@ for i = 1:Nx
         for j = 1:tFIR+(tFIR-1)
             if j<=tFIR
                 r{i}(j) = Nx*(j-1) + i;
-                s_r{i}(j,1:max(length(find(r_loc{j}(i,:))))) = find(r_loc{j}(i,:));
+                s_r{i}(j,1:max(length(find(r_loc(i,:))))) = find(r_loc(i,:));
             else
                 r{i}(j) = Nu*(j-tFIR-1) + Nx*tFIR + k;
-                s_r{i}(j,1:max(length(find(m_loc{j-tFIR}(k,:))))) = find(m_loc{j-tFIR}(k,:));
+                s_r{i}(j,1:max(length(find(m_loc(k,:))))) = find(m_loc(k,:));
             end
         end
     else
         s_r{i} = zeros(tFIR,Nx); % Preallocate the indices
         for j = 1:tFIR
             r{i}(j) = Nx*(j-1) + i;
-            s_r{i}(j,1:max(length(find(r_loc{j}(i,:))))) = find(r_loc{j}(i,:));
+            s_r{i}(j,1:max(length(find(r_loc(i,:))))) = find(r_loc(i,:));
         end
     end
     s_r{i}( :, ~any(s_r{i},1) ) = []; % Eliminate columns with only zeros

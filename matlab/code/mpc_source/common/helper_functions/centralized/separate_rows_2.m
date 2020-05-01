@@ -16,11 +16,11 @@ for i_ = 1:Nx
     for i = r{i_}
         j = find(r{i_}==i);
         if j<=tFIR
-            Psi_rows{i} = Psi(i,s_r{i_}(j,1:max(length(find(r_loc{j}(i_,:))))));
-            Lambda_rows{i} = Lambda(i,s_r{i_}(j,1:max(length(find(r_loc{j}(i_,:))))));
+            Psi_rows{i} = Psi(i,s_r{i_}(j,1:max(length(find(r_loc(i_,:))))));
+            Lambda_rows{i} = Lambda(i,s_r{i_}(j,1:max(length(find(r_loc(i_,:))))));
         else
-            Psi_rows{i} = Psi(i,s_r{i_}(j,1:max(length(find(m_loc{j-tFIR}(k,:))))));
-            Lambda_rows{i} = Lambda(i,s_r{i_}(j,1:max(length(find(m_loc{j-tFIR}(k,:))))));
+            Psi_rows{i} = Psi(i,s_r{i_}(j,1:max(length(find(m_loc(k,:))))));
+            Lambda_rows{i} = Lambda(i,s_r{i_}(j,1:max(length(find(m_loc(k,:))))));
         end
     end
 end

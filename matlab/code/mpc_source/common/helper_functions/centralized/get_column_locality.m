@@ -1,28 +1,23 @@
 function [c, s_c] = get_column_locality(sys, tFIR, r_loc, m_loc)
+% c{i}   represents the set of columns controller i solves for
+% s_c{i} represents the set of rows associated to the columns in c{i} 
 
-Nx = sys.Nx; Nu = sys.Nu;
+Nx = sys.Nx; 
 
-c     = cell(1, Nx);
-s_c   = cell(1, Nx);
+rm_loc = []; % same size as Phi, Psi, Lambda
+for t = 1:tFIR
+    rm_loc = [rm_loc; r_loc];
+end
+for t = 1:tFIR-1
+    rm_loc = [rm_loc; m_loc];
+end
+
+c     = cell(Nx, 1);
+s_c   = cell(Nx, 1);
 
 for i = 1:Nx
-    c{i} = i;
-    count = 0;
-    for j = 1:tFIR+(tFIR-1)
-        if j<=tFIR
-            find_locR = find(r_loc{j}(:,i));
-            for k =1:max(length(find_locR))
-                count = count +1;
-                s_c{i}(count) = find_locR(k)+(j-1)*Nx;
-                if j == tFIR
-                end
-            end
-        else
-            find_locM = find(m_loc{j-tFIR}(:,i));
-            for k =1:max(length(find_locM))
-                count = count +1;
-                s_c{i}(count) = find_locM(k)+(j-tFIR-1)*Nu+tFIR*Nx;
-            end
-        end
-    end
+    c{i} = i; % each controller receives one column
+    s_c{i} = find(rm_loc(:,i)); % find nonzero rows of this column    
+end
+
 end
