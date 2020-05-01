@@ -1,4 +1,4 @@
-function [c, s_c] = get_column_locality(sys, tFIR, r_loc, m_loc)
+function [c, s_c] = get_col_locality(sys, tFIR, r_loc, m_loc)
 % c{i}   represents the set of columns controller i solves for
 % s_c{i} represents the set of rows associated to the columns in c{i} 
 
