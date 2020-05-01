@@ -1,12 +1,9 @@
-function [Phi_cols, Lambda_cols] = separate_cols(sys, c, s_c, Phi, Lambda)
+function M_cols = separate_cols(sys, c, s_c, M)
 
-Nx = sys.Nx;
-
-Phi_cols    = cell(Nx, 1);
-Lambda_cols = cell(Nx, 1);               
+Nx     = sys.Nx;
+M_cols = cell(Nx, 1);
 
 for i = 1:Nx
-    Phi_cols{i}    = Phi(s_c{i}, c{i});
-    Lambda_cols{i} = Lambda(s_c{i}, c{i});
+    M_cols{i} = M(s_c{i}, c{i});
 end
         

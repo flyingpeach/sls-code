@@ -16,24 +16,18 @@ for i = 1:Nx
         nRows    = nRows + tFIR-1; % include rows from M
         actuator = actuator + 1;
     end
-    maxRowSize = 0;
     
-    r{i} = zeros(1, nRows);
-    sri  = cell(nRows, 1); % placeholder for s_r{i}
+    r{i}   = zeros(1, nRows);
+    s_r{i} = cell(nRows, 1);
     
     for j=1:tFIR
-        r{i}(j) = (j-1)*Nx + i;       
-        sri{j}  = find(r_loc(:, i));
+        r{i}(j)   = (j-1)*Nx + i;       
+        s_r{i}{j} = find(r_loc(:, i));
     end
     for j=1:tFIR-1
         j_ = j + tFIR;
-        r{i}(j_) = tFIR*Nx + (j-1)*Nu + actuator;
-        sri{j_}  = find(m_loc(:, actuator));
-    end
-    
-    s_r{i} = zeros(nRows, maxRowSize);
-    for j=1:nRows
-        s_r{i}(j, 1:length(sri{j})) = sri{j};
+        r{i}(j_)   = tFIR*Nx + (j-1)*Nu + actuator;
+        s_r{i}{j_} = find(m_loc(:, actuator));
     end    
 end
 

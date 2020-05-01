@@ -57,8 +57,9 @@ for t = 1:tHorizon
         Psi_prev = Psi;
         
         % Separate Psi, Lambda into rows (with sparsity)
-        [Psi_rows, Lambda_rows] = separate_rows(sys, tFIR, r, s_r, Psi, Lambda);        
-
+        Psi_rows    = separate_rows(sys, tFIR, r, s_r, Psi);
+        Lambda_rows = separate_rows(sys, tFIR, r, s_r, Lambda);
+      
         % Step 4: Solve (16a) to get local rows of Phi
         Phi_rows = cell(nRows, 1);
         
@@ -67,7 +68,7 @@ for t = 1:tHorizon
             
             for j = 1:length(r{i})
                 row   = r{i}(j);
-                x_loc = x_t(s_r{i}(j,:)); % observe local state
+                x_loc = x_t(s_r{i}{j}); % observe local state
                                 
                 % TODO: hacky: doesn't tolerate input constraints
                 if params.solnMode_ == MPCSolMode.ClosedForm || row > tFIR*Nx
@@ -85,13 +86,13 @@ for t = 1:tHorizon
         % Step 5: Build entire Phi matrix
         for i = 1:Nx
           for j = 1:length(r{i})
-              row = r{i}(j);
-              Phi(row, s_r{i}(j,:)) = Phi_rows{row};
+              Phi(r{i}(j), s_r{i}{j}) = Phi_rows{r{i}(j)};
           end
         end
        
         % Separate Phi, Lambda into columns
-        [Phi_cols, Lambda_cols] = separate_cols(sys, c, s_c, Phi, Lambda);
+        Phi_cols    = separate_cols(sys, c, s_c, Phi);
+        Lambda_cols = separate_cols(sys, c, s_c, Lambda);
         
         % Step 6: Solve (16b) to get local columns of Psi
         Psi_cols = cell(Nx, 1);
@@ -121,15 +122,22 @@ for t = 1:tHorizon
         % Step 9: Check convergence
         converged = true;
         for i = 1:Nx
-            % TODO: only works if s_r{i}(j,:) equal for all j
-            phi_      = Phi(r{i}, s_r{i}(tFIR,:));
-            psi_      = Psi(r{i}, s_r{i}(tFIR,:));
-            psi_prev_ = Psi_prev(r{i}, s_r{i}(tFIR,:));
-
-              if ~check_convergence(phi_, psi_, psi_prev_, params)
-                  converged = false;
-                  break; % if one fails, can stop checking the rest
-              end
+            phi_      = [];
+            psi_      = [];
+            psi_prev_ = [];
+            for j = 1:length(r{i})
+                % Due to dimensionality issues, not stacking rows
+                % Instead, just make one huge row
+                % (since we're checking Frob norm, doesn't matter)
+                phi_      = [phi_, Phi(r{i}(j), s_r{i}{j})];
+                psi_      = [psi_, Psi(r{i}(j), s_r{i}{j})];
+                psi_prev_ = [psi_prev_, Psi_prev(r{i}(j), s_r{i}{j})];
+            end
+            
+            if ~check_convergence(phi_, psi_, psi_prev_, params)
+                converged = false;
+                break; % if one fails, can stop checking the rest
+            end
         end
 
         if converged
