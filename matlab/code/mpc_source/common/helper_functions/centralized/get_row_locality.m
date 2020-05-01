@@ -5,26 +5,36 @@ Nx = sys.Nx; Nu = sys.Nu;
 r     = cell(1, Nx);
 s_r   = cell(1, Nx);
 
-k = 0;
+% TODO: this only works for quasi-diagonal B2 matrix
+actuator = 0;
+
 for i = 1:Nx
-    if mod(i, Nx/Nu) == 0 % Decide whether or not there is actuation
-        s_r{i} = zeros(tFIR+(tFIR-1),Nx); % Preallocate the indices
-        k = k+1;
-        for j = 1:tFIR+(tFIR-1)
-            if j<=tFIR
-                r{i}(j) = Nx*(j-1) + i;
-                s_r{i}(j,1:max(length(find(r_loc(i,:))))) = find(r_loc(i,:));
-            else
-                r{i}(j) = Nu*(j-tFIR-1) + Nx*tFIR + k;
-                s_r{i}(j,1:max(length(find(m_loc(k,:))))) = find(m_loc(k,:));
-            end
-        end
-    else
-        s_r{i} = zeros(tFIR,Nx); % Preallocate the indices
-        for j = 1:tFIR
-            r{i}(j) = Nx*(j-1) + i;
-            s_r{i}(j,1:max(length(find(r_loc(i,:))))) = find(r_loc(i,:));
-        end
+    hasActuation = ~all(sys.B2(i,:) == 0);
+    
+    nRows = tFIR;
+    if hasActuation
+        nRows    = nRows + tFIR-1; % include rows from M
+        actuator = actuator + 1;
     end
-    s_r{i}( :, ~any(s_r{i},1) ) = []; % Eliminate columns with only zeros
+    maxRowSize = 0;
+    
+    r{i} = zeros(1, nRows);
+    sri  = cell(nRows, 1); % placeholder for s_r{i}
+    
+    for j=1:tFIR
+        r{i}(j) = (j-1)*Nx + i;       
+        sri{j}  = find(r_loc(:, i));
+    end
+    for j=1:tFIR-1
+        j_ = j + tFIR;
+        r{i}(j_) = tFIR*Nx + (j-1)*Nu + actuator;
+        sri{j_}  = find(m_loc(:, actuator));
+    end
+    
+    s_r{i} = zeros(nRows, maxRowSize);
+    for j=1:nRows
+        s_r{i}(j, 1:length(sri{j})) = sri{j};
+    end    
+end
+
 end
