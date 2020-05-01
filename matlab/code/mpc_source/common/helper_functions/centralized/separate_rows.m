@@ -1,4 +1,5 @@
-function [Psi_rows, Lambda_rows] = separate_rows_2(sys, tFIR, r, s_r, Psi, Lambda)
+function [Psi_rows, Lambda_rows] = separate_rows(sys, tFIR, r, s_r, Psi, Lambda)
+
 Nx = sys.Nx; Nu = sys.Nu;
 nRows = Nx*tFIR + Nu*(tFIR-1);
 

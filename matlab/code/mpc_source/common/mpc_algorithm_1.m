@@ -62,9 +62,9 @@ for t = 1:tHorizon
         
         % Separate Psi, Lambda into rows
         if params.solnMode_ == MPCSolMode.ClosedForm
-            [Psi_rows, Lambda_rows] = separate_rows_1(sys, tFIR, r, s_r, r_loc, m_loc, Psi, Lambda);
+            [Psi_rows, Lambda_rows] = separate_rows_grouped(sys, r, s_r, Psi, Lambda);
         else
-            [Psi_rows, Lambda_rows] = separate_rows_2(sys, tFIR, r, s_r, Psi, Lambda);
+            [Psi_rows, Lambda_rows] = separate_rows(sys, tFIR, r, s_r, Psi, Lambda);
         end
 
         % Step 4: Solve (16a) to get local Phi
