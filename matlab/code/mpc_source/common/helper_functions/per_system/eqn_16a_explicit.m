@@ -1,11 +1,13 @@
-function [Phi_loc] = eqn_16a_explicit(x_ri, psi_rowi, lamb_rowi, n, mParams)
+function [Phi_loc] = eqn_16a_explicit(x_ri, psi_rowi, lamb_rowi, params)
 
-    rho = mParams.rho_;
+    n   = length(x_ri);
+    rho = params.rho_;
+
     M   = inv(2*x_ri*x_ri' + rho*eye(n));
     a   = psi_rowi - lamb_rowi;
     
-    b1 = mParams.stateUpperbnd_; 
-    b2 = mParams.stateLowerbnd_;
+    b1 = params.stateUpperbnd_; 
+    b2 = params.stateLowerbnd_;
 
     crit  = rho*a*M*x_ri;
 

@@ -66,57 +66,56 @@ for t = 1:tHorizon
         % Step 4: Solve (16a) to get local Phi
         Phi_rows = cell(nRows, 1);
         
-        for i_ = 1:Nx
-            if t > 1 && i_ == 1; tic; end
+        for i = 1:Nx
+            if t > 1 && i == 1; tic; end
             
-                for i = r{i_}
-                    n    = max(length((s_r{i_}(find(r{i_}==i),:))));
-                    x_ri = x_t(s_r{i_}(find(r{i_}==i),:));
-                    
-                    if params.solnMode_ == MPCSolMode.ClosedForm || i > Nx * tFIR
-                        Phi_rows{i} = eqn_16a_closed(x_ri, Psi_rows{i}, Lambda_rows{i}, n, rho); 
-                    else                    
-                        if params.solnMode_ == MPCSolMode.Explicit
-                            Phi_rows{i} = eqn_16a_explicit(x_ri, Psi_rows{i}, Lambda_rows{i}, n, params);
-                        elseif params.solnMode_ == MPCSolMode.UseSolver
-                            Phi_rows{i} = eqn_16a_solver(x_ri, Psi_rows{i}, Lambda_rows{i}, n, params); 
-                        end 
-                    end
+            for j = 1:length(r{i})
+                row  = r{i}(j);
+                x_ri = x_t(s_r{i}(j,:)); % observe local state
+                                
+                % TODO: hacky: doesn't tolerate input constraints
+                if params.solnMode_ == MPCSolMode.ClosedForm || row > tFIR*Nx
+                    Phi_rows{row} = eqn_16a_closed(x_ri, Psi_rows{row}, Lambda_rows{row}, params); 
+                elseif params.solnMode_ == MPCSolMode.Explicit
+                    Phi_rows{row} = eqn_16a_explicit(x_ri, Psi_rows{row}, Lambda_rows{row}, params);
+                elseif params.solnMode_ == MPCSolMode.UseSolver
+                    Phi_rows{row} = eqn_16a_solver(x_ri, Psi_rows{row}, Lambda_rows{row}, params); 
                 end
+            end
             
-            if t > 1 && i_ == 1; totalTime = totalTime + toc; end 
+            if t > 1 && i == 1; totalTime = totalTime + toc; end 
         end
         
         % Step 5: Build entire Phi matrix
-       
-            for i_ = 1:Nx
-                for i = r{i_}
-                    Phi(i,s_r{i_}(find(r{i_}==i),:)) = Phi_rows{i};
-                end
-            end
+        for i = 1:Nx
+          for j = 1:length(r{i})
+              row = r{i}(j);
+              Phi(row, s_r{i}(j,:)) = Phi_rows{row};
+          end
+        end
        
         % Separate Phi, Lambda into columns
         [Phi_cols, Lambda_cols] = separate_cols(sys, c, s_c, Phi, Lambda);
         
         % Step 6: Solve (16b) to get local Psi
-        Psi_locs = cell(1, Nx);
-        for i = 1:Nx
-            if t > 1 && i == 1; tic; end
+        Psi_cols = cell(Nx, 1);
+        for j = 1:Nx
+            if t > 1 && j == 1; tic; end
 
-            ZABi     = ZAB(:, s_c{i});
+            ZABi     = ZAB(:, s_c{j});
             zeroRow  = find(all(ZABi == 0, 2));
             keepIdxs = setdiff(linspace(1,Nx*tFIR,Nx*tFIR), zeroRow);
-            ZABi     = ZAB(keepIdxs, s_c{i}); 
-            Eyei     = Eye(keepIdxs, c{i});
+            ZABi     = ZAB(keepIdxs, s_c{j}); 
+            Eyei     = Eye(keepIdxs, c{j});
 
-            Psi_locs{i} = eqn_16b(Phi_cols{i}, Lambda_cols{i}, ZABi, Eyei);
+            Psi_cols{j} = eqn_16b(Phi_cols{j}, Lambda_cols{j}, ZABi, Eyei);
 
-            if t > 1 && i == 1; totalTime = totalTime + toc; end            
+            if t > 1 && j == 1; totalTime = totalTime + toc; end            
         end
-        
+                
         % Step 7: Build entire Psi matrix
-        for i = 1:Nx
-            Psi(s_c{i},c{i}) = Psi_locs{i};
+        for j = 1:Nx
+            Psi(s_c{j},c{j}) = Psi_cols{j};
         end
                      
         % Step 8: Update Lambda
@@ -124,10 +123,10 @@ for t = 1:tHorizon
         
         % Step 9: Check convergence
         converged = true;
-        for i = 1:Nx
-              phi_loc      = Phi(r{i},s_r{i}(tFIR,:));
-              psi_loc      = Psi(r{i},s_r{i}(tFIR,:));
-              psi_prev_loc = Psi_prev(r{i},s_r{i}(tFIR,:));
+        for j = 1:Nx
+              phi_loc      = Phi(r{j},s_r{j}(tFIR,:));
+              psi_loc      = Psi(r{j},s_r{j}(tFIR,:));
+              psi_prev_loc = Psi_prev(r{j},s_r{j}(tFIR,:));
 
               if ~check_convergence(phi_loc, psi_loc, psi_prev_loc, eps_p, eps_d)
                   converged = false;
