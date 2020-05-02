@@ -1,3 +1,3 @@
 function sls_error(text)
-    error(['[SLS ERROR] ', text, '\n\n'])
+    error(['[SLS ERROR] ', text])
 end
