@@ -1,11 +1,6 @@
 classdef MPCParams < matlab.mixin.Copyable
     % Contains parameters for MPC problems
     
-    properties (Access = private)
-        % automatically determined
-        solnMode_;    % MPCSolnMode indicating solution mode
-    end
-    
     properties        
         % Algorithm 1 and 2 ---------------------------------------       
         locality_;  % locality (d)
@@ -52,7 +47,7 @@ classdef MPCParams < matlab.mixin.Copyable
           e6  = isempty(obj.eps_p_);
           e7  = isempty(obj.eps_d_);
           e8  = isempty(obj.Q_);
-          e9 = isempty(obj.R_);
+          e9  = isempty(obj.R_);
           
           if (e1 || e2 || e3 || e4 || e5 || e6 || e7 || e8 || e9)
               mpc_error('One or more required parameters is missing!')
@@ -97,30 +92,6 @@ classdef MPCParams < matlab.mixin.Copyable
       function hasCoupling = has_coupling(obj)
           % at least one non-diagonal cost / constraint matrix
           hasCoupling = ~(isdiag(obj.Q_) && isdiag(obj.R_) && isdiag(obj.stateConsMtx_) && isdiag(obj.inputConsMtx));
-      end
-      
-      function solnMode = get_soln_mode(obj)
-          solnMode = obj.solnMode_;
-      end
-      
-      function sanity_check_alg_1(obj)          
-          sanity_check_params_1(obj);
-          
-          if ~has_state_cons(obj) && ~has_input_cons(obj) % no constraints
-              obj.solnMode_ = MPCSolMode.ClosedForm;
-          else
-              obj.solnMode_ = MPCSolMode.Explicit;
-          end
-      end
-          
-      function sanity_check_alg_2(obj)          
-          sanity_check_params_2(obj);
-          
-          if ~has_state_cons(obj) && ~has_input_cons(obj) % no constraints
-              obj.solnMode_ = MPCSolMode.ClosedForm;
-          else
-              obj.solnMode_ = MPCSolMode.UseSolver;
-          end
       end
       
     end
