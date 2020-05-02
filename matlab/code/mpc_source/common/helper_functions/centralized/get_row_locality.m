@@ -22,13 +22,13 @@ for i = 1:Nx
     
     for j=1:tFIR
         r{i}(j)   = (j-1)*Nx + i;       
-        s_r{i}{j} = find(r_loc(:, i));
+        s_r{i}{j} = find(r_loc(i, :));
     end
     if hasActuation
         for j=1:tFIR-1
             j_ = j + tFIR;
             r{i}(j_)   = tFIR*Nx + (j-1)*Nu + actuator;
-            s_r{i}{j_} = find(m_loc(:, actuator));
+            s_r{i}{j_} = find(m_loc(actuator, :));
         end
     end
 end
