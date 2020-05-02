@@ -1,7 +1,12 @@
 classdef MPCParams < matlab.mixin.Copyable
     % Contains parameters for MPC problems
     
-    properties
+    properties (Access = private)
+        % automatically determined
+        solnMode_;    % MPCSolnMode indicating solution mode
+    end
+    
+    properties        
         % Algorithm 1 and 2 ---------------------------------------       
         locality_;  % locality (d)
         
@@ -14,8 +19,6 @@ classdef MPCParams < matlab.mixin.Copyable
         % determines exit conditions at Step 9 (Alg1) / Step 14 (Alg2)
         eps_p_; % convergence criterion for ||Phi(k+1) - Psi(k+1)|| 
         eps_d_; % convergence criterion for ||Psi(k+1) - Psi(k)||
-
-        solnMode_; % MPCSolnMode indicating solution mode
         
         Q_; % penalty for state
         R_; % penalty for input
@@ -48,11 +51,10 @@ classdef MPCParams < matlab.mixin.Copyable
           e5  = isempty(obj.rho_);
           e6  = isempty(obj.eps_p_);
           e7  = isempty(obj.eps_d_);
-          e8  = isempty(obj.solnMode_);
-          e9  = isempty(obj.Q_);
-          e10 = isempty(obj.R_);
+          e8  = isempty(obj.Q_);
+          e9 = isempty(obj.R_);
           
-          if (e1 || e2 || e3 || e4 || e5 || e6 || e7 || e8 || e9 || e10)
+          if (e1 || e2 || e3 || e4 || e5 || e6 || e7 || e8 || e9)
               mpc_error('One or more required parameters is missing!')
           end
       end
@@ -71,12 +73,12 @@ classdef MPCParams < matlab.mixin.Copyable
 
       end
       
-      function hasCons = sanity_check_cons(mtx, ub, lb)
+      function hasthisCons = sanity_check_cons(mtx, ub, lb)
           hasMtx = ~isempty(mtx);
           hasUB  = ~isempty(ub);
           hasLB  = ~isempty(lb);
 
-          hasCons = hasMtx;
+          hasthisCons = hasMtx;
           if hasMtx && ~hasUB && ~hasLB
               mpc_error('A constraint matrix was specified with no corresponding bounds!');
           elseif ~hasMtx && (hasUB || hasLB)
@@ -92,38 +94,33 @@ classdef MPCParams < matlab.mixin.Copyable
           hasInputCons = sanity_check_cons(obj.inputConsMtx_, obj.inputUB_, obj.inputLB_);
       end
       
-      function sanity_check_alg_1(obj)
-          if ~isdiag(obj.Q_) || ~isdiag(obj.R_) || ~isdiag(obj.stateConsMtx_) || ~isdiag(obj.inputConsMtx)
-              mpc_error('Cannot use Algorithm 1, cost or constraint matrices induce coupling!')
-          end
-          
-          switch obj.solnMode_
-              case MPCSolMode.ClosedForm
-                  if has_state_cons(obj) || has_input_cons(obj)
-                      mpc_error('Cannot use closed form, there are constraints!');
-                  end
-              case MPCSolMode.Explicit
-                  % do nothing
-              case MPCSolMode.UseSolver
-                  mpc_warning('UseSolver was specified but Explicit would be much faster');
-              otherwise
-                  mpc_error('Unrecognized solution mode specified');
-          end
+      function hasCoupling = has_coupling(obj)
+          % at least one non-diagonal cost / constraint matrix
+          hasCoupling = ~(isdiag(obj.Q_) && isdiag(obj.R_) && isdiag(obj.stateConsMtx_) && isdiag(obj.inputConsMtx));
       end
       
-      function sanity_check_alg_2(obj)
-          switch obj.solnMode_
-              case MPCSolMode.ClosedForm
-                  if has_state_cons(obj) || has_input_cons(obj)
-                      mpc_error('Cannot use closed form, there are constraints!');
-                  end
-              case MPCSolMode.Explicit
-                  mpc_error('Explicit solutions not available for Algorithm 2!');
-              case MPCSolMode.UseSolver
-                  % do nothing
-              otherwise
-                  mpc_error('Unrecognized solution mode specified');
-          end         
+      function solnMode = get_soln_mode(obj)
+          solnMode = obj.solnMode_;
+      end
+      
+      function sanity_check_alg_1(obj)          
+          sanity_check_params_1(obj);
+          
+          if ~has_state_cons(obj) && ~has_input_cons(obj) % no constraints
+              obj.solnMode_ = MPCSolMode.ClosedForm;
+          else
+              obj.solnMode_ = MPCSolMode.Explicit;
+          end
+      end
+          
+      function sanity_check_alg_2(obj)          
+          sanity_check_params_2(obj);
+          
+          if ~has_state_cons(obj) && ~has_input_cons(obj) % no constraints
+              obj.solnMode_ = MPCSolMode.ClosedForm;
+          else
+              obj.solnMode_ = MPCSolMode.UseSolver;
+          end
       end
       
     end
