@@ -28,25 +28,19 @@ classdef MPCParams < matlab.mixin.Copyable
         eps_x_; % convergence criterion for ||X(n+1) - Z(n+1)||
         eps_z_; % convergence criterion for ||Z(n+1) - Z(n)||
      
-        % Optional params -----------------------------------------
-        constrMtx_;
+        % Optional params for constraints -------------------------
+        stateConsMtx_;
+        inputConsMtx_;
         
-        constrUpperbnd_; % upper bound on constrMtx * [state; input]
-        constrLowerbnd_; % lower bound on constrMtx * [state; input]
+        stateUB_; % upper bound on stateConsMtx_ * state;
+        stateLB_; % lower bound on stateConsMtx_ * state;
         
-        stateUpperbnd_; % upper bound on state (x)
-        stateLowerbnd_; % lower bound on state (x)
-        
-        inputUpperbnd_; % upper bound on input (u)
-        inputLowerbnd_; % lower bound on input (u)
-        
+        inputUB_; % upper bound on inputConsMtx_ * input;
+        inputLB_; % lower bound on inputConsMtx_ * input;
     end
     
     methods
-      function sanity_check_alg_1(obj)
-          sanity_check_constr(obj);
-          sanity_check_mode(obj);
-          
+      function sanity_check_params_1(obj)
           e1  = isempty(obj.locality_);
           e2  = isempty(obj.tFIR_);
           e3  = isempty(obj.tHorizon_);
@@ -63,57 +57,74 @@ classdef MPCParams < matlab.mixin.Copyable
           end
       end
       
-      function sanity_check_alg_2(obj)
-          sanity_check_alg_1(obj);
+      function sanity_check_params_2(obj)
+          sanity_check_params_1(obj);
           
           e1 = isempty(obj.maxItersCons_);
           e2 = isempty(obj.mu_);
           e3 = isempty(obj.eps_x_);
-          e4 = isempty(obj.eps_z_);
-          
-          if obj.solnMode_ == MPCSolMode.Explicit
-              mpc_error('Explicit solver mode not available for Algorithm 2!')
-          end
+          e4 = isempty(obj.eps_z_);          
           
           if (e1 || e2 || e3 || e4)
               mpc_error('One or more required parameters is missing!')
           end 
+
       end
       
-      function sanity_check_constr(obj)
-          e1 = isempty(obj.constrMtx_);
-          e2 = isempty(obj.constrUpperbnd_);
-          e3 = isempty(obj.constrLowerbnd_);
-          
-          if (~e1 && e2 && e3)
-              mpc_warning('Constraint matrix specified but no bounds specified! Ignoring')
-          elseif (e1 && ~e2 && ~e3)
-              mpc_warning('Constraint bounds specified but no matrix specified! Ignoring')
+      function hasCons = sanity_check_cons(mtx, ub, lb)
+          hasMtx = ~isempty(mtx);
+          hasUB  = ~isempty(ub);
+          hasLB  = ~isempty(lb);
+
+          hasCons = hasMtx;
+          if hasMtx && ~hasUB && ~hasLB
+              mpc_error('A constraint matrix was specified with no corresponding bounds!');
+          elseif ~hasMtx && (hasUB || hasLB)
+              mpc_error('Constraint bounds were specified with no corresponding matrix!');
           end
       end
       
-      function sanity_check_mode(obj)
-          e1 = isempty(obj.constrMtx_);
-          e2 = isempty(obj.constrUpperbnd_);
-          e3 = isempty(obj.constrLowerbnd_);
-          e4 = isempty(obj.stateUpperbnd_);
-          e5 = isempty(obj.stateLowerbnd_);
-          e6 = isempty(obj.inputUpperbnd_);
-          e7 = isempty(obj.inputLowerbnd_);
+      function hasStateCons = has_state_cons(obj)
+          hasStateCons = sanity_check_cons(obj.stateConsMtx_, obj.stateUB_, obj.stateLB_);
+      end
+
+      function hasInputCons = has_input_cons(obj)
+          hasInputCons = sanity_check_cons(obj.inputConsMtx_, obj.inputUB_, obj.inputLB_);
+      end
+      
+      function sanity_check_alg_1(obj)
+          if ~isdiag(obj.Q_) || ~isdiag(obj.R_) || ~isdiag(obj.stateConsMtx_) || ~isdiag(obj.inputConsMtx)
+              mpc_error('Cannot use Algorithm 1, cost or constraint matrices induce coupling!')
+          end
           
-          constr = (~e1 && ~e2) || (~e1 && ~e3);
-          constr = constr || ~e4 || ~e5 || ~e6 || ~e7;
-          
-          if obj.solnMode_ == MPCSolMode.UseSolver
-              if ~constr
-                  mpc_warning('No constraints were specified, are you sure you want to use solver?')
-                  mpc_warning('Closed form would be much, much faster.')
-              end              
-          elseif obj.solnMode_ == MPCSolMode.ClosedForm
-              if constr
-                  mpc_error('Constraints were specified, cannot use closed form')
-              end
+          switch obj.solnMode_
+              case MPCSolMode.ClosedForm
+                  if has_state_cons(obj) || has_input_cons(obj)
+                      mpc_error('Cannot use closed form, there are constraints!');
+                  end
+              case MPCSolMode.Explicit
+                  % do nothing
+              case MPCSolMode.UseSolver
+                  mpc_warning('UseSolver was specified but Explicit would be much faster');
+              otherwise
+                  mpc_error('Unrecognized solution mode specified');
           end
       end
+      
+      function sanity_check_alg_2(obj)
+          switch obj.solnMode_
+              case MPCSolMode.ClosedForm
+                  if has_state_cons(obj) || has_input_cons(obj)
+                      mpc_error('Cannot use closed form, there are constraints!');
+                  end
+              case MPCSolMode.Explicit
+                  mpc_error('Explicit solutions not available for Algorithm 2!');
+              case MPCSolMode.UseSolver
+                  % do nothing
+              otherwise
+                  mpc_error('Unrecognized solution mode specified');
+          end         
+      end
+      
     end
 end
