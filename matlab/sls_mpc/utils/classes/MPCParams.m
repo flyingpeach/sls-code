@@ -68,30 +68,67 @@ classdef MPCParams < matlab.mixin.Copyable
 
       end
       
-      function hasthisCons = sanity_check_cons(mtx, ub, lb)
-          hasMtx = ~isempty(mtx);
-          hasUB  = ~isempty(ub);
-          hasLB  = ~isempty(lb);
+      function sanity_check_state_cons(obj)
+          hasStateMtx = ~isempty(obj.stateConsMtx_);
+          hasStateUB  = ~isempty(obj.stateUB_);
+          hasStateLB  = ~isempty(obj.stateLB_);
 
-          hasthisCons = hasMtx;
-          if hasMtx && ~hasUB && ~hasLB
-              mpc_error('A constraint matrix was specified with no corresponding bounds!');
-          elseif ~hasMtx && (hasUB || hasLB)
-              mpc_error('Constraint bounds were specified with no corresponding matrix!');
+          if hasStateMtx && ~hasStateUB && ~hasStateLB
+              mpc_error('State constraint matrix was specified with no corresponding bounds!');
+          elseif ~hasStateMtx && (hasStateUB || hasStateLB)
+              mpc_error('State bounds were specified with no corresponding matrix!');
           end
+          
+          % If only UB or only LB specified, populate other with Inf/-Inf
+          if hasStateMtx && ~hasStateUB
+              obj.stateUB_ = Inf;
+          elseif hasStateMtx && ~hasStateLB
+              obj.stateLB_ = -Inf;
+          end
+      end
+
+      function sanity_check_input_cons(obj)
+          hasInputMtx = ~isempty(obj.inputConsMtx_);
+          hasInputUB  = ~isempty(obj.inputUB_);
+          hasInputLB  = ~isempty(obj.inputLB_);
+
+          if hasInputMtx && ~hasInputUB && ~hasInputLB
+              mpc_error('Input constraint matrix was specified with no corresponding bounds!');
+          elseif ~hasInputMtx && (hasInputUB || hasInputLB)
+              mpc_error('Input bounds were specified with no corresponding matrix!');
+          end
+          
+          % If only UB or only LB specified, populate other with Inf/-Inf
+          if hasInputMtx && ~hasInputUB
+              obj.inputUB_ = Inf;
+          elseif hasInputMtx && ~hasInputLB
+              obj.inputLB_ = -Inf;
+          end
+      end         
+ 
+      function sanity_check_alg_1(obj)
+          sanity_check_params_1(obj);
+          sanity_check_state_cons(obj);
+          sanity_check_input_cons(obj);
+      end
+      
+      function sanity_check_alg_2(obj)
+          sanity_check_params_2(obj);
+          sanity_check_state_cons(obj);
+          sanity_check_input_cons(obj);
       end
       
       function hasStateCons = has_state_cons(obj)
-          hasStateCons = sanity_check_cons(obj.stateConsMtx_, obj.stateUB_, obj.stateLB_);
+          hasStateCons = ~isempty(obj.stateConsMtx_);
       end
-
+      
       function hasInputCons = has_input_cons(obj)
-          hasInputCons = sanity_check_cons(obj.inputConsMtx_, obj.inputUB_, obj.inputLB_);
+          hasInputCons = ~isempty(obj.inputConsMtx_);
       end
       
       function hasCoupling = has_coupling(obj)
           % at least one non-diagonal cost / constraint matrix
-          hasCoupling = ~(isdiag(obj.Q_) && isdiag(obj.R_) && isdiag(obj.stateConsMtx_) && isdiag(obj.inputConsMtx));
+          hasCoupling = ~(isdiag(obj.Q_) && isdiag(obj.R_) && isdiag(obj.stateConsMtx_) && isdiag(obj.inputConsMtx_));
       end
       
     end
