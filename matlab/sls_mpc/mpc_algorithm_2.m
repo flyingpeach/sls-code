@@ -25,15 +25,9 @@ tHorizon = params.tHorizon_;
 
 maxIters = params.maxIters_;
 rho      = params.rho_;
-eps_d    = params.eps_d_;
-eps_p    = params.eps_p_;
 
 maxItersCons = params.maxItersCons_;
 mu           = params.mu_;
-eps_x        = params.eps_x_;
-eps_z        = params.eps_z_;
-
-up = params.constrUpperbnd_;
 
 nVals = Nx*tFIR + Nu*(tFIR-1);
 % ADMM variables
@@ -44,7 +38,12 @@ Y_rows = cell(nVals, 1);
 Z_rows = cell(nVals, 1);
 
 % Constraints, costs, and coupling info
-K     = build_constr_mtx(sys, params);
+
+% TODO: assumes no input constraints
+if params.has_state_cons()
+    K = build_constr_mtx(sys, params);
+end
+
 C     = build_cost_mtx(params);
 cpIdx = get_coupling_indices(C);
 
@@ -102,13 +101,22 @@ for t = 1:tHorizon
                     row   = r{i}(j);
                     x_loc = x_t(s_r{i}{j}); % observe local state
                     i_    = find(cpIdx{row} == row);
-                    c_    = C(row, cpIdx{row});                   
+                    c_    = C(row, cpIdx{row});
+                    
+                    isState   = row <= tFIR*Nx; % row represents state
+                    stateCons = isState && params.has_state_cons() && params.stateConsMtx_(i,i);
 
-                    % TODO: hacky: doesn't tolerate input constraints
-                    if params.solnMode_ == MPCSolMode.UseSolver && row >= Nx*2 && row <= Nx*tFIR
+                    % TODO: assumes no input cons
+                    if stateCons
                         k_ = K(2*row-1:2*row, cpIdx{row});
+                        m   = params.stateConsMtx_(i,i);
+                        b1_ = params.stateUB_ / m;
+                        b2_ = params.stateLB_ / m;
+                        ub  = max(b1_,b2_); % in case of negative signs
+                        lb = min(b1_,b2_);
+                        
                         [Phi_rows{row}, X_rows{row}] = eqn_20a_solver(x_loc, Psi_rows{row}, Lambda_rows{row}, Y_rows{row}, Z_rows, ...
-                                                                      k_, c_, cpIdx{row}, i_, params);
+                                                                      k_, c_, cpIdx{row}, i_, params, ub, lb);
                     else
                         [Phi_rows{row}, X_rows{row}] = eqn_20a_closed(x_loc, Psi_rows{row}, Lambda_rows{row}, Y_rows{row}, Z_rows, ...
                                                                       c_, cpIdx{row}, i_, params);

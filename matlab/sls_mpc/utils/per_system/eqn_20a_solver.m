@@ -1,10 +1,9 @@
 function [phi_, x_] = eqn_20a_solver(x_loc, psi_, lamb_, y_, Z_rows, ...
-                                     k_, c_, cp_, i_, params)
+                                     k_, c_, cp_, i_, params, ub, lb)
 
 n   = length(x_loc);
 rho = params.rho_;
 mu  = params.mu_;
-up  = params.constrUpperbnd_;
 
 m_j = max(length(cp_));
 a   = psi_ - lamb_;
@@ -41,8 +40,16 @@ model.Q   = sparse((c_*M2)'*(c_*M2) + rho/2*(M1'*M1) + mu/2*(Mj_sum));
 model.obj = -rho*a*M1 -mu*Mjb_sum';
 
 model.A     = sparse(k_*M2);
-model.rhs   = [up up]; 
-model.sense = '<';
+if isinf(lb)
+    model.rhs   = [ub ub];
+    model.sense = '<';
+elseif isinf(ub)
+    model.rhs   = [lb lb];
+    model.sense = '>';
+else
+    model.rhs   = [ub lb]; 
+    model.sense = '<>';
+end
 
 % default lower bound is 0; override
 MPC_LB   = -100;

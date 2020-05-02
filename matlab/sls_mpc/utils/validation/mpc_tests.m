@@ -23,24 +23,24 @@ params1.R_ = eye(sys1.Nu);
 %% Algorithm 1, no constraints
 [x, u, ~]       = sls_mpc(sys1, x01, params1);
 [xVal, uVal, ~] = mpc_centralized(sys1, x01, params1);
-printAndPlot(params1, x, u, xVal, uVal, 'Alg1, no constr');
+printAndPlot(params1, x, u, xVal, uVal, 'Alg1, no constraints');
 
-%% Algorithm 1, with state ub only
+%% Algorithm 1, with state ub
 params1.stateConsMtx_ = eye(sys1.Nx);
-params1.stateUB_      = 1;
+params1.stateUB_      = 0.1;
 
 [x, u, ~]       = sls_mpc(sys1, x01, params1);
 [xVal, uVal, ~] = mpc_centralized(sys1, x01, params1);
-printAndPlot(params1, x, u, xVal, uVal, 'Alg1, state ub only');
+printAndPlot(params1, x, u, xVal, uVal, 'Alg1, state ub');
 
-%% Algorithm 1, with state lb+ub
+%% Algorithm 1, with state lb + ub
 params1.stateConsMtx_ = eye(sys1.Nx);
 params1.stateUB_      = 1;
 params1.stateLB_      = 0;
 
 [x, u, ~]       = sls_mpc(sys1, x01, params1);
 [xVal, uVal, ~] = mpc_centralized(sys1, x01, params1);
-printAndPlot(params1, x, u, xVal, uVal, 'Alg1, state lb+ub');
+printAndPlot(params1, x, u, xVal, uVal, 'Alg1, state lb + ub');
 
 %% Algorithm 2 setup plant + parameters
 sys2    = LTISystem;
@@ -49,9 +49,14 @@ alpha = 0.8; rho = 1; actDens = 0.5;
 generate_dbl_stoch_chain(sys2, rho, actDens, alpha);
 x02 = rand(sys2.Nx, 1);
 
-params2 = copy(params1);
-params2.stateUpperbnd_ = []; % clear constraints
-params2.stateLowerbnd_ = [];
+params2 = MPCParams();
+params2.locality_ = 3;
+params2.tFIR_     = 5;
+params2.tHorizon_ = 10;
+params2.maxIters_ = 5000;
+params2.rho_      = 1; 
+params2.eps_p_    = 1e-3;
+params2.eps_d_    = 1e-3;
 
 params2.maxItersCons_ = 500;
 params2.mu_           = 1;
@@ -62,39 +67,38 @@ Nx = sys2.Nx;
 params2.Q_ = diag(ones(Nx,1)) + diag(-1/2*ones(Nx-2,1),2) + diag(-1/2*ones(Nx-2,1),-2);
 params2.R_ = eye(sys2.Nu);
 
-%% Algorithm 2, ClosedForm
-params2.solnMode_ = MPCSolMode.ClosedForm;
-[x, u, ~]       = mpc_algorithm_2(sys2, x02, params2);
-[xVal, uVal, ~] = mpc_centralized(sys2, x02, params2);
-printAndPlot(params2, x, u, xVal, uVal, 'Alg2, ClosedForm');
-
-%% Algorithm 2, UseSolver
 % Constraints
 for i = 1:2:2*(Nx-1)
-    K1(i,i)     = 1; 
-    K1(i,i+2)   = -1;
-    K1(i+1,i)   = -1; 
-    K1(i+1,i+2) = 1;
+    K(i,i)     = 1; 
+    K(i,i+2)   = -1;
+    K(i+1,i)   = -1; 
+    K(i+1,i+2) = 1;
 end
-K1            = K1(1:Nx,1:Nx); 
-K1(Nx-1:Nx,:) = zeros(2,Nx);
-  
-Ksmall = zeros(2*Nx,Nx); j = 0;
-for i = 1:2*Nx
-    if mod(i,4) == 1 || mod(i,4) == 2
-        j = j + 1;
-        Ksmall(i,:) = K1(j,:);
-    else
-    end
-end
-params2.constrMtx_ = Ksmall;
-params2.constrUpperbnd_ = 0.5;
+K            = K(1:Nx,1:Nx); 
+K(Nx-1:Nx,:) = zeros(2,Nx);
 
-params2.solnMode_ = MPCSolMode.UseSolver;
-[x, u, ~]       = mpc_algorithm_2(sys2, x02, params2);
+%% Algorithm 2, no constraints
+[x, u, ~]       = sls_mpc(sys2, x02, params2);
 [xVal, uVal, ~] = mpc_centralized(sys2, x02, params2);
-printAndPlot(params2, x, u, xVal, uVal, 'Alg2, UseSolver');
+printAndPlot(params2, x, u, xVal, uVal, 'Alg2, no constriants');
 
+%% Algorithm 2, with state ub
+params2.stateConsMtx_ = K;
+params2.stateUB_      = 0.5;
+
+[x, u, ~]       = sls_mpc(sys2, x02, params2);
+[xVal, uVal, ~] = mpc_centralized(sys2, x02, params2);
+printAndPlot(params2, x, u, xVal, uVal, 'Alg2, with state ub');
+
+%% Algorithm 2, with state lb + ub
+params2.stateConsMtx_ = K;
+params2.stateUB_      = 0.5;
+params2.stateLB_      = -0.5;
+
+[x, u, ~]       = sls_mpc(sys2, x02, params2);
+[xVal, uVal, ~] = mpc_centralized(sys2, x02, params2);
+printAndPlot(params2, x, u, xVal, uVal, 'Alg2, with state lb + ub');
+ 
 %% Local function to print values + plot graphs
 function printAndPlot(params, x, u, xVal, uVal, myTitle)
     % Calculate costs + plot 
