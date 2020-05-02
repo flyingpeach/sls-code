@@ -71,24 +71,18 @@ for t = 1:tHorizon
         R{k+1} == A*R{k} + B*M{k};
     end
     
-    if ~isempty(params.stateUpperbnd_) && isempty(params.constrMtx_) %TODO: hacky
+    if params.has_state_cons()
         for k=1:tFIR
-            R{k}*x_t <= params.stateUpperbnd_*ones(Nx,1);
-        end
-    end    
-    if ~isempty(params.stateLowerbnd_)
-        for k=1:tFIR
-            R{k}*x_t >= params.stateLowerbnd_*ones(Nx,1);
+            if ~isinf(params.stateUB_)
+                params.stateConsMtx_*R{k}*x_t <= params.stateUB_*ones(Nx, 1);
+            end
+            
+            if ~isinf(params.stateLB_)
+                params.stateConsMtx_*R{k}*x_t >= params.stateLB_*ones(Nx, 1);
+            end
         end
     end
 
-    if ~isempty(params.constrMtx_)
-        K = params.constrMtx_;
-        for k = 3:tFIR % TODO: why 3?
-            K*R{k}*x_t <= params.constrUpperbnd_*ones(2*Nx,1);
-        end
-    end
-   
     cvx_end
     
     % Compute control + state

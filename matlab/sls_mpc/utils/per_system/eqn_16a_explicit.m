@@ -1,17 +1,12 @@
-function phi_ = eqn_16a_explicit(x_loc, psi_, lamb_, params)
+function phi_ = eqn_16a_explicit(x_loc, psi_, lamb_, b1, b2, rho)
 % x_loc  : locally observed state
 % psi_   : row of Psi
 % lamb_  : row of Lambda
-% params : MPC parameters
 
 n   = length(x_loc);
-rho = params.rho_;
 M   = inv(2*x_loc*x_loc' + rho*eye(n));
 a   = psi_ - lamb_;
     
-b1 = params.stateUpperbnd_; 
-b2 = params.stateLowerbnd_;
-
 crit  = rho*a*M*x_loc;
 
 lamb = 0;

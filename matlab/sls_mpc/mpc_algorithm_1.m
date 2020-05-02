@@ -23,6 +23,7 @@ locality = params.locality_;
 tFIR     = params.tFIR_;
 tHorizon = params.tHorizon_;
 maxIters = params.maxIters_;
+rho      = params.rho_;
 
 nVals  = Nx*tFIR + Nu*(tFIR-1);
 % ADMM variables
@@ -69,14 +70,19 @@ for t = 1:tHorizon
             for j = 1:length(r{i})
                 row   = r{i}(j);
                 x_loc = x_t(s_r{i}{j}); % observe local state
-                                
-                % TODO: hacky: doesn't tolerate input constraints
-                if params.solnMode_ == MPCSolMode.ClosedForm || row > tFIR*Nx
-                    Phi_rows{row} = eqn_16a_closed(x_loc, Psi_rows{row}, Lambda_rows{row}, params); 
-                elseif params.solnMode_ == MPCSolMode.Explicit
-                    Phi_rows{row} = eqn_16a_explicit(x_loc, Psi_rows{row}, Lambda_rows{row}, params);
-                elseif params.solnMode_ == MPCSolMode.UseSolver
-                    Phi_rows{row} = eqn_16a_solver(x_loc, Psi_rows{row}, Lambda_rows{row}, params); 
+                
+                isState   = row <= tFIR*Nx; % row represents state
+                stateCons = isState && params.has_state_cons() && params.stateConsMtx_(i,i);
+ 
+                % TODO: assumes no input cons
+                if stateCons
+                    m   = params.stateConsMtx_(i,i);
+                    b1_ = params.stateUB_ / m;
+                    b2_ = params.stateLB_ / m;
+                    b1  = max(b1_,b2_); b2 = min(b1_,b2_); % in case of negative signs
+                    Phi_rows{row} = eqn_16a_explicit(x_loc, Psi_rows{row}, Lambda_rows{row}, b1, b2, rho);
+                else
+                    Phi_rows{row} = eqn_16a_closed(x_loc, Psi_rows{row}, Lambda_rows{row}, rho); 
                 end
             end
             

@@ -20,29 +20,27 @@ params1.eps_d_    = 1e-3;
 params1.Q_ = eye(sys1.Nx);
 params1.R_ = eye(sys1.Nu);
 
-%% Algorithm 1, ClosedForm
-params1.solnMode_ = MPCSolMode.ClosedForm;
-[x, u, ~]       = mpc_algorithm_1(sys1, x01, params1);
+%% Algorithm 1, no constraints
+[x, u, ~]       = sls_mpc(sys1, x01, params1);
 [xVal, uVal, ~] = mpc_centralized(sys1, x01, params1);
-printAndPlot(params1, x, u, xVal, uVal, 'Alg1, ClosedForm');
+printAndPlot(params1, x, u, xVal, uVal, 'Alg1, no constr');
 
-%% Algorithm 1, Explicit
-params1.stateUpperbnd_ = 1.2;
-params1.stateLowerbnd_ = -0.2;
+%% Algorithm 1, with state ub only
+params1.stateConsMtx_ = eye(sys1.Nx);
+params1.stateUB_      = 1;
 
-params1.solnMode_ = MPCSolMode.Explicit;
-[x, u, ~]       = mpc_algorithm_1(sys1, x01, params1);
+[x, u, ~]       = sls_mpc(sys1, x01, params1);
 [xVal, uVal, ~] = mpc_centralized(sys1, x01, params1);
-printAndPlot(params1, x, u, xVal, uVal, 'Alg1, Explicit');
+printAndPlot(params1, x, u, xVal, uVal, 'Alg1, state ub only');
 
-%% Algorithm 1, UseSolver
-params1.stateUpperbnd_ = 1.2;
-params1.stateLowerbnd_ = -0.2;
+%% Algorithm 1, with state lb+ub
+params1.stateConsMtx_ = eye(sys1.Nx);
+params1.stateUB_      = 1;
+params1.stateLB_      = 0;
 
-params1.solnMode_ = MPCSolMode.UseSolver;
-[x, u, ~]       = mpc_algorithm_1(sys1, x01, params1);
+[x, u, ~]       = sls_mpc(sys1, x01, params1);
 [xVal, uVal, ~] = mpc_centralized(sys1, x01, params1);
-printAndPlot(params1, x, u, xVal, uVal, 'Alg1, UseSolver');
+printAndPlot(params1, x, u, xVal, uVal, 'Alg1, state lb+ub');
 
 %% Algorithm 2 setup plant + parameters
 sys2    = LTISystem;
