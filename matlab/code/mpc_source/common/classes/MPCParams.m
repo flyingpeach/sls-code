@@ -59,7 +59,7 @@ classdef MPCParams < matlab.mixin.Copyable
           e10 = isempty(obj.R_);
           
           if (e1 || e2 || e3 || e4 || e5 || e6 || e7 || e8 || e9 || e10)
-              sls_error('One or more required parameters is missing!')
+              mpc_error('One or more required parameters is missing!')
           end
       end
       
@@ -72,11 +72,11 @@ classdef MPCParams < matlab.mixin.Copyable
           e4 = isempty(obj.eps_z_);
           
           if obj.solnMode_ == MPCSolMode.Explicit
-              sls_error('Explicit solver mode not available for Algorithm 2!')
+              mpc_error('Explicit solver mode not available for Algorithm 2!')
           end
           
           if (e1 || e2 || e3 || e4)
-              sls_error('One or more required parameters is missing!')
+              mpc_error('One or more required parameters is missing!')
           end 
       end
       
@@ -86,9 +86,9 @@ classdef MPCParams < matlab.mixin.Copyable
           e3 = isempty(obj.constrLowerbnd_);
           
           if (~e1 && e2 && e3)
-              sls_warning('Constraint matrix specified but no bounds specified! Ignoring')
+              mpc_warning('Constraint matrix specified but no bounds specified! Ignoring')
           elseif (e1 && ~e2 && ~e3)
-              sls_warning('Constraint bounds specified but no matrix specified! Ignoring')
+              mpc_warning('Constraint bounds specified but no matrix specified! Ignoring')
           end
       end
       
@@ -106,12 +106,12 @@ classdef MPCParams < matlab.mixin.Copyable
           
           if obj.solnMode_ == MPCSolMode.UseSolver
               if ~constr
-                  sls_warning('No constraints were specified, are you sure you want to use solver?')
-                  sls_warning('Closed form would be much, much faster.')
+                  mpc_warning('No constraints were specified, are you sure you want to use solver?')
+                  mpc_warning('Closed form would be much, much faster.')
               end              
           elseif obj.solnMode_ == MPCSolMode.ClosedForm
               if constr
-                  sls_error('Constraints were specified, cannot use closed form')
+                  mpc_error('Constraints were specified, cannot use closed form')
               end
           end
       end

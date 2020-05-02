@@ -80,10 +80,10 @@ classdef LTISystem < matlab.mixin.Copyable
       function sanity_check_mpc(obj)
         % sanity check that dimensions are consistent
         if size(obj.A,1) ~= obj.Nx || size(obj.A,2) ~= obj.Nx
-            sls_error('A matrix has incorrect dimensions')
+            mpc_error('A matrix has incorrect dimensions')
         end
         if size(obj.B2,1) ~= obj.Nx || size(obj.B2,2) ~= obj.Nu
-            sls_error('B2 matrix has incorrect dimensions')
+            mpc_error('B2 matrix has incorrect dimensions')
         end
       end
     end
