@@ -1,4 +1,4 @@
-function [x, u] = mpc_bilo(sys, tFIR, u_lb, u_ub, x_lb, xt)
+function [x_nxt, u] = mpc_bilo(sys, tFIR, u_lb, u_ub, x_lb, xt)
 % Note that these are "x, u" in the local sense of mpc
 % In the bilophila example, they are y and u_tilde (shifted coordinates)
 
@@ -49,13 +49,14 @@ for k=1:tFIR-1
 end
 
 for k=1:tFIR
-    M{k}*xt >= u_lb;
-    M{k}*xt <= u_ub;
-    R{k}*xt >= x_lb;
+     M{k}*xt >= u_lb;
+     M{k}*xt <= u_ub;
+          
+%     R{k}*xt >= x_lb; % causes infeasibility
 end
 cvx_end
 
-u = M{1}*xt;
-x = R{2}*xt;
+u     = M{1}*xt;
+x_nxt = R{2}*xt;
 
 end
