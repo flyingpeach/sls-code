@@ -38,7 +38,10 @@ for t=1:tHorizon-1
     [Ac, Bc] = linearize_bilo(x_, u_, q);
     [A, B]   = discretize(Ac, Bc, Ts);
     
-    % coordinate shift bounds and pass in to MPC
+    % coordinate shift bounds
+    u_tilde_lb  = u_lb - u_*ones(Nu, 1);
+    u_tilde_ub  = u_ub - u_*ones(Nu, 1);
+    x4_tilde_lb = x4_lb - x_;
     
     % do MPC with (A,B), x0=0 (since we're in coordinate-shifted regime)
     % remember to include x_(5) in objective    
