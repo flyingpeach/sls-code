@@ -48,13 +48,16 @@ for k=1:tFIR-1
     R{k+1} == A*R{k} + B*M{k};
 end
 
+Eye = eye(Nx);
+
 for k=1:tFIR
      M{k}*xt >= u_lb;
      M{k}*xt <= u_ub;
-end
 
-% hacky; but R{k}*xt >= x_lb causes infeasibility
-R{2}*xt >= x_lb;
+     Eye(2, :)*R{k}*xt >= x_lb(2);     
+     Eye(3, :)*R{k}*xt >= x_lb(3);     
+     Eye(4, :)*R{k}*xt >= x_lb(4);
+end
 
 cvx_end
 

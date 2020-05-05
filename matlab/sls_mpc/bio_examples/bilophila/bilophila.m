@@ -8,18 +8,18 @@ q = 0.8;
 k = [1; 1; 1];
 
 % initial conditions
-x0 = [1e-3; 1e-3; 1e-3; 1; 1e-3];
+x0 = [1e-2; 1e-2; 1e-2; 1; 1e-2];
 
 % simulation length
-tHorizon = 20;
+tHorizon = 30;
 
 % SLS length
 tFIR = 4;
 
 % disturbance (step)
-val1 = 1e-3;
-dur1 = 8;
-val2 = 2;
+val1 = 1e-2;
+dur1 = 10;
+val2 = 1;
 ws   = [val1 * ones(1, dur1), val2 * ones(1, tHorizon-dur1)];
 
 % sampling time for discretization
