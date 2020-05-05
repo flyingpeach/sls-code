@@ -51,9 +51,11 @@ end
 for k=1:tFIR
      M{k}*xt >= u_lb;
      M{k}*xt <= u_ub;
-          
-%     R{k}*xt >= x_lb; % causes infeasibility
 end
+
+% hacky; but R{k}*xt >= x_lb causes infeasibility
+R{2}*xt >= x_lb;
+
 cvx_end
 
 u     = M{1}*xt;
