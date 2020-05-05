@@ -1,4 +1,4 @@
-function [x, u] = mpc_bilo(sys, tFIR, u_lb, u_ub, x4_lb, xt)
+function [x, u] = mpc_bilo(sys, tFIR, u_lb, u_ub, x_lb, xt)
 % Note that these are "x, u" in the local sense of mpc
 % In the bilophila example, they are y and u_tilde (shifted coordinates)
 
@@ -48,12 +48,10 @@ for k=1:tFIR-1
     R{k+1} == A*R{k} + B*M{k};
 end
 
-e4 = [0 0 0 1 0];
-
 for k=1:tFIR
     M{k}*xt >= u_lb;
     M{k}*xt <= u_ub;
-    e4*R{k}*xt >= x4_lb;
+    R{k}*xt >= x_lb;
 end
 cvx_end
 

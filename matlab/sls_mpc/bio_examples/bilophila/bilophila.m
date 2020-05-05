@@ -23,10 +23,6 @@ Ts = 0.1;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Setup system
-u_lb  = [-1; -1; -1];
-u_ub  = [0; 1; 0];
-x4_lb = 1e-3;
-    
 Nx = 5;
 Nu = 3;
 
@@ -37,8 +33,11 @@ xs      = zeros(Nx, tHorizon);
 us      = zeros(Nu, tHorizon);
 xs(:,1) = x0;
 
-e1 = [1 0 0 0 0]';
+u_lb = -1 * ones(Nu, 1);
+u_ub = [0; 1; 0];
+x_lb = 1e-3 * ones(Nx, 1);
 
+e1 = [1 0 0 0 0]';
 for t=1:tHorizon-1
     fprintf('Time: %d\n', t);
     
@@ -50,14 +49,14 @@ for t=1:tHorizon-1
     [sys.A, sys.B2] = discretize(Ac, Bc, Ts);
     
     % coordinate shift bounds
-    u_tilde_lb  = u_lb - u_;
-    u_tilde_ub  = u_ub - u_;
-    x4_tilde_lb = x4_lb - x_(4);
+    u_tilde_lb = u_lb - u_;
+    u_tilde_ub = u_ub - u_;
+    x_tilde_lb = x_lb - x_;
     
     % y, u_tilde are coordinate shifts of x, u
     y0 = pinv(sys.A) * f_bilo(x_, u_, w_, q);
     
-    [y, u_tilde] = mpc_bilo(sys, tFIR, u_tilde_lb, u_tilde_ub, x4_tilde_lb, y0);
+    [y, u_tilde] = mpc_bilo(sys, tFIR, u_tilde_lb, u_tilde_ub, x_tilde_lb, y0);
 
     % calculate x(t+1) from dynamics and u_tilde directly
     x_tilde_nxt = f_bilo(x_, u_, w_, q)*Ts + sys.B2*u_tilde + e1*(ws(:,t+1) - w_);
