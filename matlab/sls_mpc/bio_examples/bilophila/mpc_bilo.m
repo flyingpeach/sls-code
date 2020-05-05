@@ -16,7 +16,7 @@ for k = 1:tFIR
     count = count + sum(sum(RSupp{k})) + sum(sum(MSupp{k}));
 end
 
-cvx_begin
+cvx_begin quiet
 
 variable X(count)
 expression Rs(Nx, Nx, tFIR)
