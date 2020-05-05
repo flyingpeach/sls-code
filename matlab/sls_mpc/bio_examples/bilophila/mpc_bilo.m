@@ -54,8 +54,8 @@ for k=1:tFIR
      M{k}*xt >= u_lb;
      M{k}*xt <= u_ub;
 
-     Eye(2, :)*R{k}*xt >= x_lb(2);     
-     Eye(3, :)*R{k}*xt >= x_lb(3);     
+%     Eye(2, :)*R{k}*xt >= x_lb(2);     
+%     Eye(3, :)*R{k}*xt >= x_lb(3);     
      Eye(4, :)*R{k}*xt >= x_lb(4);
 end
 

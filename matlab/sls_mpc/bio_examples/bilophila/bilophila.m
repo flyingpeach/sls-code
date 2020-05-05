@@ -56,7 +56,7 @@ for t=1:tHorizon-1
     u_tilde_ub = u_ub - u_;
     x_tilde_lb = x_lb - x_;
     
-    y_shift = pinv(sys.A) * f_bilo(x_, u_, w_, q, k)*Ts;
+    y_shift = pinv(sys.A - eye(Nx)) * f_bilo(x_, u_, w_, q, k)*Ts;
     yt      = y_shift;
     y_lb    = x_tilde_lb + y_shift;
     
@@ -64,7 +64,7 @@ for t=1:tHorizon-1
     
     % calculate x(t+1) from dynamics and u_tilde directly
     x_tilde_nxt = f_bilo(x_, u_, w_, q, k)*Ts + sys.B2*u_tilde;
-    xs(:,t+1) = x_ + x_tilde_nxt;
+    xs(:,t+1)   = x_ + x_tilde_nxt;
     
     % update actuation
     us(:,t) = u_ + u_tilde;    
