@@ -1,4 +1,4 @@
-function fxuw = f_bilo(x, u, q, w, k)
+function fxuw = f_bilo(x, u, w, q, k)
 
 x1=x(1); x2=x(2); x4=x(4);
 u1=u(1); u2=u(2); u3=u(3);
