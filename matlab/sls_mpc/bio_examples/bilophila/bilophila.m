@@ -7,7 +7,7 @@ clear all; close all; clc;
 q = 0.8;
 
 % initial conditions
-x0 = 0.1*ones(5, 1);
+x0 = [1e-3; 1e-3; 1e-3; 1; 1e-3];
 
 % simulation length
 tHorizon = 10;
