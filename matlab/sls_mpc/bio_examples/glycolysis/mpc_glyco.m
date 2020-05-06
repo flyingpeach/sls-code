@@ -1,4 +1,4 @@
-function [x_nxt, u] = mpc_glyco(sys, tFIR, x_lb, u_ub, xt)
+function [x_nxt, u] = mpc_glyco(sys, tFIR, x_lb, u_ub, xt, x_ref)
 % Note that these are "x, u" in the local sense of mpc
 % In the bilophila example, they are y and u_tilde (shifted coordinates)
 
@@ -35,10 +35,11 @@ e2 = [0 1];
 
 objective = 0;
 for k = 1:tFIR
-    objective = objective + e2*R{k}*xt;
+    objective = objective + (R{k}*xt-x_ref)'*(R{k}*xt-x_ref);
 end
 
-maximize(objective)
+minimize(objective)
+%maximize(objective)
 subject to
 
 % Achievability constraints
