@@ -30,16 +30,18 @@ end
 
 [R, M] = add_sparse_constraints(R, M, RSupp, MSupp, X, tFIR);
 
-% maximizing x(2) is the same as maximizing x_tilde(2)
-e2 = [0 1];
-
 objective = 0;
+
+state_pen = 1;
+input_pen = 0.2;
 for k = 1:tFIR
-    objective = objective + (R{k}*xt-x_ref)'*(R{k}*xt-x_ref);
+    % state constraint
+    objective = objective + state_pen*(R{k}*xt-x_ref)'*(R{k}*xt-x_ref);
+    % actuation constraint
+    objective = objective + input_pen*(M{k}*xt)'*(M{k}*xt);
 end
 
 minimize(objective)
-%maximize(objective)
 subject to
 
 % Achievability constraints

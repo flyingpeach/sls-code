@@ -12,10 +12,10 @@ a = 1;
 x0 = [1.1; 1.1];
 
 % simulation length
-tHorizon = 30;
+tHorizon = 50;
 
 % SLS length
-tFIR = 8;
+tFIR = 4;
 
 % disturbance (step)
 ws = -1.1 * ones(1, tHorizon);
@@ -37,7 +37,7 @@ xs(:,1) = x0;
 
 u_ub  = zeros(Nu, 1);
 x_lb  = 1e-3 * ones(Nx, 1);
-x_ref = ones(Nx,1);
+x_ref = [1; 1];
 
 for t=1:tHorizon-1
     fprintf('Time: %d\n', t);
