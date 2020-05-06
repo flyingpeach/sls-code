@@ -1,4 +1,4 @@
-function [x_nxt, u] = mpc_glyco(sys, tFIR, u_ub, xt)
+function [x_nxt, u] = mpc_glyco(sys, tFIR, x_lb, u_ub, xt)
 % Note that these are "x, u" in the local sense of mpc
 % In the bilophila example, they are y and u_tilde (shifted coordinates)
 
@@ -48,7 +48,8 @@ for k=1:tFIR-1
 end
 
 for k=1:tFIR
-     M{k}*xt <= u_ub;     
+     M{k}*xt <= u_ub;
+     R{k}*xt >= x_lb;
 end
 
 cvx_end
