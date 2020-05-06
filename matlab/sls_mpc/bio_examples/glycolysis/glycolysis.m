@@ -12,16 +12,13 @@ a = 1;
 x0 = [1.5; 1.5];
 
 % simulation length
-tHorizon = 20;
+tHorizon = 50;
 
 % SLS length
 tFIR = 4;
 
 % disturbance (step)
-val1 = 1e-2;
-dur1 = 10;
-val2 = 1e-2;
-ws   = [val1 * ones(1, dur1), val2 * ones(1, tHorizon-dur1)];
+ws = -1.1 * ones(1, tHorizon);
 
 % sampling time for discretization
 Ts = 0.1;
@@ -66,7 +63,10 @@ for t=1:tHorizon-1
     xs(:,t+1)   = x_ + x_tilde_nxt;
     
     % update actuation
-    us(:,t) = u_ + u_tilde;    
+    us(:,t)   = u_ + u_tilde;
+    % next time, linearize about current u (more accurate than zeros)
+    us(:,t+1) = us(:,t);
+
 end
 
 %% Plot
