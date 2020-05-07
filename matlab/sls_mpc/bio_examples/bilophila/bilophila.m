@@ -67,7 +67,9 @@ for t=1:tHorizon-1
     xs(:,t+1)   = x_ + x_tilde_nxt;
     
     % update actuation
-    us(:,t) = u_ + u_tilde;    
+    us(:,t) = u_ + u_tilde;
+    % next time, linearize about current u (more accurate than zeros)
+    us(:,t+1) = us(:,t);
 end
 
 %% Plot
