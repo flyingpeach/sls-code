@@ -1,13 +1,17 @@
 function fxuw = f_glyco(x, u, w, q, k, a)
 
-Q = [ 1   -1;
-     -q  q+1];
+Q = [ 1   -1  0;
+     -q  q+1 -1
+      0    0  1];
 
-v = [2*x(2).^a*exp(u(1));
-     2*k*x(1)*exp(u(2))];
+K = diag(k);
 
-e2 = [0; 1];
+v = [x(2).^a * exp(u(1));
+     x(1)    * exp(u(2));
+     x(2)    * exp(u(3))];
+ 
+e2 = [0 1 0]';
 
-fxuw = Q*v + e2*w;
+fxuw = Q*K*v + e2*w;
 
 end

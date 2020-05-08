@@ -5,8 +5,7 @@ function [x_nxt, u] = mpc_glyco(sys, tFIR, x_lb, u_ub, xt, x_ref)
 Nx = sys.Nx; Nu = sys.Nu; A = sys.A; B = sys.B2;
 
 RLoc = ones(Nx, Nx); % no sparsity constraint
-MLoc = [0 1;
-        0 1];
+MLoc = ones(Nu, Nx);
 
 count = 0;
 for k = 1:tFIR
@@ -34,9 +33,13 @@ objective = 0;
 
 state_pen = 1;
 input_pen = 0.2;
+
+E2 = [1 0 0;
+      0 1 0];
 for k = 1:tFIR
     % state constraint
-    objective = objective + state_pen*(R{k}*xt-x_ref)'*(R{k}*xt-x_ref);
+    x = E2*(R{k}*xt-x_ref);
+    objective = objective + state_pen*x'*x;
     % actuation constraint
     objective = objective + input_pen*(M{k}*xt)'*(M{k}*xt);
 end

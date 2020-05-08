@@ -5,11 +5,11 @@ clear all; close all; clc;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % model parameters
 q = 0.8;
-k = 1;
+k = [2 4 0];
 a = 1;
 
 % initial conditions
-x0 = [1.1; 1.1];
+x0 = [1.1; 1.1; 0.1];
 
 % simulation length
 tHorizon = 50;
@@ -25,8 +25,8 @@ Ts = 0.1;
 
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % Setup system
-Nx = 2;
-Nu = 2;
+Nx = 3;
+Nu = 3;
 
 sys = LTISystem();
 sys.Nx = Nx; sys.Nu = Nu;
@@ -37,7 +37,7 @@ xs(:,1) = x0;
 
 u_ub  = zeros(Nu, 1);
 x_lb  = 1e-3 * ones(Nx, 1);
-x_ref = [1; 1];
+x_ref = [1; 1; 1];
 
 for t=1:tHorizon-1
     fprintf('Time: %d\n', t);
