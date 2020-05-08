@@ -37,14 +37,19 @@ input_pen = 0.2;
 E2 = [1 0 0;
       0 1 0];
 for k = 1:tFIR
-    % state constraint
-    x = E2*(R{k}*xt-x_ref);
-    objective = objective + state_pen*x'*x;
-    % actuation constraint
-    objective = objective + input_pen*(M{k}*xt)'*(M{k}*xt);
+%     % state constraint
+%     x = E2*(R{k}*xt-x_ref);
+%     objective = objective + state_pen*x'*x;
+%     % actuation constraint
+%     objective = objective + input_pen*(M{k}*xt)'*(M{k}*xt);
+
+      objective = objective + [0 0 1]*R{k}*xt;
+      objective = objective + input_pen*[1 1 1]*M{k}*xt; % since u is negative
+
 end
 
-minimize(objective)
+maximize(objective)
+%minimize(objective)
 subject to
 
 % Achievability constraints

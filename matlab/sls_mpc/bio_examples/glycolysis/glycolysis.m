@@ -12,7 +12,7 @@ a = 1;
 x0 = [1.1; 1.1; 0.1];
 
 % simulation length
-tHorizon = 50;
+tHorizon = 30;
 
 % SLS length
 tFIR = 4;
