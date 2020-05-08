@@ -9,16 +9,16 @@ k = [2 4 1];
 a = 1;
 
 % initial conditions
-x0 = [1.1; 1.1; 0.1];
+x0 = [0.6; 0.6; 0.1];
 
 % simulation length
-tHorizon = 30;
+tHorizon = 40;
 
 % SLS length
-tFIR = 4;
+tFIR = 20;
 
 % disturbance (step)
-ws = -1.1 * ones(1, tHorizon);
+ws = -1.2 * ones(1, tHorizon);
 
 % sampling time for discretization
 Ts = 0.1;
@@ -48,7 +48,7 @@ for t=1:tHorizon-1
 
     [Ac, Bc]        = linearize_glyco(x_, u_, q, k, a);    
     [sys.A, sys.B2] = discretize(Ac, Bc, Ts);
-    
+        
     % coordinate shift bounds
     u_tilde_ub  = u_ub - u_;
     x_tilde_lb  = x_lb - x_;
@@ -59,7 +59,13 @@ for t=1:tHorizon-1
     y_lb    = x_tilde_lb + y_shift;
     y_ref   = x_tilde_ref + y_shift;
     
-    [y, u_tilde] = mpc_glyco(sys, tFIR, y_lb, u_tilde_ub, yt, y_ref);
+    kstart=1;
+    [y, u_tilde, status] = mpc_glyco(sys, tFIR, y_lb, u_tilde_ub, yt, y_ref, kstart);
+
+    while strcmp(status, 'Infeasible')
+        kstart = kstart + 1;
+        [y, u_tilde, status] = mpc_glyco(sys, tFIR, y_lb, u_tilde_ub, yt, y_ref, kstart);
+    end
     
     % calculate x(t+1) from dynamics and u_tilde directly
     x_tilde_nxt = f_glyco(x_, u_, w_, q, k, a)*Ts + sys.B2*u_tilde;

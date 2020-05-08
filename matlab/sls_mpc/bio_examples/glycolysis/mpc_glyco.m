@@ -1,4 +1,4 @@
-function [x_nxt, u] = mpc_glyco(sys, tFIR, x_lb, u_ub, xt, x_ref)
+function [x_nxt, u, status] = mpc_glyco(sys, tFIR, x_lb, u_ub, xt, x_ref, kstart)
 % Note that these are "x, u" in the local sense of mpc
 % In the bilophila example, they are y and u_tilde (shifted coordinates)
 
@@ -14,7 +14,7 @@ for k = 1:tFIR
     count = count + sum(sum(RSupp{k})) + sum(sum(MSupp{k}));
 end
 
-cvx_begin
+cvx_begin quiet
 
 variable X(count)
 expression Rs(Nx, Nx, tFIR)
@@ -58,8 +58,12 @@ for k=1:tFIR-1
     R{k+1} == A*R{k} + B*M{k};
 end
 
+    
 for k=1:tFIR
      M{k}*xt <= u_ub;
+end
+
+for k=kstart:tFIR
      R{k}*xt >= x_lb;
 end
 
@@ -67,5 +71,7 @@ cvx_end
 
 u     = M{1}*xt;
 x_nxt = R{2}*xt;
+
+status = cvx_status;
 
 end
