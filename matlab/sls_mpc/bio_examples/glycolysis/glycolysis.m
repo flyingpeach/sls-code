@@ -36,7 +36,7 @@ us      = zeros(Nu, tHorizon);
 xs(:,1) = x0;
 
 u_ub  = zeros(Nu, 1);
-x_lb  = 1e-3 * ones(Nx, 1);
+x_lb  = [1e-3; 0.5; 1e-3];
 x_ref = [1; 1; 1];
 
 for t=1:tHorizon-1
