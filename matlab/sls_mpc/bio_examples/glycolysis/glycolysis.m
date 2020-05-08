@@ -5,7 +5,7 @@ clear all; close all; clc;
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 % model parameters
 q = 0.8;
-k = [2 4 0];
+k = [2 4 1];
 a = 1;
 
 % initial conditions
@@ -73,11 +73,16 @@ for t=1:tHorizon-1
 end
 
 %% Plot
-figure(); 
-hold on;
+figure();
 
+subplot(2,1,1);
+hold on;
 for i=1:2
     plot(1:tHorizon, xs(i,:));
 end
-
+ylabel('x1, x2');
 legend('x1 (intermeds)', 'x2 (atp)');
+
+subplot(2,1,2);
+plot(1:tHorizon, xs(3,:));
+ylabel('x3 (growth)');
