@@ -4,8 +4,8 @@ function [x_nxt, u, status] = mpc_glyco(sys, tFIR, x_lb, u_lb, u_ub, xt, relax)
 
 Nx = sys.Nx; Nu = sys.Nu; A = sys.A; B = sys.B2;
 
-RLoc = ones(Nx, Nx); % no sparsity constraint
-MLoc = ones(Nu, Nx);
+RLoc = sys.A~=0;
+MLoc = sys.B2~=0;
 
 count = 0;
 for k = 1:tFIR
