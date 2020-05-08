@@ -41,7 +41,6 @@ xs(:,1) = x0;
 u_lb  = zeros(Nu, 1);
 u_ub  = ones(Nu, 1);
 x_lb  = [1e-3; 0.5; 1e-3];
-x_ref = [1; 1; 1];
 
 for t=1:tHorizon-1
     fprintf('Time: %d\n', t);
@@ -57,23 +56,20 @@ for t=1:tHorizon-1
     u_tilde_lb  = u_lb - u_;
     u_tilde_ub  = u_ub - u_;
     x_tilde_lb  = x_lb - x_;
-    x_tilde_ref = x_ref - x_;
     
     y_shift = pinv(sys.A - eye(Nx)) * f_glyco(x_, u_, w_, q, k, a)*Ts;
     yt      = y_shift;
     y_lb    = x_tilde_lb + y_shift;
-    y_ref   = x_tilde_ref + y_shift;
     
-    kstart=1;
-    [y, u_tilde, status] = mpc_glyco(sys, tFIR, y_lb, u_tilde_lb, u_tilde_ub, yt, y_ref, kstart);
+    relax = false;
+    [y, u_tilde, status] = mpc_glyco(sys, tFIR, y_lb, u_tilde_lb, u_tilde_ub, yt, relax);
 
     % Due to linearization errors, sometimes a previous step
     % will yield a solution that does not satisfy the state bounds
-    % then R{1}*xt will cause infeasibility
-    % to solve this problem, omit R{1}*xt from the calculation
-    while strcmp(status, 'Infeasible')
-        kstart = kstart + 1;
-        [y, u_tilde, status] = mpc_glyco(sys, tFIR, y_lb, u_tilde_lb, yt, y_ref, kstart);
+    % in this case, try relaxing the constraint R{1}*xt >= x_lb 
+    if strcmp(status, 'Infeasible')
+        relax = true;
+        [y, u_tilde, status] = mpc_glyco(sys, tFIR, y_lb, u_tilde_lb, u_tilde_ub, yt, relax);
     end
     
     % calculate x(t+1) from dynamics and u_tilde directly
