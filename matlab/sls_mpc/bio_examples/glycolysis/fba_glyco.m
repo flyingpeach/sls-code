@@ -27,8 +27,7 @@ Ts = 0.1;
 % stoichiometry matrix
 Nx = 3;
 S = [ 1   -1  0;
-     -q  q+1 -1
-      0    0  1];
+     -q  q+1 -1];
 
 K = diag(k);
 
@@ -36,7 +35,7 @@ xs      = zeros(Nx, tHorizon);
 fluxes  = zeros(Nx, tHorizon);
 xs(:,1) = x0;
 
-e2 = [0 1 0]';
+e2 = [0 1]';
 
 for t = 1:tHorizon-1
 
@@ -55,9 +54,9 @@ for t = 1:tHorizon-1
     flux = K*v;
     
     % update state
-    deltax    = (S*flux + e2*ws(t+1)) * Ts;
-    xs(:,t+1) = xs(:,t) + deltax;
-    
+    deltax      = (S*flux + e2*ws(t+1)) * Ts;
+    xs(1:2,t+1) = xs(1:2,t) + deltax;
+    xs(3,t+1)   = xs(3,t) + flux(3)*Ts;
 end
 %% Plot
 figure();
