@@ -4,7 +4,7 @@ clear all; close all; clc;
 rng(420);
 sys1    = LTISystem;
 sys1.Nx = 8; 
-alpha = 0.8; rho = 1; actDens = 0.6; 
+alpha = 0.8; rho = 2; actDens = 0.6; 
 generate_dbl_stoch_chain(sys1, rho, actDens, alpha);
 x01 = rand(sys1.Nx, 1);
 
@@ -27,11 +27,11 @@ params1.mode_   = MPCMode.Distributed;
 params1.mode_   = MPCMode.Centralized;
 [xVal, uVal, ~] = sls_mpc(sys1, x01, params1);
 
-printAndPlot(params1, x, u, xVal, uVal, 'Alg1, no constraints');
+printAndPlot(params1, x, u, xVal, uVal, 'Alg1, no constraints', 1);
 
 %% Algorithm 1, with state ub
 params1.stateConsMtx_ = eye(sys1.Nx);
-params1.stateUB_      = 1;
+params1.stateLB_      = -0.4;
 
 params1.mode_   = MPCMode.Distributed;
 [x, u, ~]       = sls_mpc(sys1, x01, params1);
@@ -39,12 +39,12 @@ params1.mode_   = MPCMode.Distributed;
 params1.mode_   = MPCMode.Centralized;
 [xVal, uVal, ~] = sls_mpc(sys1, x01, params1);
 
-printAndPlot(params1, x, u, xVal, uVal, 'Alg1, state ub');
+printAndPlot(params1, x, u, xVal, uVal, 'Alg1, state lb', 1);
 
 %% Algorithm 1, with state lb + ub
 params1.stateConsMtx_ = eye(sys1.Nx);
-params1.stateUB_      = 1;
-params1.stateLB_      = 0;
+params1.stateUB_      = 1.7;
+params1.stateLB_      = -0.4;
 
 params1.mode_   = MPCMode.Distributed;
 [x, u, ~]       = sls_mpc(sys1, x01, params1);
@@ -52,12 +52,12 @@ params1.mode_   = MPCMode.Distributed;
 params1.mode_   = MPCMode.Centralized;
 [xVal, uVal, ~] = sls_mpc(sys1, x01, params1);
 
-printAndPlot(params1, x, u, xVal, uVal, 'Alg1, state lb + ub');
+printAndPlot(params1, x, u, xVal, uVal, 'Alg1, state lb + ub', 1);
 
 %% Algorithm 2 setup plant + parameters
 sys2    = LTISystem;
 sys2.Nx = 4; 
-alpha = 0.8; rho = 1; actDens = 0.5; 
+alpha = 0.8; rho = 1.2; actDens = 0.5; 
 generate_dbl_stoch_chain(sys2, rho, actDens, alpha);
 x02 = rand(sys2.Nx, 1);
 
@@ -80,14 +80,9 @@ params2.Q_ = diag(ones(Nx,1)) + diag(-1/2*ones(Nx-2,1),2) + diag(-1/2*ones(Nx-2,
 params2.R_ = eye(sys2.Nu);
 
 % Constraints
-for i = 1:2:2*(Nx-1)
-    K(i,i)     = 1; 
-    K(i,i+2)   = -1;
-    K(i+1,i)   = -1; 
-    K(i+1,i+2) = 1;
-end
-K            = K(1:Nx,1:Nx); 
-K(Nx-1:Nx,:) = zeros(2,Nx);
+K = zeros(Nx);
+K(1,1) = 1; K(1,3) = 1;
+K(2,2) = 1; K(2,4) = 1;
 
 %% Algorithm 2, no constraints
 params2.mode_   = MPCMode.Distributed;
@@ -96,11 +91,11 @@ params2.mode_   = MPCMode.Distributed;
 params2.mode_   = MPCMode.Centralized;
 [xVal, uVal, ~] = sls_mpc(sys2, x02, params2);
 
-printAndPlot(params2, x, u, xVal, uVal, 'Alg2, no constriants');
+printAndPlot(params2, x, u, xVal, uVal, 'Alg2, no constraints', [1,3]);
 
 %% Algorithm 2, with state ub
 params2.stateConsMtx_ = K;
-params2.stateUB_      = 0.8;
+params2.stateUB_      = 1.4;
 
 params2.mode_   = MPCMode.Distributed;
 [x, u, ~]       = sls_mpc(sys2, x02, params2);
@@ -108,12 +103,12 @@ params2.mode_   = MPCMode.Distributed;
 params2.mode_   = MPCMode.Centralized;
 [xVal, uVal, ~] = sls_mpc(sys2, x02, params2);
 
-printAndPlot(params2, x, u, xVal, uVal, 'Alg2, with state ub');
+printAndPlot(params2, x, u, xVal, uVal, 'Alg2, with state ub', [1,3]);
 
 %% Algorithm 2, with state lb + ub
 params2.stateConsMtx_ = K;
-params2.stateUB_      = 0.8;
-params2.stateLB_      = -0.8;
+params2.stateUB_      = 1.3;
+params2.stateLB_      = 0;
 
 params2.mode_   = MPCMode.Distributed;
 [x, u, ~]       = sls_mpc(sys2, x02, params2);
@@ -121,10 +116,10 @@ params2.mode_   = MPCMode.Distributed;
 params2.mode_   = MPCMode.Centralized;
 [xVal, uVal, ~] = sls_mpc(sys2, x02, params2);
 
-printAndPlot(params2, x, u, xVal, uVal, 'Alg2, with state lb + ub');
+printAndPlot(params2, x, u, xVal, uVal, 'Alg2, with state lb + ub', [1,3]);
  
 %% Local function to print values + plot graphs
-function printAndPlot(params, x, u, xVal, uVal, myTitle)
+function printAndPlot(params, x, u, xVal, uVal, myTitle, states)
     % Calculate costs + plot 
     tSim   = params.tHorizon_;
     obj    = get_cost_fn(params, x, u);
@@ -133,11 +128,16 @@ function printAndPlot(params, x, u, xVal, uVal, myTitle)
     % Print costs (sanity check: should be close)
     fprintf('Distributed cost: %f\n', obj);
     fprintf('Centralized cost: %f\n', objVal);
-
-    figure()
-    plot(1:tSim+1,xVal(1,:),'b',1:tSim+1,x(1,:),'*b')
+    
+    figure(); hold on;
+    
+    for i=1:length(states)
+        state = states(i);
+        plot(1:tSim+1,xVal(state,:),'b',1:tSim+1,x(state,:),'*b')
+    end
+    
     xlabel('Time');
-    ylabel('State (1st only)');
+    ylabel('States');
     legend('Centralized', 'Distributed');
     title(myTitle);
 end
