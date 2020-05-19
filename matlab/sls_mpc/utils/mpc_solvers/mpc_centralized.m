@@ -18,44 +18,33 @@ x(:,1) = x0;
 
 totalTime = 0;
 
+% sparsity / support is locality-only, doesn't change with time
+Comms_Adj = abs(A)>0;
+RSupp     = Comms_Adj^(locality-1) > 0;
+MSupp     = (abs(sys.B2)' * RSupp) > 0;
+suppR     = find(RSupp);
+suppM     = find(MSupp);
+count     = tFIR * (length(suppR) + length(suppM));
+
 for t = 1:tHorizon
     fprintf('Calculating time %d of %d\n', t, tHorizon); % display progress
-    x_t = x(:,t);
-
-    clear LocalityR LocalityM
-    Comms_Adj = abs(A)>0;
-    LocalityR = Comms_Adj^(locality-1)>0;
-    
-    count = 0;
-    for k = 1:tFIR
-        Rsupport{k} = LocalityR>0;
-        Msupport{k} = (abs(B)'*Rsupport{k})>0;
-        count = count + sum(sum(Rsupport{k}))+sum(sum(Msupport{k}));
-    end
-    
+    x_t = x(:,t);    
+  
     cvx_begin quiet
     cvx_precision low
     
-    variable X(count)
     expression Rs(Nx,Nx,tFIR)
     expression Ms(Nu,Nx,tFIR)
-    
-    R = cell(1, tFIR);
-    M = cell(1, tFIR);
+    variable RMSupp(count)
     
     spot = 0;
     for k = 1:tFIR
-        R{k} = Rs(:,:,k);
-        supp = find(Rsupport{k});
-        num = sum(sum(Rsupport{k}));
-        R{k}(supp) = X(spot+1:spot+num);
-        spot = spot + num;
-        
-        M{k} = Ms(:,:,k);
-        supp = find(Msupport{k});
-        num = sum(sum(Msupport{k}));
-        M{k}(supp) = X(spot+1:spot+num);
-        spot = spot + num;
+        R{k} = Rs(:,:,k); M{k} = Ms(:,:,k);
+
+        R{k}(suppR) = RMSupp(spot+1:spot+length(suppR));
+        spot        = spot + length(suppR);        
+        M{k}(suppM) = RMSupp(spot+1:spot+length(suppM));
+        spot        = spot + length(suppM);
     end
     
     % Set up objective function
