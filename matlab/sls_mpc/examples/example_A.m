@@ -12,7 +12,7 @@ params = MPCParams();
 
 params.locality_ = 3;
 params.tFIR_     = 20;
-params.tHorizon_ = 60;
+params.tHorizon_ = 20;
 params.eps_p_    = 1e-4;
 params.eps_d_    = 1e-3;
 
@@ -36,19 +36,19 @@ plot(1:tSim+1, xOpen(1,:), 1:tSim+1, xOpen(3,:));
 %% Case 1
 params.maxIters_ = 5000;
 params.rho_      = 5;
-params.solnMode_ = MPCSolMode.ClosedForm;
+params.Q_        = eye(Nx);
 
-params.Q_ = eye(Nx);
+params.mode_ = MPCMode.Distributed;
+[x1, u1, ~]  = sls_mpc(sys, x0, params);
 
-[x1, u1, ~]       = mpc_algorithm_1(sys, x0, params);
-[xVal1, uVal1, ~] = mpc_centralized(sys, x0, params);
+params.mode_      = MPCMode.Centralized;
+[xVal1, uVal1, ~] = sls_mpc(sys, x0, params);
 
 printAndPlot(params, x1, u1, xVal1, uVal1, 'Case 1');
 
 %% Case 2
 params.maxIters_ = 5000;
 params.rho_      = 1;
-params.solnMode_ = MPCSolMode.ClosedForm;
 
 params.maxItersCons_ = 200;
 params.mu_           = 1;
@@ -67,42 +67,39 @@ for i = 1:2:Nx
     end
 end
 
-[x2, u2, ~]       = mpc_algorithm_2(sys, x0, params);
-[xVal2, uVal2, ~] = mpc_centralized(sys, x0, params);
+params.mode_ = MPCMode.Distributed;
+[x2, u2, ~]  = sls_mpc(sys, x0, params);
+
+params.mode_      = MPCMode.Centralized;
+[xVal2, uVal2, ~] = sls_mpc(sys, x0, params);
 
 printAndPlot(params, x2, u2, xVal2, uVal2, 'Case 2');
 
 %% Case 3
 params.maxIters_ = 5000;
 params.rho_      = 300;
-params.solnMode_ = MPCSolMode.UseSolver;
 
 params.maxItersCons_ = 500;
 params.mu_           = 50;
 
-params.stateUpperbnd_ = 0.05;
-
 % Constraints
 for i = 1:2:2*(Nx-1)
-    K1(i,i)     = 1; 
-    K1(i,i+2)   = -1;
-    K1(i+1,i)   = -1; 
-    K1(i+1,i+2) = 1;
+    K(i,i)     = 1; 
+    K(i,i+2)   = -1;
+    K(i+1,i)   = -1; 
+    K(i+1,i+2) = 1;
 end
-K1            = K1(1:Nx,1:Nx); 
-K1(Nx-1:Nx,:) = zeros(2,Nx);
-  
-params.constraintMtx_ = zeros(2*Nx,Nx); j = 0;
-for i = 1:2*Nx
-    if mod(i,4) == 1 || mod(i,4) == 2
-        j = j + 1;
-        params.constraintMtx_(i,:) = K1(j,:);
-    else
-    end
-end
+K            = K(1:Nx,1:Nx); 
+K(Nx-1:Nx,:) = zeros(2,Nx);
 
-[x3, u3, ~]       = mpc_algorithm_2(sys, x0, params);
-[xVal3, uVal3, ~] = mpc_centralized(sys, x0, params);
+params.stateConsMtx_ = K;
+params.stateUB_      = 0.05;
+
+params.mode_ = MPCMode.Distributed;
+[x3, u3, ~]  = sls_mpc(sys, x0, params);
+
+params.mode_      = MPCMode.Centralized;
+[xVal3, uVal3, ~] = sls_mpc(sys, x0, params);
 
 printAndPlot(params, x3, u3, xVal3, uVal3, 'Case 3');
 
