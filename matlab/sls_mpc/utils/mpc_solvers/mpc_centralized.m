@@ -64,7 +64,7 @@ for t = 1:tHorizon
     end
     
     if params.has_state_cons()
-        for k=1:tFIR
+        for k=2:tFIR % since we only care about later states
             if ~isinf(params.stateUB_)
                 params.stateConsMtx_*R{k}*x_t <= params.stateUB_*ones(Nx, 1);
             end
