@@ -104,16 +104,13 @@ for t = 1:tHorizon
                     c_    = C(row, cpIdx{row});
                     
                     isState   = row <= tFIR*Nx; % row represents state
-                    stateCons = isState && params.has_state_cons() && params.stateConsMtx_(i,i);
+                    stateCons = isState && params.has_state_cons() && ~isempty(params.stateConsMtx_(i,:));
 
                     % TODO: assumes no input cons
                     if stateCons
                         k_ = K(2*row-1:2*row, cpIdx{row});
-                        m   = params.stateConsMtx_(i,i);
-                        b1_ = params.stateUB_ / m;
-                        b2_ = params.stateLB_ / m;
-                        ub  = max(b1_,b2_); % in case of negative signs
-                        lb = min(b1_,b2_);
+                        ub = params.stateUB_;
+                        lb = params.stateLB_;
                         
                         [Phi_rows{row}, X_rows{row}] = eqn_20a_solver(x_loc, Psi_rows{row}, Lambda_rows{row}, Y_rows{row}, Z_rows, ...
                                                                       k_, c_, cpIdx{row}, i_, params, ub, lb);
