@@ -14,7 +14,7 @@ function [x, u, avgTime, avgIter] = mpc_algorithm_1(sys, x0, params)
 % calculations exclude the first mpc iteration to omit warmup effects
 
 %% Setup
-fprintf('MPC Algorithm 1\n')
+fprintf('Distributed MPC, Algorithm 1\n')
 params.sanity_check_alg_1();
 
 % For ease of notation

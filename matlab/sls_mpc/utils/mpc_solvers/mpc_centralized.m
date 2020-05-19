@@ -1,5 +1,8 @@
 function [x, u, avgTime] = mpc_centralized(sys, x0, params)
 
+fprintf('Centralized MPC\n')
+params.sanity_check_cent();
+
 Nx = sys.Nx; Nu = sys.Nu; A = sys.A; B = sys.B2;
 
 locality = params.locality_;
@@ -16,7 +19,7 @@ x(:,1) = x0;
 totalTime = 0;
 
 for t = 1:tHorizon
-    fprintf('Validating time %d of %d\n', t, tHorizon); % display progress
+    fprintf('Calculating time %d of %d\n', t, tHorizon); % display progress
     x_t = x(:,t);
 
     clear LocalityR LocalityM

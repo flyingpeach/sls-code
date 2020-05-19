@@ -1,7 +1,10 @@
 classdef MPCParams < matlab.mixin.Copyable
     % Contains parameters for MPC problems
     
-    properties        
+    properties
+        % Centralized or distributed
+        mode_;
+        
         % Algorithm 1 and 2 ---------------------------------------       
         locality_;  % locality (d)
         
@@ -118,6 +121,21 @@ classdef MPCParams < matlab.mixin.Copyable
           sanity_check_input_cons(obj);
       end
       
+      function sanity_check_cent(obj)
+          e1 = isempty(obj.locality_);
+          e2  = isempty(obj.tFIR_);
+          e3  = isempty(obj.tHorizon_);
+          e4  = isempty(obj.Q_);
+          e5  = isempty(obj.R_);
+
+          if (e1 || e2 || e3 || e4 || e5)
+              mpc_error('One or more required parameters is missing!')
+          end 
+          
+          sanity_check_state_cons(obj);
+          sanity_check_input_cons(obj);
+      end          
+          
       function hasStateCons = has_state_cons(obj)
           hasStateCons = ~isempty(obj.stateConsMtx_);
       end
