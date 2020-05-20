@@ -55,10 +55,17 @@ params1.mode_   = MPCMode.Centralized;
 printAndPlot(params1, x, u, xVal, uVal, 'Alg1, state lb + ub', 1);
 
 %% Algorithm 2 setup plant + parameters
+rng(420);
 sys2    = LTISystem;
 sys2.Nx = 4; 
-alpha = 0.8; rho = 1.2; actDens = 0.5; 
+alpha = 0.8; rho = 2; actDens = 0.5; 
 generate_dbl_stoch_chain(sys2, rho, actDens, alpha);
+
+% manually set 3 actuators
+Nu = 3;
+sys2.Nu = Nu;
+sys2.B2 = [speye(Nu); sparse(1, Nu)];
+
 x02 = rand(sys2.Nx, 1);
 
 params2 = MPCParams();
@@ -91,11 +98,11 @@ params2.mode_   = MPCMode.Distributed;
 params2.mode_   = MPCMode.Centralized;
 [xVal, uVal, ~] = sls_mpc(sys2, x02, params2);
 
-printAndPlot(params2, x, u, xVal, uVal, 'Alg2, no constraints', [1,3]);
+printAndPlot(params2, x, u, xVal, uVal, 'Alg2, no constraints', [2,4]);
 
 %% Algorithm 2, with state ub
 params2.stateConsMtx_ = K;
-params2.stateUB_      = 1.4;
+params2.stateUB_      = 0.4;
 
 params2.mode_   = MPCMode.Distributed;
 [x, u, ~]       = sls_mpc(sys2, x02, params2);
@@ -103,11 +110,11 @@ params2.mode_   = MPCMode.Distributed;
 params2.mode_   = MPCMode.Centralized;
 [xVal, uVal, ~] = sls_mpc(sys2, x02, params2);
 
-printAndPlot(params2, x, u, xVal, uVal, 'Alg2, with state ub', [1,3]);
+printAndPlot(params2, x, u, xVal, uVal, 'Alg2, with state ub', [2,4]);
 
 %% Algorithm 2, with state lb + ub
 params2.stateConsMtx_ = K;
-params2.stateUB_      = 1.3;
+params2.stateUB_      = 0.4;
 params2.stateLB_      = 0;
 
 params2.mode_   = MPCMode.Distributed;
@@ -116,7 +123,7 @@ params2.mode_   = MPCMode.Distributed;
 params2.mode_   = MPCMode.Centralized;
 [xVal, uVal, ~] = sls_mpc(sys2, x02, params2);
 
-printAndPlot(params2, x, u, xVal, uVal, 'Alg2, with state lb + ub', [1,3]);
+printAndPlot(params2, x, u, xVal, uVal, 'Alg2, with state lb + ub', [2,4]);
  
 %% Local function to print values + plot graphs
 function printAndPlot(params, x, u, xVal, uVal, myTitle, states)
