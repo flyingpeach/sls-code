@@ -99,11 +99,13 @@ for t = 1:tHorizon
                 
                 for j = 1:length(r{i})
                     row   = r{i}(j);
-                    x_loc = x_t(s_r{i}{j}); % observe local state
-                    i_    = find(cpIdx{row} == row);
-                    c_    = C(row, cpIdx{row});
+                    x_loc = x_t(s_r{i}{j});          % observe local state
+                    self_ = find(cpIdx{row} == row); % index of "self-coupling" term
+                    cost_ = C(row, cpIdx{row});      % subset of cost matrix
                     
                     isState   = row <= tFIR*Nx; % row represents state
+                    % TODO: actually should check if constraint matrix K is
+                    % empty
                     stateCons = isState && params.has_state_cons() && ~isempty(params.stateConsMtx_(i,:));
 
                     % TODO: assumes no input cons
@@ -113,10 +115,10 @@ for t = 1:tHorizon
                         lb = params.stateLB_;
                         
                         [Phi_rows{row}, X_rows{row}] = eqn_20a_solver(x_loc, Psi_rows{row}, Lambda_rows{row}, Y_rows{row}, Z_rows, ...
-                                                                      k_, c_, cpIdx{row}, i_, params, ub, lb);
+                                                                      k_, cost_, cpIdx{row}, self_, params, ub, lb);
                     else
                         [Phi_rows{row}, X_rows{row}] = eqn_20a_closed(x_loc, Psi_rows{row}, Lambda_rows{row}, Y_rows{row}, Z_rows, ...
-                                                                      c_, cpIdx{row}, i_, params);
+                                                                      cost_, cpIdx{row}, self_, params);
                     end
                 end
                 
