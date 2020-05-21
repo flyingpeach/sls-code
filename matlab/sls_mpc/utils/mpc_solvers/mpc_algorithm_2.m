@@ -98,14 +98,13 @@ for t = 1:tHorizon
                 if t > 1 && i == 1; tic; end
                 
                 for j = 1:length(r{i})
-                    row   = r{i}(j);
-                    x_loc = x_t(s_r{i}{j});          % observe local state
-                    self_ = find(cpIdx{row} == row); % index of "self-coupling" term
-                    cost_ = C(row, cpIdx{row});      % subset of cost matrix
+                    row     = r{i}(j);
+                    x_loc   = x_t(s_r{i}{j});   % observe local state
+                    cps     = cpIdx{row};       % coupling indices for this row
+                    selfIdx = find(cps == row); % index of "self-coupling" term
                     
                     isState   = row <= tFIR*Nx; % row represents state
-                    % TODO: actually should check if constraint matrix K is
-                    % empty
+                    % TODO: actually should check if constraint matrix K is empty
                     stateCons = isState && params.has_state_cons() && ~isempty(params.stateConsMtx_(i,:));
 
                     % TODO: assumes no input cons
@@ -115,10 +114,12 @@ for t = 1:tHorizon
                         lb = params.stateLB_;
                         
                         [Phi_rows{row}, X_rows{row}] = eqn_20a_solver(x_loc, Psi_rows{row}, Lambda_rows{row}, Y_rows{row}, Z_rows, ...
-                                                                      k_, cost_, cpIdx{row}, self_, params, ub, lb);
-                    else
-                        [Phi_rows{row}, X_rows{row}] = eqn_20a_closed(x_loc, Psi_rows{row}, Lambda_rows{row}, Y_rows{row}, Z_rows, ...
-                                                                      cost_, cpIdx{row}, self_, params);
+                                                                      k_, cost_, cpIdx{row}, selfIdx, params, ub, lb);
+                    else           
+                        [Phi_rows{row}, x_row] = eqn_20a_closed(x_loc, Psi_rows{row}, Lambda_rows{row}, Y_rows{row}(cps), Z_rows(cps), ...
+                                                                C(row, cps), selfIdx, params);
+                        X_rows{row} = zeros(nVals, 1);
+                        X_rows{row}(cpIdx{row}) = x_row;         
                     end
                 end
                 
