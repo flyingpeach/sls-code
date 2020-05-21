@@ -109,18 +109,16 @@ for t = 1:tHorizon
 
                     % TODO: assumes no input cons
                     if stateCons
-                        k_ = K(2*row-1:2*row, cpIdx{row});
-                        ub = params.stateUB_;
-                        lb = params.stateLB_;
+                        k_ = K(2*row-1:2*row, cps);
                         
-                        [Phi_rows{row}, X_rows{row}] = eqn_20a_solver(x_loc, Psi_rows{row}, Lambda_rows{row}, Y_rows{row}, Z_rows, ...
-                                                                      k_, cost_, cpIdx{row}, selfIdx, params, ub, lb);
+                        [Phi_rows{row}, x_row] = eqn_20a_solver(x_loc, Psi_rows{row}, Lambda_rows{row}, Y_rows{row}(cps), Z_rows(cps), ...
+                                                                      C(row, cps), k_, selfIdx, params);
                     else           
                         [Phi_rows{row}, x_row] = eqn_20a_closed(x_loc, Psi_rows{row}, Lambda_rows{row}, Y_rows{row}(cps), Z_rows(cps), ...
                                                                 C(row, cps), selfIdx, params);
-                        X_rows{row} = zeros(nVals, 1);
-                        X_rows{row}(cpIdx{row}) = x_row;         
                     end
+                    X_rows{row}             = zeros(nVals, 1);
+                    X_rows{row}(cpIdx{row}) = x_row;         
                 end
                 
                 if t > 1 && i == 1; totalTime = totalTime + toc; end             
