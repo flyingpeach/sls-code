@@ -104,15 +104,12 @@ for t = 1:tHorizon
                     selfIdx = find(cps == row); % index of "self-coupling" term
                     
                     isState   = row <= tFIR*Nx; % row represents state
-                    % TODO: actually should check if constraint matrix K is empty
-                    stateCons = isState && params.has_state_cons() && ~isempty(params.stateConsMtx_(i,:));
+                    stateCons = isState && params.has_state_cons() && ~all(params.stateConsMtx_(i,:) == 0);
 
                     % TODO: assumes no input cons
                     if stateCons
-                        k_ = K(2*row-1:2*row, cps);
-                        
                         [Phi_rows{row}, x_row] = eqn_20a_solver(x_loc, Psi_rows{row}, Lambda_rows{row}, Y_rows{row}(cps), Z_rows(cps), ...
-                                                                      C(row, cps), k_, selfIdx, params);
+                                                                C(row, cps), K(row, cps), selfIdx, params);
                     else           
                         [Phi_rows{row}, x_row] = eqn_20a_closed(x_loc, Psi_rows{row}, Lambda_rows{row}, Y_rows{row}(cps), Z_rows(cps), ...
                                                                 C(row, cps), selfIdx, params);

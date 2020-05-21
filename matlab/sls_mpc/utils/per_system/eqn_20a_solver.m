@@ -13,15 +13,17 @@ a = psi_ - lamb_;
 % note: constant terms omitted since we are interested in argmin only
 model.Q   = sparse((cost_*M2)'*(cost_*M2) + rho/2*(M1'*M1) + mu/2*(MSum));
 model.obj = -rho*a*M1 -mu*MbSum';
-model.A   = sparse(k_*M2);
 
 if isinf(lb)
-    model.rhs   = [ub ub];
+    model.A     = sparse(k_*M2);
+    model.rhs   = ub;
     model.sense = '<';
 elseif isinf(ub)
-    model.rhs   = [lb lb];
+    model.A     = sparse(k_*M2);
+    model.rhs   = lb;
     model.sense = '>';
 else
+    model.A     = sparse([k_; k_]*M2);
     model.rhs   = [ub lb]; 
     model.sense = '<>';
 end
