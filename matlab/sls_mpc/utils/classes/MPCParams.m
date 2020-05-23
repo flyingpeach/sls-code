@@ -39,9 +39,6 @@ classdef MPCParams < matlab.mixin.Copyable
         inputUB_; % upper bound on inputConsMtx_ * input;
         inputLB_; % lower bound on inputConsMtx_ * input;
     end
-    
-    % TODO: check cost/constraint matrices should be locality-limited
-    % TODO: require quasi-diagonal B2 matrix
 
     methods
       function sanity_check_params_1(obj)
@@ -125,7 +122,7 @@ classdef MPCParams < matlab.mixin.Copyable
               obj.inputLB_ = -Inf;
           end
       end         
- 
+             
       function sanity_check_alg_1(obj)
           sanity_check_params_1(obj);
           sanity_check_state_cons(obj);
@@ -139,7 +136,7 @@ classdef MPCParams < matlab.mixin.Copyable
       end
       
       function sanity_check_cent(obj)
-          e1 = isempty(obj.locality_);
+          e1  = isempty(obj.locality_);
           e2  = isempty(obj.tFIR_);
           e3  = isempty(obj.tHorizon_);
           e4  = isempty(obj.QSqrt_);
