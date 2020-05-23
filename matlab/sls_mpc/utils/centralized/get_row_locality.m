@@ -5,7 +5,6 @@ Nx = sys.Nx; Nu = sys.Nu;
 r     = cell(1, Nx);
 s_r   = cell(1, Nx);
 
-% TODO: this only works for quasi-diagonal B2 matrix
 actuator = 0;
 
 for i = 1:Nx

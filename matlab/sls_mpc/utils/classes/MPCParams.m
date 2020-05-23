@@ -40,11 +40,9 @@ classdef MPCParams < matlab.mixin.Copyable
         inputLB_; % lower bound on inputConsMtx_ * input;
     end
     
-    % TODO: dimension check cost and constraint matrices
-    %       it's possible to have constraint matrices be huge but 
-    %       allow maximum of Nx/Nu for the moment
     % TODO: check cost/constraint matrices should be locality-limited
-    
+    % TODO: require quasi-diagonal B2 matrix
+
     methods
       function sanity_check_params_1(obj)
           e1  = isempty(obj.locality_);
@@ -87,6 +85,13 @@ classdef MPCParams < matlab.mixin.Copyable
               mpc_error('State bounds were specified with no corresponding matrix!');
           end
           
+          % Note: in theory it's possible to have constraint matrices
+          %       of arbitrary size, but here we limit # of constraints
+          %       to # of subsystems           
+          if hasStateMtx && ~isequal(size(obj.stateConsMtx_), size(obj.QSqrt_))
+              mpc_error('State constraint matrix is wrong size! Expect Nx by Nx');
+          end
+    
           % If only UB or only LB specified, populate other with Inf/-Inf
           if hasStateMtx && ~hasStateUB
               obj.stateUB_ = Inf;
@@ -105,7 +110,14 @@ classdef MPCParams < matlab.mixin.Copyable
           elseif ~hasInputMtx && (hasInputUB || hasInputLB)
               mpc_error('Input bounds were specified with no corresponding matrix!');
           end
-          
+
+          % Note: in theory it's possible to have constraint matrices
+          %       of arbitrary size, but here we limit # of constraints
+          %       to # of inputs
+          if hasInputMtx && ~isequal(size(obj.inputConsMtx_), size(obj.RSqrt_))
+              mpc_error('Input constraint matrix is wrong size! Expect Nu by Nu');
+          end
+
           % If only UB or only LB specified, populate other with Inf/-Inf
           if hasInputMtx && ~hasInputUB
               obj.inputUB_ = Inf;
