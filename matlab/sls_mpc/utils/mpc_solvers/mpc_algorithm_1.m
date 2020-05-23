@@ -31,9 +31,9 @@ Phi    = zeros(nVals, Nx);
 Psi    = zeros(nVals, Nx);
 Lambda = zeros(nVals, Nx);
 
-% Cost matrix
+% Cost matrices (both are diagonal)
 C = build_cost_mtx(params);
-K = build_constr_mtx(params);
+K = build_constr_mtx(sys, params);
 
 % State + control
 x       = zeros(Nx, tHorizon);

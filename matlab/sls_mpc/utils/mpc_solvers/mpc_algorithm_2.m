@@ -99,8 +99,16 @@ for t = 1:tHorizon
                     k_    = K(row, cps); % constraint
 
                     if ~all(k_ == 0) % has constraint
+                        if row <= Nx*tFIR % is state
+                            lb  = params.stateLB_;
+                            ub  = params.stateUB_;
+                        else % is input
+                            lb = params.inputLB_;
+                            ub = params.inputUB_;
+                        end
+                        
                         [Phi_rows{row}, x_row] = eqn_20a_solver(x_loc, Psi_rows{row}, Lambda_rows{row}, Y_rows{row}(cps), Z_rows(cps), ...
-                                                                cost_, k_, selfIdx, params);
+                                                                cost_, k_, selfIdx, lb, ub, params);
                     else           
                         [Phi_rows{row}, x_row] = eqn_20a_closed(x_loc, Psi_rows{row}, Lambda_rows{row}, Y_rows{row}(cps), Z_rows(cps), ...
                                                                 cost_, selfIdx, params);

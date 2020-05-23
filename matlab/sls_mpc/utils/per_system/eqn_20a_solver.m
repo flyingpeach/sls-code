@@ -1,9 +1,7 @@
 function [phi_, x_] = eqn_20a_solver(x_loc, psi_, lamb_, y_, z_, ...
-                                     cost_, k_, selfIdx, params)        
+                                     cost_, k_, selfIdx, lb, ub, params)        
 rho = params.rho_;
 mu  = params.mu_;
-ub  = params.stateUB_;
-lb  = params.stateLB_;
 
 [M1, M2, MSum, MbSum] = eqn_20a_common(x_loc, y_, z_, selfIdx);
 a = psi_ - lamb_;
