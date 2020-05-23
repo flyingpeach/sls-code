@@ -26,12 +26,11 @@ params1.mode_   = MPCMode.Distributed;
 
 params1.mode_   = MPCMode.Centralized;
 [xVal, uVal, ~] = sls_mpc(sys1, x01, params1);
-
 printAndPlot(params1, x, u, xVal, uVal, 'Alg1, no constraints', 1);
 
-%% Algorithm 1, with state ub
+%% Algorithm 1, with state lb
 params1.stateConsMtx_ = eye(sys1.Nx);
-params1.stateLB_      = -0.4;
+params1.stateLB_      = -0.5;
 
 params1.mode_   = MPCMode.Distributed;
 [x, u, ~]       = sls_mpc(sys1, x01, params1);
@@ -39,12 +38,12 @@ params1.mode_   = MPCMode.Distributed;
 params1.mode_   = MPCMode.Centralized;
 [xVal, uVal, ~] = sls_mpc(sys1, x01, params1);
 
-printAndPlot(params1, x, u, xVal, uVal, 'Alg1, state lb', 1);
+printAndPlot(params1, x, u, xVal, uVal, 'Alg1, state lb', [1:8]);
 
 %% Algorithm 1, with state lb + ub
 params1.stateConsMtx_ = eye(sys1.Nx);
 params1.stateUB_      = 1.7;
-params1.stateLB_      = -0.4;
+params1.stateLB_      = -0.5;
 
 params1.mode_   = MPCMode.Distributed;
 [x, u, ~]       = sls_mpc(sys1, x01, params1);

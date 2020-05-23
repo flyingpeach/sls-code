@@ -86,7 +86,7 @@ for t = 1:tHorizon
                     b1_ = params.stateUB_ / m;
                     b2_ = params.stateLB_ / m;
                     b1  = max(b1_,b2_); b2 = min(b1_,b2_); % in case of negative signs
-                    Phi_rows{row} = eqn_16a_explicit(x_loc, Psi_rows{row}, Lambda_rows{row}, b1, b2, rho);
+                    Phi_rows{row} = eqn_16a_explicit(x_loc, Psi_rows{row}, Lambda_rows{row}, b1, b2, cost_, rho);
                 else
                     Phi_rows{row} = eqn_16a_closed(x_loc, Psi_rows{row}, Lambda_rows{row}, cost_, rho); 
                 end
