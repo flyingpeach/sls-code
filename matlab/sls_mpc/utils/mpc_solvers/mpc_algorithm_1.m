@@ -31,6 +31,9 @@ Phi    = zeros(nVals, Nx);
 Psi    = zeros(nVals, Nx);
 Lambda = zeros(nVals, Nx);
 
+% Cost matrix
+C = build_cost_mtx(params);
+
 % State + control
 x       = zeros(Nx, tHorizon);
 u       = zeros(Nu, tHorizon);
@@ -71,6 +74,9 @@ for t = 1:tHorizon
                 row   = r{i}(j);
                 x_loc = x_t(s_r{i}{j}); % observe local state
                 
+                % no coupling in algorithm 1; so C is diagonal
+                cost_ = C(row, row);
+                
                 isState   = row <= tFIR*Nx; % row represents state
                 stateCons = isState && params.has_state_cons() && params.stateConsMtx_(i,i);
  
@@ -82,7 +88,7 @@ for t = 1:tHorizon
                     b1  = max(b1_,b2_); b2 = min(b1_,b2_); % in case of negative signs
                     Phi_rows{row} = eqn_16a_explicit(x_loc, Psi_rows{row}, Lambda_rows{row}, b1, b2, rho);
                 else
-                    Phi_rows{row} = eqn_16a_closed(x_loc, Psi_rows{row}, Lambda_rows{row}, rho); 
+                    Phi_rows{row} = eqn_16a_closed(x_loc, Psi_rows{row}, Lambda_rows{row}, cost_, rho); 
                 end
             end
             

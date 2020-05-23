@@ -17,8 +17,8 @@ params1.rho_      = 1;
 params1.eps_p_    = 1e-3;
 params1.eps_d_    = 1e-3;
 
-params1.Q_ = eye(sys1.Nx);
-params1.R_ = eye(sys1.Nu);
+params1.Q_ = diag(randi([1, 3], sys1.Nx, 1));
+params1.R_ = diag(randi([1, 3], sys1.Nu, 1));
 
 %% Algorithm 1, no constraints
 params1.mode_   = MPCMode.Distributed;
@@ -79,7 +79,7 @@ params2.eps_z_        = 1e-3;
 
 Nx = sys2.Nx;
 params2.Q_ = diag(ones(Nx,1)) + diag(-1/2*ones(Nx-2,1),2) + diag(-1/2*ones(Nx-2,1),-2);
-params2.R_ = eye(sys2.Nu);
+params2.R_ = diag(randi([1, 3], sys2.Nu, 1));
 
 % Constraints
 K = zeros(Nx);
