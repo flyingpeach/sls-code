@@ -33,6 +33,7 @@ Lambda = zeros(nVals, Nx);
 
 % Cost matrix
 C = build_cost_mtx(params);
+K = build_constr_mtx(params);
 
 % State + control
 x       = zeros(Nx, tHorizon);
@@ -71,23 +72,22 @@ for t = 1:tHorizon
             if t > 1 && i == 1; tic; end
             
             for j = 1:length(r{i})
+                % Note: Alg1 has no coupling, so C, K are diagonal
                 row   = r{i}(j);
                 x_loc = x_t(s_r{i}{j}); % observe local state
-                
-                % no coupling in algorithm 1; so C is diagonal
                 cost_ = C(row, row);
                 
-                isState   = row <= tFIR*Nx; % row represents state
-                stateCons = isState && params.has_state_cons() && params.stateConsMtx_(i,i);
- 
-                % TODO: assumes no input cons
-                if stateCons
-                    m   = params.stateConsMtx_(i,i);
-                    b1_ = params.stateUB_ / m;
-                    b2_ = params.stateLB_ / m;
+                if K(i,i) % has constraint
+                    if row <= tFIR*Nx % state constraint
+                        b1_ = params.stateUB_ / K(i,i);
+                        b2_ = params.stateLB_ / K(i,i);
+                    else % input constraint
+                        b1_ = params.inputUB_ / K(i,i);
+                        b2_ = params.inputLB_ / K(i,i);
+                    end
                     b1  = max(b1_,b2_); b2 = min(b1_,b2_); % in case of negative signs
                     Phi_rows{row} = eqn_16a_explicit(x_loc, Psi_rows{row}, Lambda_rows{row}, b1, b2, cost_, rho);
-                else
+                else % no constraint, use closed form
                     Phi_rows{row} = eqn_16a_closed(x_loc, Psi_rows{row}, Lambda_rows{row}, cost_, rho); 
                 end
             end

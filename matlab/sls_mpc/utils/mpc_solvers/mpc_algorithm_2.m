@@ -23,11 +23,8 @@ locality = params.locality_;
 tFIR     = params.tFIR_;
 tHorizon = params.tHorizon_;
 
-maxIters = params.maxIters_;
-rho      = params.rho_;
-
+maxIters     = params.maxIters_;
 maxItersCons = params.maxItersCons_;
-mu           = params.mu_;
 
 nVals = Nx*tFIR + Nu*(tFIR-1);
 % ADMM variables
@@ -98,16 +95,15 @@ for t = 1:tHorizon
                     cps     = cpIdx{row};       % coupling indices for this row
                     selfIdx = find(cps == row); % index of "self-coupling" term
                     
-                    isState   = row <= tFIR*Nx; % row represents state
-                    stateCons = isState && params.has_state_cons() && ~all(params.stateConsMtx_(i,:) == 0);
+                    cost_ = C(row, cps);
+                    k_    = K(row, cps); % constraint
 
-                    % TODO: assumes no input cons
-                    if stateCons
+                    if ~all(k_ == 0) % has constraint
                         [Phi_rows{row}, x_row] = eqn_20a_solver(x_loc, Psi_rows{row}, Lambda_rows{row}, Y_rows{row}(cps), Z_rows(cps), ...
-                                                                C(row, cps), K(row, cps), selfIdx, params);
+                                                                cost_, k_, selfIdx, params);
                     else           
                         [Phi_rows{row}, x_row] = eqn_20a_closed(x_loc, Psi_rows{row}, Lambda_rows{row}, Y_rows{row}(cps), Z_rows(cps), ...
-                                                                C(row, cps), selfIdx, params);
+                                                                cost_, selfIdx, params);
                     end
                     X_rows{row}             = zeros(nVals, 1);
                     X_rows{row}(cpIdx{row}) = x_row;         
