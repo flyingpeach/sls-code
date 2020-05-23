@@ -9,8 +9,8 @@ locality = params.locality_;
 tFIR     = params.tFIR_;   
 tHorizon = params.tHorizon_;          
 
-Q = params.Q_;
-S = params.R_; % use different letter to avoid confusion with SLS R
+QSqrt = params.QSqrt_;
+RSqrt = params.RSqrt_; % note this is not related to SLS R
 
 x      = zeros(Nx, tHorizon);
 u      = zeros(Nu, tHorizon);
@@ -50,7 +50,7 @@ for t = 1:tHorizon
     % Set up objective function
     objective = 0;
     for k = 1:tFIR
-        vect = vec([Q zeros(Nx,Nu); zeros(Nu,Nx) S]*[R{k};M{k}]*x_t);
+        vect = vec([QSqrt zeros(Nx,Nu); zeros(Nu,Nx) RSqrt]*[R{k};M{k}]*x_t);
         objective = objective + vect'*vect;
     end
 

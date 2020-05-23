@@ -17,8 +17,8 @@ params1.rho_      = 1;
 params1.eps_p_    = 1e-3;
 params1.eps_d_    = 1e-3;
 
-params1.Q_ = diag(randi([1, 3], sys1.Nx, 1));
-params1.R_ = diag(randi([1, 3], sys1.Nu, 1));
+params1.QSqrt_ = diag(randi([1, 3], sys1.Nx, 1));
+params1.RSqrt_ = diag(randi([1, 3], sys1.Nu, 1));
 
 %% Algorithm 1, no constraints
 params1.mode_   = MPCMode.Distributed;
@@ -26,6 +26,7 @@ params1.mode_   = MPCMode.Distributed;
 
 params1.mode_   = MPCMode.Centralized;
 [xVal, uVal, ~] = sls_mpc(sys1, x01, params1);
+
 printAndPlot(params1, x, u, xVal, uVal, 'Alg1, no constraints', 1);
 
 %% Algorithm 1, with state lb
@@ -38,7 +39,7 @@ params1.mode_   = MPCMode.Distributed;
 params1.mode_   = MPCMode.Centralized;
 [xVal, uVal, ~] = sls_mpc(sys1, x01, params1);
 
-printAndPlot(params1, x, u, xVal, uVal, 'Alg1, state lb', [1:8]);
+printAndPlot(params1, x, u, xVal, uVal, 'Alg1, state lb', 1);
 
 %% Algorithm 1, with state lb + ub
 params1.stateConsMtx_ = eye(sys1.Nx);
@@ -77,8 +78,8 @@ params2.eps_x_        = 1e-3;
 params2.eps_z_        = 1e-3;
 
 Nx = sys2.Nx;
-params2.Q_ = diag(ones(Nx,1)) + diag(-1/2*ones(Nx-2,1),2) + diag(-1/2*ones(Nx-2,1),-2);
-params2.R_ = diag(randi([1, 3], sys2.Nu, 1));
+params2.QSqrt_ = diag(ones(Nx,1)) + diag(-1/2*ones(Nx-2,1),2) + diag(-1/2*ones(Nx-2,1),-2);
+params2.RSqrt_ = diag(randi([1, 3], sys2.Nu, 1));
 
 % Constraints
 K = zeros(Nx);

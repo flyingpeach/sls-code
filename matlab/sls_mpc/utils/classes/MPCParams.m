@@ -18,8 +18,8 @@ classdef MPCParams < matlab.mixin.Copyable
         eps_p_; % convergence criterion for ||Phi(k+1) - Psi(k+1)|| 
         eps_d_; % convergence criterion for ||Psi(k+1) - Psi(k)||
         
-        Q_; % penalty for state
-        R_; % penalty for input
+        QSqrt_; % penalty for state (square-root)
+        RSqrt_; % penalty for input (square-root)
 
         % Algorithm 2 only ----------------------------------------
         maxItersCons_; % maximum allowed iterations for ADMM consensus
@@ -49,8 +49,8 @@ classdef MPCParams < matlab.mixin.Copyable
           e5  = isempty(obj.rho_);
           e6  = isempty(obj.eps_p_);
           e7  = isempty(obj.eps_d_);
-          e8  = isempty(obj.Q_);
-          e9  = isempty(obj.R_);
+          e8  = isempty(obj.QSqrt_);
+          e9  = isempty(obj.RSqrt_);
           
           if (e1 || e2 || e3 || e4 || e5 || e6 || e7 || e8 || e9)
               mpc_error('One or more required parameters is missing!')
@@ -125,8 +125,8 @@ classdef MPCParams < matlab.mixin.Copyable
           e1 = isempty(obj.locality_);
           e2  = isempty(obj.tFIR_);
           e3  = isempty(obj.tHorizon_);
-          e4  = isempty(obj.Q_);
-          e5  = isempty(obj.R_);
+          e4  = isempty(obj.QSqrt_);
+          e5  = isempty(obj.RSqrt_);
 
           if (e1 || e2 || e3 || e4 || e5)
               mpc_error('One or more required parameters is missing!')
@@ -146,7 +146,7 @@ classdef MPCParams < matlab.mixin.Copyable
       
       function hasCoupling = has_coupling(obj)
           % at least one non-diagonal cost / constraint matrix
-          hasCoupling = ~(isdiag(obj.Q_) && isdiag(obj.R_) && isdiag(obj.stateConsMtx_) && isdiag(obj.inputConsMtx_));
+          hasCoupling = ~(isdiag(obj.QSqrt_) && isdiag(obj.RSqrt_) && isdiag(obj.stateConsMtx_) && isdiag(obj.inputConsMtx_));
       end
       
     end
