@@ -78,11 +78,11 @@ for t = 1:tHorizon
     if params.has_input_cons()
         for k=1:tFIR
             if ~isinf(params.inputUB_)
-                params.inputConsMtx_*M{k}*x_t <= params.stateUB_*ones(Nu, 1);
+                params.inputConsMtx_*M{k}*x_t <= params.inputUB_*ones(Nu, 1);
             end
             
             if ~isinf(params.inputLB_)
-                params.inputConsMtx_*M{k}*x_t >= params.stateLB_*ones(Nu, 1);
+                params.inputConsMtx_*M{k}*x_t >= params.inputLB_*ones(Nu, 1);
             end
         end
         
