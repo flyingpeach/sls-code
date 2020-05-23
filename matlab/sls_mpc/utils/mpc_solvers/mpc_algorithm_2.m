@@ -39,13 +39,9 @@ Z_rows = cell(nVals, 1);
 
 % Constraints, costs, and coupling info
 
-% TODO: assumes no input constraints
-if params.has_state_cons()
-    K = build_constr_mtx(sys, params);
-end
-
 C     = build_cost_mtx(params);
-cpIdx = get_coupling_indices(C);
+K     = build_constr_mtx(sys, params);
+cpIdx = get_coupling_indices(C, K);
 
 for row = 1:nVals % Initialize Y, Z
     if ~isempty(cpIdx{row})
@@ -53,7 +49,6 @@ for row = 1:nVals % Initialize Y, Z
         for k = cpIdx{row}
             Y_rows{row}{k} = 0;
         end
-    else
     end
 end
 
@@ -124,15 +119,15 @@ for t = 1:tHorizon
             % Step 6: Update Z (Step 5 implicitly done in this step)
             for i = 1:Nx
                 if t > 1 && i == 1; tic; end
-                for row = r{i}
+                for row = r{i} 
                     Z_rows{row} = 0;
-                    for k = cpIdx{row}
+                    for k = cpIdx{row}                        
                         Z_rows{row} = Z_rows{row} + (X_rows{k}(row)+Y_rows{k}{row})/length(cpIdx{row});
                     end
                 end
                 if t > 1 && i == 1; totalTime = totalTime + toc; end
             end
-       
+
             % Step 8: Update Y (Step 7 implicitly done in this step)            
             for i = 1:Nx
                 if t > 1 && i == 1; tic; end

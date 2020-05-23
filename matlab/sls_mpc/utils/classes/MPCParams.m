@@ -40,6 +40,11 @@ classdef MPCParams < matlab.mixin.Copyable
         inputLB_; % lower bound on inputConsMtx_ * input;
     end
     
+    % TODO: dimension check cost and constraint matrices
+    %       it's possible to have constraint matrices be huge but 
+    %       allow maximum of Nx/Nu for the moment
+    % TODO: check cost/constraint matrices should be locality-limited
+    
     methods
       function sanity_check_params_1(obj)
           e1  = isempty(obj.locality_);

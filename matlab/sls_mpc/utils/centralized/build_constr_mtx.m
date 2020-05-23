@@ -4,11 +4,14 @@ tFIR = params.tFIR_;
 
 ConstrMtx = [];
 
-% TODO: currently assumes K1 is Nx by Nx and somewhat diagonal
-K1 = params.stateConsMtx_;
-
-% TODO: currently ignores input constraint matrix
-K2 = zeros(sys.Nu);   
+K1 = zeros(sys.Nx);
+K2 = zeros(sys.Nu);
+if params.has_state_cons()
+    K1 = params.stateConsMtx_;
+end
+if params.has_input_cons()
+    K2 = params.inputConsMtx_;
+end
     
 for t = 0:tFIR-1
     ConstrMtx = blkdiag(ConstrMtx, K1);

@@ -81,10 +81,10 @@ Nx = sys2.Nx;
 params2.QSqrt_ = diag(ones(Nx,1)) + diag(-1/2*ones(Nx-2,1),2) + diag(-1/2*ones(Nx-2,1),-2);
 params2.RSqrt_ = diag(randi([1, 3], sys2.Nu, 1));
 
-% Constraints
+% Constraints (different coupling from cost)
 K = zeros(Nx);
-K(1,1) = 1; K(1,3) = 1;
-K(2,2) = 1; K(2,4) = 1;
+K(1,:) = [1 1 0 0];
+K(2,:) = [0 1 1 0];
 
 %% Algorithm 2, no constraints
 params2.mode_   = MPCMode.Distributed;
@@ -93,11 +93,11 @@ params2.mode_   = MPCMode.Distributed;
 params2.mode_   = MPCMode.Centralized;
 [xVal, uVal, ~] = sls_mpc(sys2, x02, params2);
 
-printAndPlot(params2, x, u, xVal, uVal, 'Alg2, no constraints', [1,3]);
+printAndPlot(params2, x, u, xVal, uVal, 'Alg2, no constraints', [2,3]);
 
 %% Algorithm 2, with state ub
 params2.stateConsMtx_ = K;
-params2.stateUB_      = 0.6;
+params2.stateUB_      = 0.8;
 
 params2.mode_   = MPCMode.Distributed;
 [x, u, ~]       = sls_mpc(sys2, x02, params2);
@@ -105,11 +105,11 @@ params2.mode_   = MPCMode.Distributed;
 params2.mode_   = MPCMode.Centralized;
 [xVal, uVal, ~] = sls_mpc(sys2, x02, params2);
 
-printAndPlot(params2, x, u, xVal, uVal, 'Alg2, with state ub', [1,3]);
+printAndPlot(params2, x, u, xVal, uVal, 'Alg2, with state ub', [2,3]);
 
 %% Algorithm 2, with state lb + ub
 params2.stateConsMtx_ = K;
-params2.stateUB_      = 0.6;
+params2.stateUB_      = 0.8;
 params2.stateLB_      = 0;
 
 params2.mode_   = MPCMode.Distributed;
@@ -118,7 +118,7 @@ params2.mode_   = MPCMode.Distributed;
 params2.mode_   = MPCMode.Centralized;
 [xVal, uVal, ~] = sls_mpc(sys2, x02, params2);
 
-printAndPlot(params2, x, u, xVal, uVal, 'Alg2, with state lb + ub', [1,3]);
+printAndPlot(params2, x, u, xVal, uVal, 'Alg2, with state lb + ub', [2,3]);
  
 %% Local function to print values + plot graphs
 function printAndPlot(params, x, u, xVal, uVal, myTitle, states)
