@@ -7,7 +7,7 @@ function print_and_plot(params, x, u, xCent, uCent, myTitle, states, inputs)
     fprintf('Distributed cost: %f\n', obj);
     fprintf('Centralized cost: %f\n', objVal);
     
-    time = 1:length(x);
+    time = 1:size(x, 2);
     figure();
     subplot(2,1,1); hold on;
 

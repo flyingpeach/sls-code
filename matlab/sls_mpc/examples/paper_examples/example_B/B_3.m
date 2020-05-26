@@ -1,4 +1,4 @@
-% Algorithm I, System B
+% Algorithm II, System B
 clear all; close all; clc;
 rng(2020);
 
@@ -6,19 +6,26 @@ rng(2020);
 params = MPCParams();
 
 params.tFIR_     = 5;
-params.tHorizon_ = 10;
-params.maxIters_ = 5000;
-params.rho_      = 5;
+params.maxIters_ = 10000;
+params.rho_      = 1;
 params.eps_p_    = 1e-4;
 params.eps_d_    = 1e-3;
-params.solnMode_ = MPCSolMode.ClosedForm;
+
+params.maxItersCons_ = 500;
+params.mu_           = 1;
+params.eps_x_        = 1e-3;
+params.eps_z_        = 1e-4;
+
+tHorizon = 10;
 
 %% Sweep over locality sizes
 numPendula = 10;
 sys        = setup_plant_b(numPendula);
 x0         = rand(sys.Nx, 1);
-params.Q_  = eye(sys.Nx);
-params.R_  = eye(sys.Nu);
+
+Nx             = sys.Nx;
+params.QSqrt_  = diag(ones(Nx,1)) + diag(-1/2*ones(Nx-2,1),2) + diag(-1/2*ones(Nx-2,1),-2);
+params.RSqrt_  = eye(sys.Nu);
 
 localities   = [3 5 7 10];
 numLocs      = length(localities);
@@ -28,12 +35,12 @@ iters_l      = zeros(1, numLocs);
 
 for i=1:numLocs
     params.locality_ = localities(i);
-    
-    % Distributed MPC
-    [x, u, times_l(i), iters_l(i)] = mpc_algorithm_1(sys, x0, params);
-    
-    % Centralized MPC (for validation + comparison)
-    [xVal, uVal, timeCents_l(i)] = mpc_centralized(sys, x0, params);   
+
+    params.mode_ = MPCMode.Distributed;
+    [x, u, times_l(i), iters_l(i)] = sls_mpc(sys, x0, params, tHorizon);
+
+    params.mode_ = MPCMode.Centralized;
+    [xVal, uVal, timeCents_l(i)] = sls_mpc(sys, x0, params, tHorizon);   
 end
 
 %% Plot sweep over locality sizes
@@ -58,14 +65,16 @@ for i=2:numSizes
     numPendula = sizes(i);
     sys        = setup_plant_b(numPendula);
     x0         = rand(sys.Nx, 1);
-    params.Q_  = eye(sys.Nx);
-    params.R_  = eye(sys.Nu);
-    
-    % Distributed MPC
-    [x, u, times_n(i), iters_n(i)] = mpc_algorithm_1(sys, x0, params);
-    
-    % Centralized MPC (for validation + comparison)
-    [xVal, uVal, timeCents_n(i)] = mpc_centralized(sys, x0, params);   
+
+    Nx             = sys.Nx;
+    params.QSqrt_  = diag(ones(Nx,1)) + diag(-1/2*ones(Nx-2,1),2) + diag(-1/2*ones(Nx-2,1),-2);
+    params.RSqrt_  = eye(sys.Nu);
+
+    params.mode_ = MPCMode.Distributed;
+    [x, u, times_n(i), iters_n(i)] = sls_mpc(sys, x0, params, tHorizon);
+
+    params.mode_ = MPCMode.Centralized;
+    [xVal, uVal, timeCents_n(i)] = sls_mpc(sys, x0, params, tHorizon);
 end
 
 %% Plot sweep over network sizes

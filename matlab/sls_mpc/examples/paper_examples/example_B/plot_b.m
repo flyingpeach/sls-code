@@ -1,4 +1,5 @@
 function plot_b(x_series, times, timeCents, iters, localityBool)
+
 if localityBool
     xStr = '$$\#\ subsystems\ in\ localized\ region$$';
 else
@@ -19,4 +20,5 @@ subplot(1,2,2)
 plot(x_series, iters,'m-s','LineWidth',2)
 xlabel(xStr, 'Interpreter','latex','Fontsize', 10)
 ylabel('$$Avg\ \#\ ADMM\ iters\ per\ MPC\ iteration\ for\ each\ state\ (s)$$','Interpreter','latex','Fontsize', 10)
+
 end
