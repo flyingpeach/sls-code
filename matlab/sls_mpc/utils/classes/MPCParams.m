@@ -8,9 +8,7 @@ classdef MPCParams < matlab.mixin.Copyable
         % Algorithm 1 and 2 ---------------------------------------       
         locality_;  % locality (d)
         
-        tFIR_;      % order of controller (# spectral components)
-        tHorizon_;  % MPC time horizon
-                
+        tFIR_;      % order of controller (# spectral components)               
         maxIters_;  % maximum allowed iterations for ADMM 
         rho_;       % ADMM update step size
         
@@ -44,15 +42,14 @@ classdef MPCParams < matlab.mixin.Copyable
       function sanity_check_params_1(obj)
           e1  = isempty(obj.locality_);
           e2  = isempty(obj.tFIR_);
-          e3  = isempty(obj.tHorizon_);
-          e4  = isempty(obj.maxIters_);
-          e5  = isempty(obj.rho_);
-          e6  = isempty(obj.eps_p_);
-          e7  = isempty(obj.eps_d_);
-          e8  = isempty(obj.QSqrt_);
-          e9  = isempty(obj.RSqrt_);
+          e3  = isempty(obj.maxIters_);
+          e4  = isempty(obj.rho_);
+          e5  = isempty(obj.eps_p_);
+          e6  = isempty(obj.eps_d_);
+          e7  = isempty(obj.QSqrt_);
+          e8  = isempty(obj.RSqrt_);
           
-          if (e1 || e2 || e3 || e4 || e5 || e6 || e7 || e8 || e9)
+          if (e1 || e2 || e3 || e4 || e5 || e6 || e7 || e8)
               mpc_error('One or more required parameters is missing!')
           end
       end
@@ -138,11 +135,10 @@ classdef MPCParams < matlab.mixin.Copyable
       function sanity_check_cent(obj)
           e1  = isempty(obj.locality_);
           e2  = isempty(obj.tFIR_);
-          e3  = isempty(obj.tHorizon_);
-          e4  = isempty(obj.QSqrt_);
-          e5  = isempty(obj.RSqrt_);
+          e3  = isempty(obj.QSqrt_);
+          e4  = isempty(obj.RSqrt_);
 
-          if (e1 || e2 || e3 || e4 || e5)
+          if (e1 || e2 || e3 || e4)
               mpc_error('One or more required parameters is missing!')
           end 
           
