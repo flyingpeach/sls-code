@@ -1,80 +1,34 @@
-function [x, u, time, iters] = sls_mpc(sys, x0, params)
-% Call this function once per time-step with the desired system / params
+function [xs, us, avgTime, avgIters] = sls_mpc(sys, x0, params, tHorizon)
+% Call this function once to run mpc on a system with 
+% non time-varying parameters / dynamics
+% Wrapper function for sls_mpc_per_time
 % Allows some time-varying systems and constraints
-%
-% Inputs
-%   sys     : LTISystem containing system matrices (A, B2) and Nx, Nu 
-%   x0      : Starting system state
-%   params  : MPCParams containing parameters for mpc
-% Outputs
-%   x       : Next state if MPC input is used
-%   u       : Current input as calculated by MPC
-%   time    : Total runtime per state
-%   iters   : Total ADMM iters per state (for distributed MPC only)
+%   avgTime  : Runtime per state per timestep
+%   avgIters : Total ADMM iters per state per timestep (for distributed MPC only)
+% For time / iteration calculations, t=1 is omitted to omit warm-up effects
 
-iters = [];
-    
-if params.mode_ == MPCMode.Centralized
-    [x, u, time] = mpc_centralized(sys, x0, params);
-elseif params.mode_ == MPCMode.Distributed
-    % Implementation of distributed MPC currently requires
-    %  1. One actuator per subsystem
-    %  2. Actuator indices should be a strictly increasing
-    %     function of the subsystem indices they correspond to
-    %  Example: B2 = [0 0 1;
-    %                [0 1 0] violates (2)
-    %           since actuator 3 corresponds to subsystem 1
-    %           but   actuator 2 corresponds to subsystem 2
-    %  B2 = [0 1 0;
-    %       [0 0 1] will work
-        
-    lastActIdx = 0;
-    for row=1:sys.Nu
-        if length(find(sys.B2(row,:))) > 1
-            mpc_error('Maximum one actuator per subsystem');
-        end
-        if find(sys.B2(row,:)) <= lastActIdx
-            mpc_error('sys.B2 has unsupported sparsity pattern');
-        end
-        lastActIdx = find(sys.B2(row,:));
+xs      = zeros(sys.Nx, tHorizon);
+us      = zeros(sys.Nu, tHorizon);
+xs(:,1) = x0;
+
+times = zeros(tHorizon-1);
+iters = zeros(tHorizon-1);
+
+for t=1:tHorizon-1
+    fprintf('Calculating time %d of %d\n', t, tHorizon-1);
+    if params.mode_ == MPCMode.Distributed
+        [xs(:,t+1), us(:,t), times(t), iters(t)] = sls_mpc_per_time(sys, xs(:,t), params);
+    else % no iters in centralized MPC
+        [xs(:,t+1), us(:,t), times(t)] = sls_mpc_per_time(sys, xs(:,t), params);
     end
-     
-    if ~params.has_coupling()
-        [x, u, time, iters] = mpc_algorithm_1(sys, x0, params);
-    else
-        Comms_Adj  = abs(sys.A) > 0;
-        % sparsity patterns given by locality constraint
-        StateSupp  = Comms_Adj^(params.locality_-1) > 0;
-        InputSupp  = (abs(sys.B2)' * StateSupp * abs(sys.B2)) > 0;
-            
-        Comms_Cost_State = abs(params.QSqrt_) > 0;
-        if ~isempty(find(StateSupp - Comms_Cost_State < 0, 1))
-            mpc_error('State cost coupling violates locality!');
-        end
-            
-        Comms_Cost_Input = abs(params.RSqrt_) > 0;
-        if ~isempty(find(InputSupp - Comms_Cost_Input < 0, 1))
-            mpc_error('Input cost coupling violates locality!');
-        end
-            
-        if params.has_state_cons()
-           Comms_Cons_State = abs(params.stateConsMtx_) > 0;
-           if ~isempty(find(StateSupp - Comms_Cons_State < 0, 1))
-               mpc_error('State constraint coupling violates locality!');
-           end 
-        end
-            
-        if params.has_input_cons()
-            Comms_Cons_Input = abs(params.inputConsMtx_) > 0;
-            if ~isempty(find(InputSupp - Comms_Cons_Input < 0,1))
-                mpc_error('Input constraint coupling violates locality!');
-            end
-        end
-            
-        [x, u, time, iters] = mpc_algorithm_2(sys, x0, params);
-    end
+end
+
+avgTime  = mean(times(2:end)); % omit t=1
+
+if params.mode_ == MPCMode.Distributed
+    avgIters = mean(iters(2:end));
 else
-    mpc_error('Unrecognized MPC mode specified!');
-end    
-    
+    avgIters = [];
+end
+
 end
