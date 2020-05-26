@@ -109,25 +109,25 @@ for iter=1:maxIters % ADMM (outer loop)
                
         % Step 6: Update Z (Step 5 implicitly done in this step)
         for i = 1:Nx
-            if t > 1 && i == 1; tic; end
+            if i == 1; tic; end
             for row = r{i} 
                 Z_rows{row} = 0;
                 for k = cpIdx{row}                        
                     Z_rows{row} = Z_rows{row} + (X_rows{k}(row)+Y_rows{k}{row})/length(cpIdx{row});
                 end
             end
-            if t > 1 && i == 1; time = time + toc; end
+            if i == 1; time = time + toc; end
         end
 
         % Step 8: Update Y (Step 7 implicitly done in this step)            
         for i = 1:Nx
-            if t > 1 && i == 1; tic; end
+            if i == 1; tic; end
             for row = r{i}
                 for k = cpIdx{row}
                     Y_rows{row}{k} = Y_rows{row}{k} + X_rows{row}(k) - Z_rows{k};
                 end
             end
-            if t > 1 && i == 1; time = time + toc; end
+            if i == 1; time = time + toc; end
         end
             
         % Step 9: Check convergence of ADMM consensus
