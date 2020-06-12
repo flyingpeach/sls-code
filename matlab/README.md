@@ -1,32 +1,45 @@
 # System Level Synthesis
-MATLAB implementation of system level synthesis and regularization for design (RFD).
+MATLAB implementation of system level synthesis.
 
 ## Dependencies
 This toolbox uses cvx, which can be downloaded from [here](http://cvxr.com/cvx/download/).
 
 ## Setup
-Add the sls directory to MATLAB's directory either manually or by running `code/init.m`.
+Add the sls directory to MATLAB's directory by running `code/init.m`.
 
 ## Code
-All equations referenced in the documentation are from [this tutorial paper](https://arxiv.org/pdf/1904.01634v1.pdf).
+Reference materials
+
+For `sls_base`
+[System Level Synthesis, Anderson et al.](https://arxiv.org/pdf/1904.01634v1.pdf)
+
+For `sls_base/refine_controller.m`
+[Separating Controller Design from Closed Loop Design, Li & Ho](https://arxiv.org/abs/2006.05040)
+
+For `sls_mpc`
+[Distributed and Localized MPC via System Level Synthesis, Amo Alonso & Matni](https://arxiv.org/abs/1909.10074)
+
+### Key functions
+`sls_base/state_fdbk_sls.m` contains the main SLS algorithm
+`sls_base/refine_controller.m` implements the 2nd step of two-step SLS
+`sls_base/simulate_state_fdbk.m` simulates the system using the SLS controller
+
+`sls_mpc/sls_mpc.m` contains the main distributed MPC algorithm
 
 ### Examples
-Several example files can be found in `code/examples`. Some of these (especially `cdc_examples.m`) generate *many* graphs, so it's suggested to run them one section at a time. Suggestion: start with `visually_pleasing_example.m` and `state_fdbk_example.m`.
+Suggested examples to start:
+`sls_base/examples/state_fdbk_example.m`
+`sls_mpc/examples/tests_algorithm_1.m`
 
 ### Classes
 `LTISystem` contains all system matrices of the plant
 
-`SimParams` contains parameters for simulation (i.e. time, disturbance)
+`CLMaps` contains closed loop maps for the system
 
-`SLSOutputs` contains outputs of the SLS solver
+`Ctrller` contains controller matrices for the system (note that in conventional SLS, the CLMaps are directly used as controller matrices. To convert CLMaps directly to Ctrller, use Ctrller.ctrller_from_cl_maps(clMaps)).
 
-`SLSParams` contains parameters for the SLS solver
+`SimParams` contains parameters for simulation, such as disturbance
 
-### Key functions
-`code/simulate_system.m` simulates the system according to the controller synthesized by the SLS solver
+`SLSParams` contains parameters for the SLS algorithm
 
-`code/state_fdbk_sls.m` is the main SLS solver
-
-## Old version
-The pre-github version of the code can be found on the [SLS Wiki](
-http://slswiki.cms.caltech.edu/index.php/SLS_Toolbox). It is also tagged as a release on the repository; use `git checkout v1.0` to access it.
+`MPCParams` contains parameters for the MPC algorithm
