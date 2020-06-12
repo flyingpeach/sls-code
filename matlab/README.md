@@ -1,6 +1,8 @@
 # System Level Synthesis
 MATLAB implementation of system level synthesis.
 
+For questions, email jsli at caltech dot edu.
+
 ## Dependencies
 This toolbox uses cvx, which can be downloaded from [here](http://cvxr.com/cvx/download/).
 
@@ -8,11 +10,10 @@ This toolbox uses cvx, which can be downloaded from [here](http://cvxr.com/cvx/d
 Add the sls directory to MATLAB's directory by running `code/init.m`.
 
 ## Code
-Reference materials
+### Reference materials
 
 For `sls_base`
-[System Level Synthesis, Anderson et al.](https://arxiv.org/pdf/1904.01634v1.pdf)
-Equation numbers in the in-code documentation refer to equations from this paper unless otherwise specified.
+[System Level Synthesis, Anderson et al.](https://arxiv.org/pdf/1904.01634v1.pdf) Equation numbers in the in-code documentation refer to equations from this paper unless otherwise specified.
 
 For `sls_base/refine_controller.m`
 [Separating Controller Design from Closed Loop Design, Li & Ho](https://arxiv.org/pdf/2006.05040.pdf)
@@ -22,14 +23,18 @@ For `sls_mpc`
 
 ### Key functions
 `sls_base/state_fdbk_sls.m` contains the main SLS algorithm
+
 `sls_base/refine_controller.m` implements the 2nd step of two-step SLS
+
 `sls_base/simulate_state_fdbk.m` simulates the system using the SLS controller
 
 `sls_mpc/sls_mpc.m` contains the main distributed MPC algorithm
 
 ### Examples
-Suggested examples to start:
+All examples should be functional, but some run quicker than others. Suggested examples to start with:
+
 `sls_base/examples/state_fdbk_example.m`
+
 `sls_mpc/examples/tests_algorithm_1.m`
 
 ### Classes
