@@ -12,12 +12,13 @@ Reference materials
 
 For `sls_base`
 [System Level Synthesis, Anderson et al.](https://arxiv.org/pdf/1904.01634v1.pdf)
+Equation numbers in the in-code documentation refer to equations from this paper unless otherwise specified.
 
 For `sls_base/refine_controller.m`
-[Separating Controller Design from Closed Loop Design, Li & Ho](https://arxiv.org/abs/2006.05040)
+[Separating Controller Design from Closed Loop Design, Li & Ho](https://arxiv.org/pdf/2006.05040.pdf)
 
 For `sls_mpc`
-[Distributed and Localized MPC via System Level Synthesis, Amo Alonso & Matni](https://arxiv.org/abs/1909.10074)
+[Distributed and Localized MPC via System Level Synthesis, Amo Alonso & Matni](https://arxiv.org/pdf/1909.10074.pdf)
 
 ### Key functions
 `sls_base/state_fdbk_sls.m` contains the main SLS algorithm
