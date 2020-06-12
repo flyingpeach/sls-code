@@ -1,16 +1,14 @@
 # System Level Synthesis
-A compilation of SLS simulation codes.
+This repository includes the MATLAB (SLS-MATLAB) and Python (SLSpy) implementations of System Level Synthesis.
 
-## To access the Python version
-The python codes are included as a submodule. To get the source code of the submodule, do
+## How to access SLSpy
+SLSpy is included as a submodule. To access it, enter the 'sls-code/python' directory and run the following commands
 
     git submodule init
     git submodule update 
 
-inside the folder of 'python'.
-
-To enable automatic update of the submodule, set
+To enable automatic update of the submodule, run
 
     git config --global submodule.recurse true
 
-this will enable automatic update whenever running a git pull.
+This will enable automatic update whenever running a git pull.
