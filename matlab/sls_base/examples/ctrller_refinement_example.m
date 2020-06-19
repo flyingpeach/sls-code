@@ -39,38 +39,46 @@ clMapsDistr  = state_fdbk_sls(sys, slsParams);
 ctrllerDistr = Ctrller.ctrller_from_cl_maps(clMapsDistr);
 
 % approximate SLS (i.e. virtually localized)
-slsParams.approx_      = true;
+slsParams.approx_    = true;
 slsParams.stabCoeff_ = 1e3;
 clMapsVirt  = state_fdbk_sls(sys, slsParams);
 ctrllerVirt = Ctrller.ctrller_from_cl_maps(clMapsVirt);
 
-% two-step method with L1 objective
+% two-step method with controller L1 objective
 slsParams.objectives_  = {}; % reset objectives
 
 slsParams.stabCoeff_ = 1; % stability objective
-eqnErrCoeff            = 1; % equation error penalty
-slsParams.add_objective(SLSObjective.L1, 1); % L1 objective
-ctrller2Step = refine_ctrller(sys, clMapsCent, slsParams, eqnErrCoeff); 
+eqnErrCoeff          = 1; % equation error penalty
+slsParams.add_objective(SLSObjective.L1, 1); % controller L1 objective
+ctrller2Step_1 = refine_ctrller(sys, clMapsCent, slsParams, eqnErrCoeff); 
+
+% lower order two-step method
+slsParams.T_ = 2;
+ctrller2Step_2 = refine_ctrller(sys, clMapsCent, slsParams, eqnErrCoeff);
 
 %% calculate + print stats for comparison
 tTotal = 200;
 
 [lqrCostCent, intRadCent, l1normCent] = get_ctrller_stats(sys, ctrllerCent, tTotal);
-fprintf('Centralized  : cost=%.3f, rad=%.3f, l1norm=%.3f\n', ...
+fprintf('Centralized    : cost=%.3f, rad=%.3f, l1norm=%.3f\n', ...
         lqrCostCent / infLQRCost, intRadCent, l1normCent);
 
 if strcmp(clMapsDistr.solveStatus_, 'Solved')
     [lqrCostDistr, intRadDistr, l1normDistr] = get_ctrller_stats(sys, ctrllerDistr, tTotal); 
-    fprintf('Distributed  : cost=%.3f, rad=%.3f, l1norm=%.3f\n', ...
+    fprintf('Distributed    : cost=%.3f, rad=%.3f, l1norm=%.3f\n', ...
             lqrCostDistr / infLQRCost, intRadDistr, l1normDistr);
 else
-    fprintf('Distributed  : Infeasible!\n');
+    fprintf('Distributed    : Infeasible!\n');
 end
 
 [lqrCostVirt, intRadVirt, l1normVirt] = get_ctrller_stats(sys, ctrllerVirt, tTotal);
-fprintf('Virtualized  : cost=%.3f, rad=%.3f, l1norm=%.3f\n', ...
+fprintf('Virtualized    : cost=%.3f, rad=%.3f, l1norm=%.3f\n', ...
         lqrCostVirt / infLQRCost, intRadVirt, l1normVirt);
 
-[lqrCost2Step, intRad2Step, l1norm2Step] = get_ctrller_stats(sys, ctrller2Step, tTotal);
-fprintf('Two-step     : cost=%.3f, rad=%.3f, l1norm=%.3f\n', ...
-         lqrCost2Step / infLQRCost, intRad2Step, l1norm2Step);
+[lqrCost2Step_1, intRad2Step_1, l1norm2Step_1] = get_ctrller_stats(sys, ctrller2Step_1, tTotal);
+fprintf('Two-step (T=20): cost=%.3f, rad=%.3f, l1norm=%.3f\n', ...
+         lqrCost2Step_1 / infLQRCost, intRad2Step_1, l1norm2Step_1);
+
+[lqrCost2Step_2, intRad2Step_2, l1norm2Step_2] = get_ctrller_stats(sys, ctrller2Step_2, tTotal);
+fprintf('Two-step (T=2) : cost=%.3f, rad=%.3f, l1norm=%.3f\n', ...
+         lqrCost2Step_2 / infLQRCost, intRad2Step_2, l1norm2Step_2);
