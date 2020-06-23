@@ -13,8 +13,8 @@ for t=1:tTotal
     M_{t} = zeros(sys.Nu, sys.Nx); % CL map from w to u
 end
 
-for i=1:sys.Nx
-    simParams.w_ = zeros(sys.Nx, simParams.tSim_);
+for i=1:sys.Nw
+    simParams.w_ = zeros(sys.Nw, simParams.tSim_);
     simParams.w_(i, 1) = 1;
 
     [x, u]  = simulate_state_fdbk(sys, ctrller, simParams);
