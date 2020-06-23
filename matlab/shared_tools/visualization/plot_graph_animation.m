@@ -67,7 +67,11 @@ plot_graph(adjMtx, nodeCoords, cmap(1,:));
 colorbar;
 title('control (normalized)')
 
-for time=1:TMax-1
+if TMax > 1
+    TMax = TMax - 1;
+end
+
+for time=1:TMax
     pause(waitTime);
     for node=1:Nx
         subplot(1,2,1)
