@@ -70,6 +70,7 @@ classdef SLSParams < matlab.mixin.Copyable
               thisItem = list{i};
               thisType = thisItem{1};
               if thisType == type
+                  sls_warning('The constraint type you tried to add already existed; replaced old value with new value');
                   add_idx = i;
                   break;
               end
