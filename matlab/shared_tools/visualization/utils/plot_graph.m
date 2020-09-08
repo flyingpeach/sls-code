@@ -19,4 +19,7 @@ minCoords = min(nodeCoords);     maxCoords = max(nodeCoords);
 xlowerlim = minCoords(1) - 0.5;  xupperlim = maxCoords(1) + 0.5;
 ylowerlim = minCoords(2) - 0.5;  yupperlim = maxCoords(2) + 0.5;
 
+set(gca,'XTick',[])
+set(gca,'YTick',[])
+
 axis([xlowerlim xupperlim ylowerlim yupperlim])
