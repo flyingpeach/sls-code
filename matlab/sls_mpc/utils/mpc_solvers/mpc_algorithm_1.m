@@ -64,13 +64,13 @@ for iters=1:maxIters % ADMM loop
             x_loc = x0(s_r{i}{j}); % observe local state
             cost_ = C(row, row);
                 
-            if K(i,i) % has constraint
+            if K(row, row) % has constraint
                 if row <= tFIR*Nx % state constraint
-                    b1_ = params.stateUB_ / K(i,i);
-                    b2_ = params.stateLB_ / K(i,i);
+                    b1_ = params.stateUB_ / K(row, row);
+                    b2_ = params.stateLB_ / K(row, row);
                 else % input constraint
-                    b1_ = params.inputUB_ / K(i,i);
-                    b2_ = params.inputLB_ / K(i,i);
+                    b1_ = params.inputUB_ / K(row, row);
+                    b2_ = params.inputLB_ / K(row, row);
                 end
                 b1  = max(b1_,b2_); b2 = min(b1_,b2_); % in case of negative signs
                 Phi_rows{row} = eqn_16a_explicit(x_loc, Psi_rows{row}, Lambda_rows{row}, b1, b2, cost_, rho);
