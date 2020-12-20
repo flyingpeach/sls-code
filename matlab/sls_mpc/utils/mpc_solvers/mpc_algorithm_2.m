@@ -58,6 +58,21 @@ ZAB = get_sls_constraint(sys, tFIR);
 [c, s_c]       = get_col_locality(sys, tFIR, r_loc, m_loc);
 [r, s_r]       = get_row_locality(sys, tFIR, r_loc, m_loc);
 
+% Column-wise partition SLS constraints and pre-calculate inverse
+zabs  = cell(Nx, 1);
+eyes  = cell(Nx, 1);
+zabis = cell(Nx, 1); % inverse
+
+for i = 1:Nx
+    zab_     = ZAB(:, s_c{i});
+    zeroRows = find(all(zab_ == 0, 2));
+    keepRows = setdiff(1:tFIR*Nx, zeroRows);           
+    zabs{i}  = ZAB(keepRows, s_c{i}); 
+    eyes{i}  = Eye(keepRows, c{i});
+    
+    zabis{i} = zabs{i}'*pinv(zabs{i}*zabs{i}');
+end
+
 %% MPC   
 for iter=1:maxIters % ADMM (outer loop)
     Psi_prev = Psi;
@@ -168,16 +183,7 @@ for iter=1:maxIters % ADMM (outer loop)
     Psi_cols = cell(Nx, 1);
     for i = 1:Nx
         if i == 1; tic; end
-
-        % Reduce computation by eliminating zero rows
-        zab_     = ZAB(:, s_c{i});
-        zeroRows = find(all(zab_ == 0, 2));
-        keepRows = setdiff(1:tFIR*Nx, zeroRows);           
-        zab_     = ZAB(keepRows, s_c{i}); 
-        eye_     = Eye(keepRows, c{i});
-
-        Psi_cols{i} = eqn_16b(Phi_cols{i}, Lambda_cols{i}, zab_, eye_);
-
+        Psi_cols{i} = eqn_16b(Phi_cols{i}, Lambda_cols{i}, zabs{i}, eyes{i}, zabis{i});
         if i == 1; time = time + toc; end            
     end
 
