@@ -13,10 +13,10 @@ if params.has_input_cons()
     K2 = params.inputConsMtx_;
 end
     
-for t = 0:tFIR-1
+for t = 1:tFIR
     ConstrMtx = blkdiag(ConstrMtx, K1);
 end
-for t = 0:tFIR-2
+for t = 1:tFIR-1
     ConstrMtx = blkdiag(ConstrMtx, K2);
 end    
 
