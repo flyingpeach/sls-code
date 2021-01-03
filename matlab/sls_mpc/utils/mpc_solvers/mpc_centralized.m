@@ -5,7 +5,7 @@ params.sanity_check_cent();
 Nx = sys.Nx; Nu = sys.Nu; A = sys.A; B = sys.B2;
 
 locality = params.locality_;
-tFIR     = params.tFIR_;   
+T     = params.tFIR_;   
 
 QSqrt = params.QSqrt_;
 RSqrt = params.RSqrt_; % note this is not related to SLS R
@@ -18,29 +18,39 @@ RSupp     = Comms_Adj^(locality-1) > 0;
 MSupp     = (abs(sys.B2)' * RSupp) > 0;
 suppR     = find(RSupp); % indices
 suppM     = find(MSupp);
-count     = tFIR * (length(suppR) + length(suppM));
+count     = length(suppR)*T + length(suppM)*(T-1);
 
 cvx_begin quiet
 cvx_precision low
     
-expression Rs(Nx,Nx,tFIR)
-expression Ms(Nu,Nx,tFIR)
+expression Rs(Nx,Nx,T)
+expression Ms(Nu,Nx,T-1)
 variable RMSupp(count)
-    
-spot = 0;
-for k = 1:tFIR
-    R{k} = Rs(:,:,k); M{k} = Ms(:,:,k);
 
+R = cell(T, 1);
+M = cell(T-1, 1);
+
+spot = 0;
+for k = 1:T
+    R{k}        = Rs(:,:,k);
     R{k}(suppR) = RMSupp(spot+1:spot+length(suppR));
-    spot        = spot + length(suppR);        
-    M{k}(suppM) = RMSupp(spot+1:spot+length(suppM));
-    spot        = spot + length(suppM);
+    spot        = spot + length(suppR);
+    if k < T
+        M{k}        = Ms(:,:,k);
+        M{k}(suppM) = RMSupp(spot+1:spot+length(suppM));
+        spot        = spot + length(suppM);
+    end
 end
     
 % Set up objective function
 objective = 0;
-for k = 1:tFIR
-    vect = vec([QSqrt zeros(Nx,Nu); zeros(Nu,Nx) RSqrt]*[R{k};M{k}]*x0);
+for k = 1:T
+    if k < T
+        M_ = M{k};
+    else
+        M_ = zeros(Nu,Nx);
+    end
+    vect = vec([QSqrt zeros(Nx,Nu); zeros(Nu,Nx) RSqrt]*[R{k};M_]*x0);
     objective = objective + vect'*vect;
 end
 
@@ -49,12 +59,12 @@ minimize(objective)
 subject to
 
 R{1} == eye(Nx); % Achievability constraints
-for k=1:tFIR-1
+for k=1:T-1
     R{k+1} == A*R{k} + B*M{k};
 end
     
 if params.has_state_cons()
-    for k=1:tFIR
+    for k=1:T
         if ~isinf(params.stateUB_)
             params.stateConsMtx_*R{k}*x0 <= params.stateUB_*ones(Nx, 1);
         end
@@ -66,7 +76,7 @@ if params.has_state_cons()
 end
     
 if params.has_input_cons()
-    for k=1:tFIR
+    for k=1:T-1
         if ~isinf(params.inputUB_)
             params.inputConsMtx_*M{k}*x0 <= params.inputUB_*ones(Nu, 1);
         end
