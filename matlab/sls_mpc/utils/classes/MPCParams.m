@@ -31,14 +31,20 @@ classdef MPCParams < matlab.mixin.Copyable
         stateConsMtx_;
         inputConsMtx_;
         
-        stateUB_; % upper bound on stateConsMtx_ * state;
-        stateLB_; % lower bound on stateConsMtx_ * state;
+        stateUB_; % upper bound on stateConsMtx_ * state
+        stateLB_; % lower bound on stateConsMtx_ * state
         
-        inputUB_; % upper bound on inputConsMtx_ * input;
-        inputLB_; % lower bound on inputConsMtx_ * input;
+        inputUB_; % upper bound on inputConsMtx_ * input
+        inputLB_; % lower bound on inputConsMtx_ * input
+        
+        % Robust MPC parameters -----------------------------------
+        distConsMtx_;
+        
+        distUB_; % upper bound on distConsMtx_ * disturbance
+        distLB_; % lower bound on distConsMtx_ * disturbance
     end
 
-    methods
+    methods        
       function sanity_check_params_1(obj)
           e1  = isempty(obj.locality_);
           e2  = isempty(obj.tFIR_);
@@ -119,7 +125,33 @@ classdef MPCParams < matlab.mixin.Copyable
               obj.inputLB_ = -Inf;
           end
       end         
-             
+      
+      function sanity_check_dist_cons(obj)
+          hasdistMtx = ~isempty(obj.distConsMtx_);
+          hasdistUB  = ~isempty(obj.distUB_);
+          hasdistLB  = ~isempty(obj.distLB_);
+
+          if hasdistMtx && ~hasdistUB && ~hasdistLB
+              mpc_error('Disturbance constraint matrix was specified with no corresponding bounds!');
+          elseif ~hasdistMtx && (hasdistUB || hasdistLB)
+              mpc_error('Disturbance bounds were specified with no corresponding matrix!');
+          end
+          
+          % Note: in theory it's possible to have constraint matrices
+          %       of arbitrary size, but here we limit # of constraints
+          %       to # of subsystems           
+          if hasdistMtx && ~isequal(size(obj.distConsMtx_), size(obj.QSqrt_))
+              mpc_error('Disturbance constraint matrix is wrong size! Expect Nx by Nx');
+          end
+    
+          % If only UB or only LB specified, populate other with Inf/-Inf
+          if hasdistMtx && ~hasdistUB
+              obj.distUB_ = Inf;
+          elseif hasdistMtx && ~hasdistLB
+              obj.distLB_ = -Inf;
+          end          
+      end              
+      
       function sanity_check_alg_1(obj)
           sanity_check_params_1(obj);
           sanity_check_state_cons(obj);
@@ -144,6 +176,7 @@ classdef MPCParams < matlab.mixin.Copyable
           
           sanity_check_state_cons(obj);
           sanity_check_input_cons(obj);
+          sanity_check_dist_cons(obj);
       end          
           
       function hasStateCons = has_state_cons(obj)
@@ -152,6 +185,10 @@ classdef MPCParams < matlab.mixin.Copyable
       
       function hasInputCons = has_input_cons(obj)
           hasInputCons = ~isempty(obj.inputConsMtx_);
+      end
+      
+      function accForDist = accounts_for_disturbance(obj)
+          accForDist = ~isempty(obj.distConsMtx_);
       end
       
       function hasCoupling = has_coupling(obj)
