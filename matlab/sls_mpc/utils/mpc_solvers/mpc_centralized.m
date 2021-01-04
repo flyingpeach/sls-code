@@ -16,9 +16,9 @@ time = 0;
 Comms_Adj = abs(A)>0;
 RSupp     = Comms_Adj^(locality-1) > 0;
 MSupp     = (abs(sys.B2)' * RSupp) > 0;
-suppR     = find(RSupp); % indices
-suppM     = find(MSupp);
-count     = length(suppR)*T + length(suppM)*(T-1);
+suppSizeR = sum(sum(RSupp));
+suppSizeM = sum(sum(MSupp));
+count     = suppSizeR*T + suppSizeM*(T-1);
 
 cvx_begin quiet
 cvx_precision low
@@ -33,12 +33,12 @@ M = cell(T-1, 1);
 spot = 0;
 for k = 1:T
     R{k}        = Rs(:,:,k);
-    R{k}(suppR) = RMSupp(spot+1:spot+length(suppR));
-    spot        = spot + length(suppR);
+    R{k}(RSupp) = RMSupp(spot+1:spot+suppSizeR);
+    spot        = spot + suppSizeR;
     if k < T
         M{k}        = Ms(:,:,k);
-        M{k}(suppM) = RMSupp(spot+1:spot+length(suppM));
-        spot        = spot + length(suppM);
+        M{k}(MSupp) = RMSupp(spot+1:spot+suppSizeM);
+        spot        = spot + suppSizeM;
     end
 end
     
