@@ -131,7 +131,8 @@ classdef MPCParams < matlab.mixin.Copyable
           hasdistUB  = ~isempty(obj.distUB_);
           hasdistLB  = ~isempty(obj.distLB_);
 
-          if hasdistMtx && ~hasdistUB && ~hasdistLB
+          % Need upper AND lower bounds on disturbance (otherwise unbounded)
+          if hasdistMtx && (~hasdistUB || ~hasdistLB) 
               mpc_error('Disturbance constraint matrix was specified with no corresponding bounds!');
           elseif ~hasdistMtx && (hasdistUB || hasdistLB)
               mpc_error('Disturbance bounds were specified with no corresponding matrix!');
@@ -143,13 +144,6 @@ classdef MPCParams < matlab.mixin.Copyable
           if hasdistMtx && ~isequal(size(obj.distConsMtx_), size(obj.QSqrt_))
               mpc_error('Disturbance constraint matrix is wrong size! Expect Nx by Nx');
           end
-    
-          % If only UB or only LB specified, populate other with Inf/-Inf
-          if hasdistMtx && ~hasdistUB
-              obj.distUB_ = Inf;
-          elseif hasdistMtx && ~hasdistLB
-              obj.distLB_ = -Inf;
-          end          
       end              
       
       function sanity_check_alg_1(obj)
