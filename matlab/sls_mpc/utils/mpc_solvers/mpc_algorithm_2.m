@@ -102,11 +102,12 @@ for iter=1:maxIters % ADMM (outer loop)
 
                 if ~all(k_ == 0) % has constraint
                     if row <= Nx*tFIR % is state
-                        lb  = params.stateLB_;
-                        ub  = params.stateUB_;
+                        lb  = params.stateLB_(i);
+                        ub  = params.stateUB_(i);
                     else % is input
-                        lb = params.inputLB_;
-                        ub = params.inputUB_;
+                        inputIdx = find(sys.B2(i,:));
+                        lb = params.inputLB_(inputIdx);
+                        ub = params.inputUB_(inputIdx);
                     end
                         
                     [Phi_rows{row}, x_row] = eqn_20a_solver(x_loc, Psi_rows{row}, Lambda_rows{row}, Y_rows{row}(cps), Z_rows(cps), ...

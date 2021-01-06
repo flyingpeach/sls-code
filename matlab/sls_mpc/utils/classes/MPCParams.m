@@ -31,17 +31,17 @@ classdef MPCParams < matlab.mixin.Copyable
         stateConsMtx_;
         inputConsMtx_;
         
-        stateUB_; % upper bound on stateConsMtx_ * state
-        stateLB_; % lower bound on stateConsMtx_ * state
+        stateUB_; % stateConsMtx_ * state <= stateUB_
+        stateLB_; % stateConsMtx_ * state >= stateLB_
         
-        inputUB_; % upper bound on inputConsMtx_ * input
-        inputLB_; % lower bound on inputConsMtx_ * input
+        inputUB_; % inputConsMtx_ * input <= inputUB_
+        inputLB_; % inputConsMtx_ * input >= inputLB_
         
         % Robust MPC parameters -----------------------------------
         distConsMtx_;
         
-        distUB_; % upper bound on distConsMtx_ * disturbance
-        distLB_; % lower bound on distConsMtx_ * disturbance
+        distUB_; % distConsMtx_ * disturbance <= distUB_
+        distLB_; % distConsMtx_ * disturbance >= distLB_
     end
 
     methods        
@@ -76,75 +76,60 @@ classdef MPCParams < matlab.mixin.Copyable
       
       function sanity_check_state_cons(obj)
           hasStateMtx = ~isempty(obj.stateConsMtx_);
-          hasStateUB  = ~isempty(obj.stateUB_);
-          hasStateLB  = ~isempty(obj.stateLB_);
+          Nx          = size(obj.QSqrt_, 1);
 
-          if hasStateMtx && ~hasStateUB && ~hasStateLB
-              mpc_error('State constraint matrix was specified with no corresponding bounds!');
-          elseif ~hasStateMtx && (hasStateUB || hasStateLB)
-              mpc_error('State bounds were specified with no corresponding matrix!');
-          end
-          
-          % Note: in theory it's possible to have constraint matrices
-          %       of arbitrary size, but here we limit # of constraints
-          %       to # of subsystems           
-          if hasStateMtx && ~isequal(size(obj.stateConsMtx_), size(obj.QSqrt_))
+          % This size constraint is enforced for convenient implementation;
+          % in theory we can have constraint matrices of any size
+          if hasStateMtx && ~isequal(size(obj.stateConsMtx_), [Nx Nx])
               mpc_error('State constraint matrix is wrong size! Expect Nx by Nx');
           end
-    
-          % If only UB or only LB specified, populate other with Inf/-Inf
-          if hasStateMtx && ~hasStateUB
-              obj.stateUB_ = Inf;
-          elseif hasStateMtx && ~hasStateLB
-              obj.stateLB_ = -Inf;
+          
+          if hasStateMtx && ~isequal(size(obj.stateUB_), [Nx 1])
+              mpc_error('State upper bound is wrong size! Expect Nx by 1');
+          end
+
+          if hasStateMtx && ~isequal(size(obj.stateLB_), [Nx 1])
+              mpc_error('State upper bound is wrong size! Expect Nx by 1');
           end
       end
 
       function sanity_check_input_cons(obj)
           hasInputMtx = ~isempty(obj.inputConsMtx_);
-          hasInputUB  = ~isempty(obj.inputUB_);
-          hasInputLB  = ~isempty(obj.inputLB_);
-
-          if hasInputMtx && ~hasInputUB && ~hasInputLB
-              mpc_error('Input constraint matrix was specified with no corresponding bounds!');
-          elseif ~hasInputMtx && (hasInputUB || hasInputLB)
-              mpc_error('Input bounds were specified with no corresponding matrix!');
-          end
-
-          % Note: in theory it's possible to have constraint matrices
-          %       of arbitrary size, but here we limit # of constraints
-          %       to # of inputs
-          if hasInputMtx && ~isequal(size(obj.inputConsMtx_), size(obj.RSqrt_))
+          Nu          = size(obj.RSqrt_, 1);
+          
+          % This size constraint is enforced for convenient implementation;
+          % in theory we can have constraint matrices of any size
+          if hasInputMtx && ~isequal(size(obj.inputConsMtx_), [Nu Nu])
               mpc_error('Input constraint matrix is wrong size! Expect Nu by Nu');
           end
-
-          % If only UB or only LB specified, populate other with Inf/-Inf
-          if hasInputMtx && ~hasInputUB
-              obj.inputUB_ = Inf;
-          elseif hasInputMtx && ~hasInputLB
-              obj.inputLB_ = -Inf;
+          
+          if hasInputMtx && ~isequal(size(obj.inputUB_), [Nu 1])
+              mpc_error('Input upper bound is wrong size! Expect Nu by 1');
           end
+
+          if hasInputMtx && ~isequal(size(obj.inputLB_), [Nu 1])
+              mpc_error('Input upper bound is wrong size! Expect Nu by 1');
+          end          
       end         
       
       function sanity_check_dist_cons(obj)
-          hasdistMtx = ~isempty(obj.distConsMtx_);
-          hasdistUB  = ~isempty(obj.distUB_);
-          hasdistLB  = ~isempty(obj.distLB_);
-
-          % Need upper AND lower bounds on disturbance (otherwise unbounded)
-          if hasdistMtx && (~hasdistUB || ~hasdistLB) 
-              mpc_error('Disturbance constraint matrix was specified with no corresponding bounds!');
-          elseif ~hasdistMtx && (hasdistUB || hasdistLB)
-              mpc_error('Disturbance bounds were specified with no corresponding matrix!');
-          end
+          hasDistMtx = ~isempty(obj.distConsMtx_);
+          Nx         = size(obj.QSqrt_, 1);
           
-          % Note: in theory it's possible to have constraint matrices
-          %       of arbitrary size, but here we limit # of constraints
-          %       to # of subsystems           
-          if hasdistMtx && ~isequal(size(obj.distConsMtx_), size(obj.QSqrt_))
+          % This size constraint is enforced for convenient implementation;
+          % in theory we can have constraint matrices of any size
+          if hasDistMtx && ~isequal(size(obj.distConsMtx_), [Nx Nx])
               mpc_error('Disturbance constraint matrix is wrong size! Expect Nx by Nx');
           end
-      end              
+          
+          if hasDistMtx && ~isequal(size(obj.distUB_), [Nx 1])
+              mpc_error('Disturbance upper bound is wrong size! Expect Nx by 1');
+          end
+
+          if hasDistMtx && ~isequal(size(obj.distLB_), [Nx 1])
+              mpc_error('Disturbance upper bound is wrong size! Expect Nx by 1');
+          end       
+      end
       
       function sanity_check_alg_1(obj)
           sanity_check_params_1(obj);

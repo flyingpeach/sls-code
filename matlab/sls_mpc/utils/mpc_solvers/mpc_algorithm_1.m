@@ -81,11 +81,12 @@ for iters=1:maxIters % ADMM loop
                 
             if K(row, row) % has constraint
                 if row <= tFIR*Nx % state constraint
-                    b1_ = params.stateUB_ / K(row, row);
-                    b2_ = params.stateLB_ / K(row, row);
+                    b1_ = params.stateUB_(i) / K(row, row);
+                    b2_ = params.stateLB_(i) / K(row, row);
                 else % input constraint
-                    b1_ = params.inputUB_ / K(row, row);
-                    b2_ = params.inputLB_ / K(row, row);
+                    inputIdx = find(sys.B2(i,:));
+                    b1_ = params.inputUB_(inputIdx) / K(row, row);
+                    b2_ = params.inputLB_(inputIdx) / K(row, row);
                 end
                 b1  = max(b1_,b2_); b2 = min(b1_,b2_); % in case of negative signs
                 Phi_rows{row} = eqn_16a_explicit(x_loc, Psi_rows{row}, Lambda_rows{row}, b1, b2, cost_, rho);

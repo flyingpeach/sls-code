@@ -35,8 +35,8 @@ print_and_plot(params, xA, uA, xCentA, uCentA, 'Alg1 Test A', plotStates, plotIn
 
 %% TEST B: Algorithm 1, with state constraints
 params.stateConsMtx_ = eye(sys.Nx);
-params.stateUB_      = 1.7;  % not a tight constraint
-params.stateLB_      = -0.5; % tight constraint
+params.stateUB_      =  1.7 * ones(sys.Nx, 1);  % not a tight constraint
+params.stateLB_      = -0.5 * ones(sys.Nx, 1); % tight constraint
 
 params.mode_        = MPCMode.Distributed;
 [xB, uB, ~]         = sls_mpc(sys, x0, params, tHorizon);
@@ -49,7 +49,8 @@ print_and_plot(params, xB, uB, xCentB, uCentB, 'Alg1 Test B', plotStates, plotIn
 %% TEST C: Algorithm 1, with state + input constraints
 % state constraints still apply from TEST B if run sequentially
 params.inputConsMtx_ = eye(sys.Nu);
-params.inputLB_      = -1.5; % tight constraint
+params.inputUB_      = inf(sys.Nu, 1);
+params.inputLB_      = -1.5 * ones(sys.Nu, 1); % tight constraint
 
 params.mode_        = MPCMode.Distributed;
 [xC, uC, ~]         = sls_mpc(sys, x0, params, tHorizon);

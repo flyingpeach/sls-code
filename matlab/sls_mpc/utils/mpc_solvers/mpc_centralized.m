@@ -65,26 +65,30 @@ end
     
 if params.has_state_cons()
     for k=1:T
-        if ~isinf(params.stateUB_)
-            params.stateConsMtx_*R{k}*x0 <= params.stateUB_*ones(Nx, 1);
-        end
-            
-        if ~isinf(params.stateLB_)
-            params.stateConsMtx_*R{k}*x0 >= params.stateLB_*ones(Nx, 1);
+        stateCons = params.stateConsMtx_*R{k}*x0;
+        for i=1:Nx
+            if ~isinf(params.stateUB_(i))
+                stateCons(i) <= params.stateUB_(i);
+            end
+            if ~isinf(params.stateLB_(i))
+                stateCons(i) >= params.stateLB_(i);
+            end
         end
     end
 end
     
 if params.has_input_cons()
     for k=1:T-1
-        if ~isinf(params.inputUB_)
-            params.inputConsMtx_*M{k}*x0 <= params.inputUB_*ones(Nu, 1);
+        inputCons = params.inputConsMtx_*M{k}*x0;
+        for i=1:Nu
+            if ~isinf(params.inputUB_(i))
+                inputCons(i) <= params.inputUB_(i);
+            end
+            if ~isinf(params.inputLB_(i))
+                inputCons(i) >= params.inputLB_(i);
+            end
         end
-            
-        if ~isinf(params.inputLB_)
-            params.inputConsMtx_*M{k}*x0 >= params.inputLB_*ones(Nu, 1);
-        end
-    end        
+    end
 end
 
 time = time + toc;
