@@ -28,18 +28,16 @@ classdef MPCParams < matlab.mixin.Copyable
         eps_z_; % convergence criterion for ||Z(n+1) - Z(n)||
      
         % Optional params for constraints -------------------------
-        stateConsMtx_;
-        inputConsMtx_;
-        
+        stateConsMtx_;        
         stateUB_; % stateConsMtx_ * state <= stateUB_
         stateLB_; % stateConsMtx_ * state >= stateLB_
         
+        inputConsMtx_;
         inputUB_; % inputConsMtx_ * input <= inputUB_
         inputLB_; % inputConsMtx_ * input >= inputLB_
         
         % Robust MPC parameters -----------------------------------
         distConsMtx_;
-        
         distUB_; % distConsMtx_ * disturbance <= distUB_
         distLB_; % distConsMtx_ * disturbance >= distLB_
     end
@@ -70,8 +68,7 @@ classdef MPCParams < matlab.mixin.Copyable
           
           if (e1 || e2 || e3 || e4)
               mpc_error('One or more required parameters is missing!')
-          end 
-
+          end
       end
       
       function sanity_check_state_cons(obj)
@@ -135,6 +132,7 @@ classdef MPCParams < matlab.mixin.Copyable
           sanity_check_params_1(obj);
           sanity_check_state_cons(obj);
           sanity_check_input_cons(obj);
+          sanity_check_dist_cons(obj);
       end
       
       function sanity_check_alg_2(obj)
