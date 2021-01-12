@@ -4,7 +4,7 @@ M = zeros(M_size);
 
 for i = 1:sys.Nx
     for j = 1:length(r{i})
-        row = r{i}(j);
+        row = r{i}{j};
         M(row, s_r{i}{j}) = M_rows{row};
     end
 end

@@ -17,7 +17,6 @@ params.sanity_check_alg_1();
 
 % For ease of notation
 Nx = sys.Nx; Nu = sys.Nu;
-locality = params.locality_;
 tFIR     = params.tFIR_;
 maxIters = params.maxIters_;
 rho      = params.rho_;
@@ -40,9 +39,11 @@ Eye = [eye(Nx); zeros(Nx*(tFIR-1),Nx)];
 ZAB = get_sls_constraint(sys, tFIR);
 
 % Get indices corresponding to rows / columns / localities
-[r_loc, m_loc] = get_r_m_locality(sys, locality);
-[c, s_c]       = get_col_locality(sys, tFIR, r_loc, m_loc);
-[r, s_r]       = get_row_locality(sys, tFIR, r_loc, m_loc);
+PsiSupp  = get_psi_sparsity(sys, params); % Toeplitz matrix
+PhiSupp  = PsiSupp(:, 1:Nx);              % First block column
+r        = assign_rows(sys, tFIR);
+s_r      = get_row_locality(r, PhiSupp);
+[c, s_c] = get_col_locality(sys, PhiSupp);
 
 % Column-wise partition SLS constraints and pre-calculate inverse
 zabs  = cell(Nx, 1);
@@ -75,7 +76,7 @@ for iters=1:maxIters % ADMM loop
          
         for j = 1:length(r{i})
             % Note: Alg1 has no coupling, so C, K are diagonal
-            row   = r{i}(j);
+            row   = r{i}{j};
             x_loc = x0(s_r{i}{j}); % observe local state
             cost_ = C(row, row);
                 
@@ -131,9 +132,9 @@ for iters=1:maxIters % ADMM loop
             % Due to dimensionality issues, not stacking rows
             % Instead, just make one huge row
             % (since we're checking Frob norm, doesn't matter)
-            phi_      = [phi_, Phi(r{i}(j), s_r{i}{j})];
-            psi_      = [psi_, Psi(r{i}(j), s_r{i}{j})];
-            psi_prev_ = [psi_prev_, Psi_prev(r{i}(j), s_r{i}{j})];
+            phi_      = [phi_, Phi(r{i}{j}, s_r{i}{j})];
+            psi_      = [psi_, Psi(r{i}{j}, s_r{i}{j})];
+            psi_prev_ = [psi_prev_, Psi_prev(r{i}{j}, s_r{i}{j})];
         end
             
         if ~check_convergence(phi_, psi_, psi_prev_, params)

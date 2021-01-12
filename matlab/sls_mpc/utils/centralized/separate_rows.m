@@ -7,7 +7,7 @@ M_rows = cell(nRows, 1);
                 
 for i = 1:Nx
     for j = 1:length(r{i})
-        row = r{i}(j);
+        row = r{i}{j};
         M_rows{row} = M(row, s_r{i}{j});
     end
 end

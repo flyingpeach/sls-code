@@ -17,8 +17,7 @@ params.sanity_check_alg_2();
 
 % For ease of notation
 Nx = sys.Nx; Nu = sys.Nu;
-locality = params.locality_;
-tFIR     = params.tFIR_;
+tFIR = params.tFIR_;
 
 maxIters     = params.maxIters_;
 maxItersCons = params.maxItersCons_;
@@ -54,9 +53,11 @@ Eye = [eye(Nx); zeros(Nx*(tFIR-1),Nx)];
 ZAB = get_sls_constraint(sys, tFIR);
 
 % Get indices corresponding to rows / columns / localities
-[r_loc, m_loc] = get_r_m_locality(sys, locality);
-[c, s_c]       = get_col_locality(sys, tFIR, r_loc, m_loc);
-[r, s_r]       = get_row_locality(sys, tFIR, r_loc, m_loc);
+PsiSupp  = get_psi_sparsity(sys, params); % Toeplitz matrix
+PhiSupp  = PsiSupp(:, 1:Nx);              % First block column
+r        = assign_rows(sys, tFIR);
+s_r      = get_row_locality(r, PhiSupp);
+[c, s_c] = get_col_locality(sys, PhiSupp);
 
 % Column-wise partition SLS constraints and pre-calculate inverse
 zabs  = cell(Nx, 1);
@@ -92,7 +93,7 @@ for iter=1:maxIters % ADMM (outer loop)
             if i == 1; tic; end
                 
             for j = 1:length(r{i})
-                row     = r{i}(j);
+                row     = r{i}{j};
                 x_loc   = x0(s_r{i}{j});   % observe local state
                 cps     = cpIdx{row};       % coupling indices for this row
                 selfIdx = find(cps == row); % index of "self-coupling" term
@@ -126,7 +127,8 @@ for iter=1:maxIters % ADMM (outer loop)
         % Step 6: Update Z (Step 5 implicitly done in this step)
         for i = 1:Nx
             if i == 1; tic; end
-            for row = r{i} 
+            for j = 1:length(r{i})
+                row = r{i}{j};
                 Z_rows{row} = 0;
                 for k = cpIdx{row}                        
                     Z_rows{row} = Z_rows{row} + (X_rows{k}(row)+Y_rows{k}{row})/length(cpIdx{row});
@@ -138,7 +140,8 @@ for iter=1:maxIters % ADMM (outer loop)
         % Step 8: Update Y (Step 7 implicitly done in this step)            
         for i = 1:Nx
             if i == 1; tic; end
-            for row = r{i}
+            for j = 1:length(r{i})
+                row = r{i}{j};
                 for k = cpIdx{row}
                     Y_rows{row}{k} = Y_rows{row}{k} + X_rows{row}(k) - Z_rows{k};
                 end
@@ -149,7 +152,8 @@ for iter=1:maxIters % ADMM (outer loop)
         % Step 9: Check convergence of ADMM consensus
         converged = true;           
         for i = 1:Nx
-            for row = r{i}
+            for j = 1:length(r{i})
+                row = r{i}{j};
                 z_cp = zeros(nVals, 1);
                 for k = cpIdx{row}
                     z_cp(k) = Z_rows{k};
@@ -206,9 +210,9 @@ for iter=1:maxIters % ADMM (outer loop)
             % Due to dimensionality issues, not stacking rows
             % Instead, just make one huge row
             % (since we're checking Frob norm, doesn't matter)
-            phi_      = [phi_, Phi(r{i}(j), s_r{i}{j})];
-            psi_      = [psi_, Psi(r{i}(j), s_r{i}{j})];
-            psi_prev_ = [psi_prev_, Psi_prev(r{i}(j), s_r{i}{j})];
+            phi_      = [phi_, Phi(r{i}{j}, s_r{i}{j})];
+            psi_      = [psi_, Psi(r{i}{j}, s_r{i}{j})];
+            psi_prev_ = [psi_prev_, Psi_prev(r{i}{j}, s_r{i}{j})];
         end
             
         if ~check_convergence(phi_, psi_, psi_prev_, params)

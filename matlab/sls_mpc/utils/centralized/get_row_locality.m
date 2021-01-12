@@ -1,34 +1,17 @@
-function [r, s_r] = get_row_locality(sys, tFIR, r_loc, m_loc)
+function s_r = get_row_locality(r, SuppMtx)
+% r{i}   represents the set of rows controller i solves for
+% s_r{i} represents the set of columns associated to the rows in r{i} 
 
-Nx = sys.Nx; Nu = sys.Nu;
+Nx  = length(r);
+s_r = cell(Nx, 1);
 
-r     = cell(1, Nx);
-s_r   = cell(1, Nx);
+for i=1:Nx
+    numRowsi = length(r{i});
+    s_r{i}   = cell(numRowsi, 1);
 
-actuator = 0;
-
-for i = 1:Nx
-    hasActuation = ~all(sys.B2(i,:) == 0);
-    
-    nRows = tFIR;
-    if hasActuation
-        nRows    = nRows + tFIR-1; % include rows from M
-        actuator = actuator + 1;
-    end
-    
-    r{i}   = zeros(1, nRows);
-    s_r{i} = cell(nRows, 1);
-    
-    for j=1:tFIR
-        r{i}(j)   = (j-1)*Nx + i;       
-        s_r{i}{j} = find(r_loc(i, :));
-    end
-    if hasActuation
-        for j=1:tFIR-1
-            j_ = j + tFIR;
-            r{i}(j_)   = tFIR*Nx + (j-1)*Nu + actuator;
-            s_r{i}{j_} = find(m_loc(actuator, :));
-        end
+    for j = 1:numRowsi
+        row       = r{i}{j};
+        s_r{i}{j} = find(SuppMtx(row,:));
     end
 end
 
