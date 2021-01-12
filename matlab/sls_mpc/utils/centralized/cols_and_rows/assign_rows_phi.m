@@ -1,4 +1,4 @@
-function r = assign_rows(sys, tFIR)
+function r = assign_rows_phi(sys, tFIR)
 % r{i}   represents the set of rows subsystem i solves for
 
 Nx = sys.Nx; Nu = sys.Nu;

@@ -55,9 +55,10 @@ ZAB = get_sls_constraint(sys, tFIR);
 % Get indices corresponding to rows / columns / localities
 PsiSupp  = get_psi_sparsity(sys, params); % Toeplitz matrix
 PhiSupp  = PsiSupp(:, 1:Nx);              % First block column
-r        = assign_rows(sys, tFIR);
-s_r      = get_row_locality(r, PhiSupp);
-[c, s_c] = assign_and_get_col_locality(sys, PhiSupp);
+r   = assign_rows_phi(sys, tFIR);
+c   = assign_cols_phi(sys);
+s_r = get_row_locality(r, PhiSupp);
+s_c = get_col_locality(c, PhiSupp);
 
 % Column-wise partition SLS constraints and pre-calculate inverse
 zabs  = cell(Nx, 1);
@@ -65,11 +66,11 @@ eyes  = cell(Nx, 1);
 zabis = cell(Nx, 1); % inverse
 
 for i = 1:Nx
-    zab_     = ZAB(:, s_c{i});
+    zab_     = ZAB(:, s_c{i}{1});
     zeroRows = find(all(zab_ == 0, 2));
     keepRows = setdiff(1:tFIR*Nx, zeroRows);           
-    zabs{i}  = ZAB(keepRows, s_c{i}); 
-    eyes{i}  = Eye(keepRows, c{i});
+    zabs{i}  = ZAB(keepRows, s_c{i}{1}); 
+    eyes{i}  = Eye(keepRows, c{i}{1});
     
     zabis{i} = zabs{i}'*pinv(zabs{i}*zabs{i}');
 end
@@ -79,8 +80,8 @@ for iter=1:maxIters % ADMM (outer loop)
     Psi_prev = Psi;
         
     % Separate Psi, Lambda into rows (with sparsity)
-    Psi_rows    = separate_rows(sys, tFIR, r, s_r, Psi);
-    Lambda_rows = separate_rows(sys, tFIR, r, s_r, Lambda);
+    Psi_rows    = separate_rows(r, s_r, Psi);
+    Lambda_rows = separate_rows(r, s_r, Lambda);
         
     for consIter=1:maxItersCons % ADMM consensus (inner loop)
         Z_prev_rows = Z_rows;
@@ -178,11 +179,11 @@ for iter=1:maxIters % ADMM (outer loop)
     end
 
     % Step 10: Build entire Phi matrix 
-    Phi = build_from_rows(sys, r, s_r, Phi_rows, size(Phi));
+    Phi = build_from_rows(r, s_r, Phi_rows, size(Phi));
 
     % Separate Phi, Lambda into columns
-    Phi_cols    = separate_cols(sys, c, s_c, Phi);
-    Lambda_cols = separate_cols(sys, c, s_c, Lambda);
+    Phi_cols    = separate_cols(c, s_c, Phi);
+    Lambda_cols = separate_cols(c, s_c, Lambda);
                 
     % Step 11: Solve (16b) to get local Psi
     Psi_cols = cell(Nx, 1);
@@ -193,9 +194,7 @@ for iter=1:maxIters % ADMM (outer loop)
     end
 
     % Step 12: Build entire Psi matrix
-    for i = 1:Nx
-        Psi(s_c{i}, c{i}) = Psi_cols{i};
-    end
+    Psi = build_from_cols(c, s_c, Psi_cols, size(Psi));
 
     % Step 13: Update Lambda
     Lambda = Lambda + Phi - Psi; 
