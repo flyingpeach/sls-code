@@ -1,4 +1,4 @@
-function [c, s_c] = get_col_locality(sys, PhiSupp)
+function [c, s_c] = assign_and_get_col_locality(sys, PhiSupp)
 % c{i}   represents the set of columns subsystem i solves for
 % s_c{i} represents the set of rows associated to the columns in c{i} 
 

@@ -43,7 +43,7 @@ PsiSupp  = get_psi_sparsity(sys, params); % Toeplitz matrix
 PhiSupp  = PsiSupp(:, 1:Nx);              % First block column
 r        = assign_rows(sys, tFIR);
 s_r      = get_row_locality(r, PhiSupp);
-[c, s_c] = get_col_locality(sys, PhiSupp);
+[c, s_c] = assign_and_get_col_locality(sys, PhiSupp);
 
 % Column-wise partition SLS constraints and pre-calculate inverse
 zabs  = cell(Nx, 1);
