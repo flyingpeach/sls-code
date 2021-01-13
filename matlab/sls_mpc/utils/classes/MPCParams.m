@@ -40,6 +40,12 @@ classdef MPCParams < matlab.mixin.Copyable
         distConsMtx_;
         distUB_; % distConsMtx_ * disturbance <= distUB_
         distLB_; % distConsMtx_ * disturbance >= distLB_
+        
+        % Advanced options ----------------------------------------
+        % Which solver to use for main row update
+        % Leave this blank unless you really know what you're doing
+        % No sanity checks accompany this option
+        solverMode_; 
     end
 
     methods        
@@ -55,6 +61,10 @@ classdef MPCParams < matlab.mixin.Copyable
           
           if (e1 || e2 || e3 || e4 || e5 || e6 || e7 || e8)
               mpc_error('One or more required parameters is missing!')
+          end
+          
+          if ~isempty(obj.solverMode_)
+              mpc_warning('You have specified solverMode_. \nYou should leave it empty unless you **really** know what you are doing');              
           end
       end
       

@@ -101,6 +101,8 @@ for iter=1:maxIters % ADMM (outer loop)
                     
                 cost_ = C(row, cps);
                 k_    = K(row, cps); % constraint
+                
+                solverMode = params.solverMode_;
 
                 if ~all(k_ == 0) % has constraint
                     if row <= Nx*tFIR % is state
@@ -111,13 +113,26 @@ for iter=1:maxIters % ADMM (outer loop)
                         lb = params.inputLB_(inputIdx);
                         ub = params.inputUB_(inputIdx);
                     end
-                        
+                    
+                    if isempty(solverMode)
+                        solverMode = MPCSolverMode.UseSolver;
+                    end
+                else % no constraint, use closed form
+                    if isempty(solverMode)
+                        solverMode = MPCSolverMode.ClosedForm;
+                    end
+                end
+                
+                if solverMode == MPCSolverMode.ClosedForm
+                    [Phi_rows{row}, x_row] = eqn_20a_closed(x_loc, Psi_rows{row}, Lambda_rows{row}, Y_rows{row}(cps), Z_rows(cps), ...
+                                                            cost_, selfIdx, params);
+                elseif solverMode == MPCSolverMode.Explicit
+                    mpc_error('There is no explicit mode for Algorithm 2!');
+                else % use solver
                     [Phi_rows{row}, x_row] = eqn_20a_solver(x_loc, Psi_rows{row}, Lambda_rows{row}, Y_rows{row}(cps), Z_rows(cps), ...
                                                             cost_, k_, selfIdx, lb, ub, params);
-                else           
-                    [Phi_rows{row}, x_row] = eqn_20a_closed(x_loc, Psi_rows{row}, Lambda_rows{row}, Y_rows{row}(cps), Z_rows(cps), ...
-                                                                cost_, selfIdx, params);
                 end
+                
                 X_rows{row}             = zeros(nVals, 1);
                 X_rows{row}(cpIdx{row}) = x_row;         
             end

@@ -80,7 +80,9 @@ for iters=1:maxIters % ADMM loop
             row   = r{i}{j};
             x_loc = x0(s_r{i}{j}); % observe local state
             cost_ = C(row, row);
-                
+            
+            solverMode = params.solverMode_;
+            
             if K(row, row) % has constraint
                 if row <= tFIR*Nx % state constraint
                     b1_ = params.stateUB_(i) / K(row, row);
@@ -91,10 +93,26 @@ for iters=1:maxIters % ADMM loop
                     b2_ = params.inputLB_(inputIdx) / K(row, row);
                 end
                 b1  = max(b1_,b2_); b2 = min(b1_,b2_); % in case of negative signs
-                Phi_rows{row} = eqn_16a_explicit(x_loc, Psi_rows{row}, Lambda_rows{row}, b1, b2, cost_, rho);
+                
+                if isempty(solverMode)
+                    solverMode = MPCSolverMode.Explicit;
+                end
+                                
             else % no constraint, use closed form
-                Phi_rows{row} = eqn_16a_closed(x_loc, Psi_rows{row}, Lambda_rows{row}, cost_, rho); 
+                b1 = inf; b2 = -inf;
+                if isempty(solverMode)
+                    solverMode = MPCSolverMode.ClosedForm;
+                end                
             end
+
+            if solverMode == MPCSolverMode.ClosedForm
+                Phi_rows{row} = eqn_16a_closed(x_loc, Psi_rows{row}, Lambda_rows{row}, cost_, rho); 
+            elseif solverMode == MPCSolverMode.Explicit 
+                Phi_rows{row} = eqn_16a_explicit(x_loc, Psi_rows{row}, Lambda_rows{row}, b1, b2, cost_, rho);
+            else % use solver
+                Phi_rows{row} = eqn_16a_solver(x_loc, Psi_rows{row}, Lambda_rows{row}, b1, b2, cost_, rho);
+            end
+            
         end
             
         if i == 1; time = time + toc; end 
