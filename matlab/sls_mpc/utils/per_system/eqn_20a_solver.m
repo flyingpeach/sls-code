@@ -1,4 +1,4 @@
-function [phi_, x_] = eqn_20a_solver(x_loc, psi_, lamb_, y_, z_, ...
+function [phi_, x_, time] = eqn_20a_solver(x_loc, psi_, lamb_, y_, z_, ...
                                      cost_, k_, selfIdx, lb, ub, params)        
 rho = params.rho_;
 mu  = params.mu_;
@@ -37,4 +37,5 @@ W      = result.x(:);
 
 phi_  = (M1*W)';
 x_    = M2*W;
+time  = result.runtime;
 end

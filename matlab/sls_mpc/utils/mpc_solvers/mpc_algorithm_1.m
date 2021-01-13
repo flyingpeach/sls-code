@@ -72,9 +72,7 @@ for iters=1:maxIters % ADMM loop
     % Step 4: Solve (16a) to get local rows of Phi
     Phi_rows = cell(nVals, 1);
         
-    for i = 1:Nx
-        if i == 1; tic; end
-         
+    for i = 1:Nx         
         for j = 1:length(r{i})
             % Note: Alg1 has no coupling, so C, K are diagonal
             row   = r{i}{j};
@@ -103,16 +101,19 @@ for iters=1:maxIters % ADMM loop
             end
 
             if solverMode == MPCSolverMode.ClosedForm
-                Phi_rows{row} = eqn_16a_closed(x_loc, Psi_rows{row}, Lambda_rows{row}, cost_, rho); 
+                if i == 1; tic; end
+                Phi_rows{row} = eqn_16a_closed(x_loc, Psi_rows{row}, Lambda_rows{row}, cost_, rho);
+                if i == 1; time = time + toc; end
             elseif solverMode == MPCSolverMode.Explicit 
+                if i == 1; tic; end
                 Phi_rows{row} = eqn_16a_explicit(x_loc, Psi_rows{row}, Lambda_rows{row}, b1, b2, cost_, rho);
+                if i == 1; time = time + toc; end
             else % use solver
-                Phi_rows{row} = eqn_16a_solver(x_loc, Psi_rows{row}, Lambda_rows{row}, b1, b2, cost_, rho);
+                [Phi_rows{row}, solverTime] = eqn_16a_solver(x_loc, Psi_rows{row}, Lambda_rows{row}, b1, b2, cost_, rho);
+                if i == 1; time = time + solverTime; end
             end
             
         end
-            
-        if i == 1; time = time + toc; end 
     end
         
     % Step 5: Build entire Phi matrix

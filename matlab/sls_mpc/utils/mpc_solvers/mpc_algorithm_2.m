@@ -90,9 +90,7 @@ for iter=1:maxIters % ADMM (outer loop)
         Phi_rows = cell(nVals, 1);
         X_rows   = cell(nVals, 1);
             
-        for i = 1:Nx
-            if i == 1; tic; end
-                
+        for i = 1:Nx                
             for j = 1:length(r{i})
                 row     = r{i}{j};
                 x_loc   = x0(s_r{i}{j});   % observe local state
@@ -122,20 +120,21 @@ for iter=1:maxIters % ADMM (outer loop)
                 end
                 
                 if solverMode == MPCSolverMode.ClosedForm
+                    if i == 1; tic; end
                     [Phi_rows{row}, x_row] = eqn_20a_closed(x_loc, Psi_rows{row}, Lambda_rows{row}, Y_rows{row}(cps), Z_rows(cps), ...
                                                             cost_, selfIdx, params);
+                    if i == 1; time = time + toc; end
                 elseif solverMode == MPCSolverMode.Explicit
                     mpc_error('There is no explicit mode for Algorithm 2!');
                 else % use solver
-                    [Phi_rows{row}, x_row] = eqn_20a_solver(x_loc, Psi_rows{row}, Lambda_rows{row}, Y_rows{row}(cps), Z_rows(cps), ...
-                                                            cost_, k_, selfIdx, lb, ub, params);
+                    [Phi_rows{row}, x_row, solverTime] = eqn_20a_solver(x_loc, Psi_rows{row}, Lambda_rows{row}, Y_rows{row}(cps), Z_rows(cps), ...
+                                                                        cost_, k_, selfIdx, lb, ub, params);
+                    if i == 1; time = time + solverTime; end
                 end
                 
                 X_rows{row}             = zeros(nVals, 1);
                 X_rows{row}(cpIdx{row}) = x_row;         
-            end
-          
-            if i == 1; time = time + toc; end            
+            end        
         end
                
         % Step 6: Update Z (Step 5 implicitly done in this step)

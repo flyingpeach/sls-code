@@ -1,4 +1,4 @@
-function phi_ = eqn_16a_solver(x_loc, psi_, lamb_, b1, b2, cost_, rho)
+function [phi_, time] = eqn_16a_solver(x_loc, psi_, lamb_, b1, b2, cost_, rho)
 % x_loc  : locally observed state
 % psi_   : row of Psi
 % lamb_  : row of Lambda
@@ -32,6 +32,7 @@ model.lb = MPC_LB*ones(length(model.A), 1);
 % solve QP
 gParams.outputflag = 0;
 result = gurobi(model, gParams);
-phi_   = result.x(:);
 
+phi_ = result.x(:);
+time = result.runtime;
 end
