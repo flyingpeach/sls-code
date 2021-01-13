@@ -118,9 +118,7 @@ for iter=1:maxIters % ADMM (outer loop)
                         solverMode = MPCSolverMode.UseSolver;
                     end
                 else % no constraint, use closed form
-                    if isempty(solverMode)
-                        solverMode = MPCSolverMode.ClosedForm;
-                    end
+                    solverMode = MPCSolverMode.ClosedForm;
                 end
                 
                 if solverMode == MPCSolverMode.ClosedForm

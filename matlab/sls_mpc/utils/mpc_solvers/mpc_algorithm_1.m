@@ -99,10 +99,7 @@ for iters=1:maxIters % ADMM loop
                 end
                                 
             else % no constraint, use closed form
-                b1 = inf; b2 = -inf;
-                if isempty(solverMode)
-                    solverMode = MPCSolverMode.ClosedForm;
-                end                
+                solverMode = MPCSolverMode.ClosedForm;
             end
 
             if solverMode == MPCSolverMode.ClosedForm
