@@ -11,8 +11,8 @@ xs      = zeros(sys.Nx, tHorizon);
 us      = zeros(sys.Nu, tHorizon);
 xs(:,1) = x0;
 
-times = zeros(tHorizon-1);
-iters = zeros(tHorizon-1);
+times = zeros(tHorizon-1, 1);
+iters = zeros(tHorizon-1, 1);
 
 for t=1:tHorizon-1
     fprintf('Calculating time %d of %d\n', t, tHorizon-1);
@@ -23,7 +23,7 @@ for t=1:tHorizon-1
     end
 end
 
-avgTime  = mean(times(2:end)); % omit t=1
+avgTime = mean(times(2:end)); % omit t=1
 
 if params.mode_ == MPCMode.Distributed
     avgIters = mean(iters(2:end));
