@@ -27,7 +27,7 @@ else
 end
 
 % default lower bound is 0; override
-MPC_LB   = -100;
+MPC_LB   = -1e3;
 model.lb = MPC_LB*ones(length(model.A), 1);
 
 % solve QP

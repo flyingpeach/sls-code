@@ -3,26 +3,35 @@ function phi_ = eqn_16a_solver(x_loc, psi_, lamb_, b1, b2, cost_, rho)
 % psi_   : row of Psi
 % lamb_  : row of Lambda
 
-cvx_begin quiet
-variable phi(size(psi_))
+n   = length(x_loc);
 
-objVec = vec(cost_ * phi * x_loc);
-admmVec = vec(phi - psi_ + lamb_);
+% set up QP
+% minimize Phi*Q*Phi' + obj*Phi'
+% note: constant terms omitted since we are interested in argmin only
+model.Q   = sparse((cost_*x_loc')'*(cost_*x_loc') + rho/2*eye(n));
+model.obj = rho*(-psi_ + lamb_);
 
-objective = objVec'*objVec + 0.5*rho*admmVec'*admmVec;
-
-minimize objective
-subject to
-
-if ~isinf(b1)
-    phi*x_loc <= b1;
+if isinf(b2)
+    model.A     = sparse(x_loc');
+    model.rhs   = b1;
+    model.sense = '<';
+elseif isinf(b1)
+    model.A     = sparse(x_loc');
+    model.rhs   = b2;
+    model.sense = '>';
+else
+    model.A     = sparse([x_loc'; x_loc']);
+    model.rhs   = [b1 b2];
+    model.sense = '<>';
 end
-if ~isinf(b2)
-    phi*x_loc >= b2;
-end
 
-cvx_end
+% default lower bound is 0; override
+MPC_LB   = -1e3;
+model.lb = MPC_LB*ones(length(model.A), 1);
 
-phi_ = phi; % cvx doesn't allow variable with underscore ending
+% solve QP
+gParams.outputflag = 0;
+result = gurobi(model, gParams);
+phi_   = result.x(:);
 
 end
