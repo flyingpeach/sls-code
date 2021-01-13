@@ -44,8 +44,13 @@ elseif params.mode_ == MPCMode.Distributed
     end
 
     if ~params.has_coupling() % no coupling
-        if params.accounts_for_disturbance() % robust MPC
-            [x, u, time, iters] = rmpc_algorithm_1(sys, x0, params);
+        if params.accounts_for_disturbance()
+            if params.has_state_cons() || params.has_input_cons() % Bounds specified; use robust mpc
+                [x, u, time, iters] = rmpc_algorithm_1(sys, x0, params);
+            else
+                mpc_warning('Disturbance was specified but no state/input bounds apply.\nDisregarding disturbance and using standard (non-robust) MPC');
+                [x, u, time, iters] = mpc_algorithm_1(sys, x0, params);
+            end
         else
             [x, u, time, iters] = mpc_algorithm_1(sys, x0, params);
         end
