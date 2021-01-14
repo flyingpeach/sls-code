@@ -152,7 +152,7 @@ for iters=1:maxIters % ADMM loop
             psi_prev_ = [psi_prev_, Psi_prev(r{i}{j}, s_r{i}{j})];
         end
             
-        if ~check_convergence(phi_, psi_, psi_prev_, params)
+        if ~check_convergence(phi_, psi_, psi_, psi_prev_, params)
             converged = false;
             break; % if one fails, can stop checking the rest
         end

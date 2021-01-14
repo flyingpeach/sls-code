@@ -1,14 +1,10 @@
-function converged = check_convergence(phi_, psi_, psi_prev_, params)
-% phi_      : rows of Phi
-% psi_      : rows of Psi
-% psi_prev_ : rows of Psi from previous ADMM iteration
-% params    : MPC parameters
+function converged = check_convergence(prim1, prim2, dual1, dual2, params)
+% Checks whether the following is satisfied, where ||  ||_F is frob norm
+% || prim1 - prim2 ||_F <= params.eps_p_
+% || dual1 - dual2 ||_F <= params.eps_d_
 
-eps_d = params.eps_d_;
-eps_p = params.eps_p_;
-
-primRes   = norm(phi_-psi_,'fro');
-dualRes   = norm(psi_-psi_prev_,'fro');
-converged = primRes <= eps_p && dualRes <= eps_d;
+primRes = norm(prim1 - prim2, 'fro');
+dualRes = norm(dual1 - dual2, 'fro');
+converged = primRes <= params.eps_p_ && dualRes <= params.eps_d_;
 
 end
