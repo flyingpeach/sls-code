@@ -49,10 +49,10 @@ elseif params.mode_ == MPCMode.Distributed
                 [x, u, time, iters] = rmpc_algorithm_1(sys, x0, params);
             else
                 mpc_warning('Disturbance was specified but no state/input bounds apply.\nDisregarding disturbance and using standard (non-robust) MPC');
-                [x, u, time, iters] = mpc_algorithm_1(sys, x0, params);
+                [x, u, time, iters] = mpc_algorithm_2(sys, x0, params);
             end
         else
-            [x, u, time, iters] = mpc_algorithm_1(sys, x0, params);
+            [x, u, time, iters] = mpc_algorithm_2(sys, x0, params);
         end
     else % has coupling
         if params.accounts_for_disturbance()
