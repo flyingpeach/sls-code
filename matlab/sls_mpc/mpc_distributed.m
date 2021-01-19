@@ -87,7 +87,6 @@ for i = 1:Nx
     keepRows = setdiff(1:tFIR*Nx, zeroRows);
     zabs{i}  = ZAB(keepRows, s_c{i}{1});
     eyes{i}  = Eye(keepRows, c{i}{1});
-    
     zabis{i} = zabs{i}'*pinv(zabs{i}*zabs{i}');
 end
 
@@ -99,65 +98,55 @@ for iters=1:maxIters % ADMM (outer loop)
     Psi_rows    = separate_rows(r, s_r, Psi);
     Lambda_rows = separate_rows(r, s_r, Lambda);
     
-    % Solve for Phi
+    % Step 4: Solve for Phi
     Phi_rows = cell(nVals, 1);
     
-    % UNCOUPLED ROWS:
+    % Solve for Phi for uncoupled rows
     for i = 1:Nx
-        if ~isempty(rUcp{i}) % TODO: this doesn't do anything because
-                                    % it's never empty.
-            for j = 1:length(rUcp{i})
-                row   = rUcp{i}{j};
+        for j = 1:length(rUcp{i})
+            row   = rUcp{i}{j};
+            x_loc = x0(s_rUcp{i}{j}); % observe local state
+            cost_ = C(row, row);
 
-                x_loc = x0(s_rUcp{i}{j}); % observe local state
-                cost_ = C(row, row);
-
-                solverMode = params.solverMode_;
-
-                if K(row, row) % has constraint
-                    if row <= tFIR*Nx % state constraint
-                        b1_ = params.stateUB_(i) / K(row, row);
-                        b2_ = params.stateLB_(i) / K(row, row);
-                    else % input constraint
-                        inputIdx = find(sys.B2(i,:));
-                        b1_ = params.inputUB_(inputIdx) / K(row, row);
-                        b2_ = params.inputLB_(inputIdx) / K(row, row);
-                    end
-                    b1  = max(b1_,b2_); b2 = min(b1_,b2_); % in case of negative signs
-
-                    if isempty(solverMode)
-                        solverMode = MPCSolverMode.Explicit;
-                    end
-
-                else % no constraint, use closed form
-                    solverMode = MPCSolverMode.ClosedForm;
+            solverMode = params.solverMode_;
+            if K(row, row) % has constraint
+                if row <= tFIR*Nx % state constraint
+                    b1_ = params.stateUB_(i) / K(row, row);
+                    b2_ = params.stateLB_(i) / K(row, row);
+                else % input constraint
+                    inputIdx = find(sys.B2(i,:));
+                    b1_ = params.inputUB_(inputIdx) / K(row, row);
+                    b2_ = params.inputLB_(inputIdx) / K(row, row);
                 end
+                b1  = max(b1_,b2_); b2 = min(b1_,b2_); % in case of negative signs
 
-                if solverMode == MPCSolverMode.ClosedForm
-                    tic;
-                    Phi_rows{row} = eqn_16a_closed(x_loc, Psi_rows{row}, Lambda_rows{row}, cost_, rho);
-                    times(i) = times(i) + toc;
-                elseif solverMode == MPCSolverMode.Explicit
-                    tic;
-                    Phi_rows{row} = eqn_16a_explicit(x_loc, Psi_rows{row}, Lambda_rows{row}, b1, b2, cost_, rho);
-                    times(i) = times(i) + toc;
-                else % use solver
-                    [Phi_rows{row}, solverTime] = eqn_16a_solver(x_loc, Psi_rows{row}, Lambda_rows{row}, b1, b2, cost_, rho);
-                    times(i) = times(i) + solverTime;                    
+                if isempty(solverMode)
+                    solverMode = MPCSolverMode.Explicit;
                 end
+            else % no constraint, use closed form
+                solverMode = MPCSolverMode.ClosedForm;
+            end
+
+            if solverMode == MPCSolverMode.ClosedForm
+                tic;
+                Phi_rows{row} = eqn_16a_closed(x_loc, Psi_rows{row}, Lambda_rows{row}, cost_, rho);
+                times(i) = times(i) + toc;
+            elseif solverMode == MPCSolverMode.Explicit
+                tic;
+                Phi_rows{row} = eqn_16a_explicit(x_loc, Psi_rows{row}, Lambda_rows{row}, b1, b2, cost_, rho);
+                times(i) = times(i) + toc;
+            else % use solver
+                [Phi_rows{row}, solverTime] = eqn_16a_solver(x_loc, Psi_rows{row}, Lambda_rows{row}, b1, b2, cost_, rho);
+                times(i) = times(i) + solverTime;                    
             end
         end
     end
     
-    % COUPLED ROWS:
-    converged = true; % in case we have no coupled rows
-    
+    % Solve for Phi for coupled rows using ADMM consensus    
     if params.has_coupling()
         for consIter=1:maxItersCons % ADMM consensus (inner loop)
             Z_prev_rows = Z_rows;
-
-            % Step 4: Solve (20a) to get local Phi, X
-            X_rows   = cell(nValsCp, 1);
+            X_rows      = cell(nValsCp, 1);
 
             for i = 1:Nx
                 for j = 1:length(rCp{i})
@@ -190,14 +179,14 @@ for iters=1:maxIters % ADMM (outer loop)
 
                     if solverMode == MPCSolverMode.ClosedForm
                         tic;
-                        [Phi_rows{row}, x_row] = eqn_20a_closed(x_loc, Psi_rows{row}, Lambda_rows{row}, Y_rows{row}(cps), Z_rows(cps), ...
-                            cost_, selfIdx, params);
+                        [Phi_rows{row}, x_row] = eqn_20a_closed(x_loc, Psi_rows{row}, Lambda_rows{row}, ...
+                                                 Y_rows{row}(cps), Z_rows(cps), cost_, selfIdx, params);
                         times(i) = times(i) + toc;                        
                     elseif solverMode == MPCSolverMode.Explicit
                         mpc_error('There is no explicit mode for Algorithm 2!');
                     else % use solver
-                        [Phi_rows{row}, x_row, solverTime] = eqn_20a_solver(x_loc, Psi_rows{row}, Lambda_rows{row}, Y_rows{row}(cps), Z_rows(cps), ...
-                            cost_, k_, selfIdx, lb, ub, params);
+                        [Phi_rows{row}, x_row, solverTime] = eqn_20a_solver(x_loc, Psi_rows{row}, Lambda_rows{row}, ...
+                                                             Y_rows{row}(cps), Z_rows(cps), cost_, k_, selfIdx, lb, ub, params);
                         times(i) = times(i) + solverTime;
                     end
 
