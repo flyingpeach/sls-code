@@ -6,13 +6,11 @@ function [x, u, time, iters, consIters] = mpc_distributed(sys, x0, params)
 % Outputs
 %   x        : Next state if MPC input is used
 %   u        : Current input as calculated by MPC
-%   time     : Total runtime (Steps 4+6+8+11) per state
-%   iters    : Maximum ADMM iters per state (outer loop)
+%   time     : Runtime (Steps 4+6+8+11) per state
+%   iters    : ADMM iters per state (outer loop)
 %   consIters: Average ADMM consensus iters per state, per iter (inner loop)
 %              example: if outer loop ran 3 iters and inner loop ran
 %                       2 iters, 5 iters, and 6 iters, then consIters = 4.3
-% Note that we include the first state as a representative per-state
-% measurement for runtime calculations
 
 %% Setup
 sanity_check_actuation(sys)
@@ -35,7 +33,7 @@ maxItersCons = params.maxItersCons_;
 nVals = Nx*tFIR + Nu*(tFIR-1);
 
 % Track runtime and iterations
-time         = 0;
+times        = zeros(Nx, 1); % per state
 consIterList = zeros(maxIters,1);
 
 % SLS constraints
@@ -157,16 +155,16 @@ for iters=1:maxIters % ADMM (outer loop)
                 end
 
                 if solverMode == MPCSolverMode.ClosedForm
-                    if i == 1; tic; end
+                    tic;
                     Phi_rows{row} = eqn_16a_closed(x_loc, Psi_rows{row}, Lambda_rows{row}, cost_, rho);
-                    if i == 1; time = time + toc; end
+                    times(i) = times(i) + toc;
                 elseif solverMode == MPCSolverMode.Explicit
-                    if i == 1; tic; end
+                    tic;
                     Phi_rows{row} = eqn_16a_explicit(x_loc, Psi_rows{row}, Lambda_rows{row}, b1, b2, cost_, rho);
-                    if i == 1; time = time + toc; end
+                    times(i) = times(i) + toc;
                 else % use solver
                     [Phi_rows{row}, solverTime] = eqn_16a_solver(x_loc, Psi_rows{row}, Lambda_rows{row}, b1, b2, cost_, rho);
-                    if i == 1; time = time + solverTime; end
+                    times(i) = times(i) + solverTime;                    
                 end
             end
         end
@@ -212,16 +210,16 @@ for iters=1:maxIters % ADMM (outer loop)
                     end
 
                     if solverMode == MPCSolverMode.ClosedForm
-                        if i == 1; tic; end                        
+                        tic;
                         [Phi_rows{row}, x_row] = eqn_20a_closed(x_loc, Psi_rows{row}, Lambda_rows{row}, Y_rows{row}(cps), Z_rows(cps), ...
                             cost_, selfIdx, params);
-                        if i == 1; time = time + toc; end
+                        times(i) = times(i) + toc;                        
                     elseif solverMode == MPCSolverMode.Explicit
                         mpc_error('There is no explicit mode for Algorithm 2!');
                     else % use solver
                         [Phi_rows{row}, x_row, solverTime] = eqn_20a_solver(x_loc, Psi_rows{row}, Lambda_rows{row}, Y_rows{row}(cps), Z_rows(cps), ...
                             cost_, k_, selfIdx, lb, ub, params);
-                        if i == 1; time = time + solverTime; end
+                        times(i) = times(i) + solverTime;
                     end
 
                     X_rows{row}             = zeros(nVals, 1);
@@ -231,7 +229,7 @@ for iters=1:maxIters % ADMM (outer loop)
 
             % Step 6: Update Z (Step 5 implicitly done in this step)
             for i = 1:Nx
-                if i == 1; tic; end
+                tic;
                 for j = 1:length(coupled_r{i})
                     row = coupled_r{i}{j};
                     Z_rows{row} = 0;
@@ -239,19 +237,19 @@ for iters=1:maxIters % ADMM (outer loop)
                         Z_rows{row} = Z_rows{row} + (X_rows{k}(row)+Y_rows{k}{row})/length(cpIdx{row});
                     end
                 end
-                if i == 1; time = time + toc; end
+                times(i) = times(i) + toc;
             end
 
             % Step 8: Update Y (Step 7 implicitly done in this step)
             for i = 1:Nx
-                if i == 1; tic; end
+                tic;
                 for j = 1:length(coupled_r{i})
                     row = coupled_r{i}{j};
                     for k = cpIdx{row}
                         Y_rows{row}{k} = Y_rows{row}{k} + X_rows{row}(k) - Z_rows{k};
                     end
                 end
-                if i == 1; time = time + toc; end
+                times(i) = times(i) + toc;                
             end
 
             % Step 9: Check convergence of ADMM consensus
@@ -291,9 +289,9 @@ for iters=1:maxIters % ADMM (outer loop)
     % Step 11: Solve (16b) to get local Psi
     Psi_cols = cell(Nx, 1);
     for i = 1:Nx
-        if i == 1; tic; end
+        tic;
         Psi_cols{i} = eqn_16b(Phi_cols{i}, Lambda_cols{i}, zabs{i}, eyes{i}, zabis{i});
-        if i == 1; time = time + toc; end
+        times(i) = times(i) + toc;        
     end
     
     % Step 12: Build entire Psi matrix
@@ -336,6 +334,7 @@ end
 u = Phi(1+Nx*tFIR:Nx*tFIR+Nu,:)*x0;
 x = Phi(1+Nx:2*Nx,:)*x0; % since no noise, x_ref = x
 
+time      = mean(times);
 consIters = mean(consIterList(1:iters));
 
 end
