@@ -39,13 +39,13 @@ plotInputs = 1:sys.Nu;
 
 %% TEST A: Algorithm 2, no constraints
 params.mode_                  = MPCMode.Distributed;
-[xA, uA, avgTimeA, avgItersA] = sls_mpc(sys, x0, params, tHorizon);
+[xA, uA, avgTimeA, avgItersA, avgConsItersA] = sls_mpc(sys, x0, params, tHorizon);
 
 params.mode_        = MPCMode.Centralized;
 [xCentA, uCentA, ~] = sls_mpc(sys, x0, params, tHorizon);
 
-print_and_plot(params, xA, uA, xCentA, uCentA, 'Alg1 Test A', plotStates, plotInputs);
-fprintf('avgTime: %.4f, avgIters: %.4f\n\n', avgTimeA, avgItersA);
+print_and_plot(params, xA, uA, xCentA, uCentA, 'Alg2 Test A', plotStates, plotInputs);
+fprintf('avgTime: %.4f, avgIters: %.4f, avgConsIters: %.4f\n\n', avgTimeA, avgItersA, avgConsItersA);
 
 %% TEST B: Algorithm 2, with state constraints
 params.stateConsMtx_ = K;
@@ -53,13 +53,13 @@ params.stateUB_      = 0.8 * ones(sys.Nx, 1); % tight constraint
 params.stateLB_      = inf(sys.Nx, 1);
 
 params.mode_                  = MPCMode.Distributed;
-[xB, uB, avgTimeB, avgItersB] = sls_mpc(sys, x0, params, tHorizon);
+[xB, uB, avgTimeB, avgItersB, avgConsItersB] = sls_mpc(sys, x0, params, tHorizon);
 
 params.mode_        = MPCMode.Centralized;
 [xCentB, uCentB, ~] = sls_mpc(sys, x0, params, tHorizon);
 
-print_and_plot(params, xB, uB, xCentB, uCentB, 'Alg1 Test B', plotStates, plotInputs);
-fprintf('avgTime: %.4f, avgIters: %.4f\n\n', avgTimeB, avgItersB);
+print_and_plot(params, xB, uB, xCentB, uCentB, 'Alg2 Test B', plotStates, plotInputs);
+fprintf('avgTime: %.4f, avgIters: %.4f, avgConsIters: %.4f\n\n', avgTimeB, avgItersB, avgConsItersB);
 
 %% TEST C: Algorithm 2, with state + input constraints
 % state constraints still apply from TEST B if run sequentially
@@ -68,10 +68,10 @@ params.inputUB_      = inf(sys.Nu, 1);
 params.inputLB_      = -0.8 * ones(sys.Nu, 1); % tight constraint
 
 params.mode_                  = MPCMode.Distributed;
-[xC, uC, avgTimeC, avgItersC] = sls_mpc(sys, x0, params, tHorizon);
+[xC, uC, avgTimeC, avgItersC, avgConsItersC] = sls_mpc(sys, x0, params, tHorizon);
 
 params.mode_        = MPCMode.Centralized;
 [xCentC, uCentC, ~] = sls_mpc(sys, x0, params, tHorizon);
 
-print_and_plot(params, xC, uC, xCentC, uCentC, 'Alg1 Test C', plotStates, plotInputs);
-fprintf('avgTime: %.4f, avgIters: %.4f\n\n', avgTimeC, avgItersC);
+print_and_plot(params, xC, uC, xCentC, uCentC, 'Alg2 Test C', plotStates, plotInputs);
+fprintf('avgTime: %.4f, avgIters: %.4f, avgConsIters: %.4f\n\n', avgTimeC, avgItersC, avgConsItersC);

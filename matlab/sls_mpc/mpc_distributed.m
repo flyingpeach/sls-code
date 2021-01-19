@@ -1,14 +1,16 @@
-function [x, u, time, iters] = mpc_distributed(sys, x0, params)
+function [x, u, time, iters, consIters] = mpc_distributed(sys, x0, params)
 % Inputs
 %   sys     : LTISystem containing system matrices (A, B2) and Nx, Nu
 %   x0      : Initial system state
 %   params  : MPCParams containing parameters for mpc
 % Outputs
-%   x       : Next state if MPC input is used
-%   u       : Current input as calculated by MPC
-%   time    : Total runtime (Steps 4+6+8+11) per state
-%   iters   : Total ADMM iters per state
-%
+%   x        : Next state if MPC input is used
+%   u        : Current input as calculated by MPC
+%   time     : Total runtime (Steps 4+6+8+11) per state
+%   iters    : Maximum ADMM iters per state (outer loop)
+%   consIters: Average ADMM consensus iters per state, per iter (inner loop)
+%              example: if outer loop ran 3 iters and inner loop ran
+%                       2 iters, 5 iters, and 6 iters, then consIters = 4.3
 % Note that we include the first state as a representative per-state
 % measurement for runtime calculations
 
@@ -32,8 +34,9 @@ maxItersCons = params.maxItersCons_;
 
 nVals = Nx*tFIR + Nu*(tFIR-1);
 
-% Track runtime
-time  = 0;
+% Track runtime and iterations
+time         = 0;
+consIterList = zeros(maxIters,1);
 
 % SLS constraints
 Eye = [eye(Nx); zeros(Nx*(tFIR-1),Nx)];
@@ -124,7 +127,8 @@ for iters=1:maxIters % ADMM (outer loop)
     
     % UNCOUPLED ROWS:
     for i = 1:Nx
-        if ~isempty(uncoupled_r{i})
+        if ~isempty(uncoupled_r{i}) % TODO: this doesn't do anything because
+                                    % it's never empty.
             for j = 1:length(uncoupled_r{i})
                 row   = uncoupled_r{i}{j};
 
@@ -170,8 +174,8 @@ for iters=1:maxIters % ADMM (outer loop)
     
     % COUPLED ROWS:
     converged = true; % in case we have no coupled rows
-    if ~isempty(coupled_r)
-        
+    
+    if params.has_coupling()
         for consIter=1:maxItersCons % ADMM consensus (inner loop)
             Z_prev_rows = Z_rows;
 
@@ -271,11 +275,10 @@ for iters=1:maxIters % ADMM (outer loop)
                 break; % exit ADMM consensus iterations
             end
         end
-
         if ~converged
             fprintf('ADMM consensus reached %d iters and did not converge\n', maxItersCons);
-        end
-        
+        end   
+    consIterList(iters) = consIter;
     end 
     
     % Step 10: Build entire Phi matrix
@@ -332,4 +335,7 @@ end
 % Compute control + state
 u = Phi(1+Nx*tFIR:Nx*tFIR+Nu,:)*x0;
 x = Phi(1+Nx:2*Nx,:)*x0; % since no noise, x_ref = x
+
+consIters = mean(consIterList(1:iters));
+
 end
