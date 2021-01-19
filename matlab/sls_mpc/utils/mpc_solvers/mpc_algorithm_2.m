@@ -13,7 +13,14 @@ function [x, u, time, iters] = mpc_algorithm_2(sys, x0, params)
 % measurement for runtime calculations
 
 %% Setup
-%params.sanity_check_alg_2();
+sanity_check_actuation(sys)
+
+if params.has_coupling()
+    params.sanity_check_alg_2();
+    sanity_check_coupling(sys, params);
+else
+    params.sanity_check_alg_1();
+end
 
 % For ease of notation
 Nx = sys.Nx; Nu = sys.Nu;
