@@ -22,8 +22,7 @@ iters     = zeros(tHorizon-1, 1);
 consIters = zeros(tHorizon-1, 1);
 
 for t=1:tHorizon-1
-    fprintf('Calculating time %d of %d\n', t, tHorizon-1);
-
+    fprintf('Calculating time %d of %d\n', t+1, tHorizon);
     if params.mode_ == MPCMode.Distributed
         if params.accounts_for_disturbance() % robust MPC
             [xs(:,t+1), us(:,t), times(t), iters(t)] = rmpc_distributed(sys, xs(:,t), params);
