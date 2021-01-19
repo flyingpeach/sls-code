@@ -45,7 +45,7 @@ params.mode_        = MPCMode.Centralized;
 [xCentA, uCentA, ~] = sls_mpc(sys, x0, params, tHorizon);
 
 print_and_plot(params, xA, uA, xCentA, uCentA, 'Alg1 Test A', plotStates, plotInputs);
-fprintf('\navgTime: %.4f, avgIters: %.4f\n', avgTimeA, avgItersA);
+fprintf('avgTime: %.4f, avgIters: %.4f\n\n', avgTimeA, avgItersA);
 
 %% TEST B: Algorithm 2, with state constraints
 params.stateConsMtx_ = K;
@@ -59,7 +59,7 @@ params.mode_        = MPCMode.Centralized;
 [xCentB, uCentB, ~] = sls_mpc(sys, x0, params, tHorizon);
 
 print_and_plot(params, xB, uB, xCentB, uCentB, 'Alg1 Test B', plotStates, plotInputs);
-fprintf('\navgTime: %.4f, avgIters: %.4f\n', avgTimeB, avgItersB);
+fprintf('avgTime: %.4f, avgIters: %.4f\n\n', avgTimeB, avgItersB);
 
 %% TEST C: Algorithm 2, with state + input constraints
 % state constraints still apply from TEST B if run sequentially
@@ -74,4 +74,4 @@ params.mode_        = MPCMode.Centralized;
 [xCentC, uCentC, ~] = sls_mpc(sys, x0, params, tHorizon);
 
 print_and_plot(params, xC, uC, xCentC, uCentC, 'Alg1 Test C', plotStates, plotInputs);
-fprintf('\navgTime: %.4f, avgIters: %.4f\n', avgTimeC, avgItersC);
+fprintf('avgTime: %.4f, avgIters: %.4f\n\n', avgTimeC, avgItersC);
