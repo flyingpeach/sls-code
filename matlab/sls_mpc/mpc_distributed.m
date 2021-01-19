@@ -58,41 +58,20 @@ Phi    = zeros(nVals, Nx);
 Psi    = zeros(nVals, Nx);
 Lambda = zeros(nVals, Nx);
 
-nValsCoup = 0;
-for i = 1:Nx
-    for j = 1:length(r{i})
-        row   = r{i}{j};     
-        if length(cpIdx{row}) > 1 % there is coupling
-            nValsCoup = nValsCoup+1;
-        end
-    end
-end
+[rCp, rUcp, nValsCp] = sort_rows_coupled(r, cpIdx);
+s_rCp  = get_row_locality(rCp, PhiSupp);
+s_rUcp = get_row_locality(rUcp, PhiSupp);
 
-Y_rows = cell(nValsCoup, 1);
-Z_rows = cell(nValsCoup, 1);
+Y_rows = cell(nValsCp, 1);
+Z_rows = cell(nValsCp, 1);
 
-coupled_r   = cell(Nx, 1);
-coupled_s_r = cell(Nx, 1);
-uncoupled_r = cell(Nx, 1);
-uncoupled_s_r = cell(Nx, 1);
-
-% Identify rows with coupling 
-for i = 1:Nx
-    j_c = 0; j_unc = 0;
-    for j = 1:length(r{i})
-        row   = r{i}{j};     
-        if length(cpIdx{row}) <= 1 % there is only "self-coupling"
-            j_unc = j_unc +1;
-            uncoupled_r{i}{j_unc} = r{i}{j};
-            uncoupled_s_r{i}{j_unc} = s_r{i}{j};
-        else % there is coupling: initialize Y, Z
-            j_c = j_c +1;
-            coupled_r{i}{j_c} = r{i}{j};
-            coupled_s_r{i}{j_c} = s_r{i}{j};
-            Z_rows{row} = 0;
-            for k = cpIdx{row}
-                Y_rows{row}{k} = 0;
-            end
+% Initialize Y and Z
+for i=1:Nx
+    for j = 1:length(rCp{i})
+        row = rCp{i}{j};
+        Z_rows{row} = 0;
+        for k = cpIdx{row}
+            Y_rows{row}{k} = 0;
         end
     end
 end
@@ -125,12 +104,12 @@ for iters=1:maxIters % ADMM (outer loop)
     
     % UNCOUPLED ROWS:
     for i = 1:Nx
-        if ~isempty(uncoupled_r{i}) % TODO: this doesn't do anything because
+        if ~isempty(rUcp{i}) % TODO: this doesn't do anything because
                                     % it's never empty.
-            for j = 1:length(uncoupled_r{i})
-                row   = uncoupled_r{i}{j};
+            for j = 1:length(rUcp{i})
+                row   = rUcp{i}{j};
 
-                x_loc = x0(uncoupled_s_r{i}{j}); % observe local state
+                x_loc = x0(s_rUcp{i}{j}); % observe local state
                 cost_ = C(row, row);
 
                 solverMode = params.solverMode_;
@@ -178,12 +157,12 @@ for iters=1:maxIters % ADMM (outer loop)
             Z_prev_rows = Z_rows;
 
             % Step 4: Solve (20a) to get local Phi, X
-            X_rows   = cell(nValsCoup, 1);
+            X_rows   = cell(nValsCp, 1);
 
             for i = 1:Nx
-                for j = 1:length(coupled_r{i})
-                    row     = coupled_r{i}{j};
-                    x_loc   = x0(coupled_s_r{i}{j});   % observe local state
+                for j = 1:length(rCp{i})
+                    row     = rCp{i}{j};
+                    x_loc   = x0(s_rCp{i}{j});   % observe local state
                     cps     = cpIdx{row};       % coupling indices for this row
                     selfIdx = find(cps == row); % index of "self-coupling" term
 
@@ -230,8 +209,8 @@ for iters=1:maxIters % ADMM (outer loop)
             % Step 6: Update Z (Step 5 implicitly done in this step)
             for i = 1:Nx
                 tic;
-                for j = 1:length(coupled_r{i})
-                    row = coupled_r{i}{j};
+                for j = 1:length(rCp{i})
+                    row = rCp{i}{j};
                     Z_rows{row} = 0;
                     for k = cpIdx{row}                                           
                         Z_rows{row} = Z_rows{row} + (X_rows{k}(row)+Y_rows{k}{row})/length(cpIdx{row});
@@ -243,8 +222,8 @@ for iters=1:maxIters % ADMM (outer loop)
             % Step 8: Update Y (Step 7 implicitly done in this step)
             for i = 1:Nx
                 tic;
-                for j = 1:length(coupled_r{i})
-                    row = coupled_r{i}{j};
+                for j = 1:length(rCp{i})
+                    row = rCp{i}{j};
                     for k = cpIdx{row}
                         Y_rows{row}{k} = Y_rows{row}{k} + X_rows{row}(k) - Z_rows{k};
                     end
@@ -255,8 +234,8 @@ for iters=1:maxIters % ADMM (outer loop)
             % Step 9: Check convergence of ADMM consensus
             converged = true;
             for i = 1:Nx
-                for j = 1:length(coupled_r{i})
-                    row = coupled_r{i}{j};
+                for j = 1:length(rCp{i})
+                    row = rCp{i}{j};
                     z_cp = zeros(nVals, 1);
                     for k = cpIdx{row}
                         z_cp(k) = Z_rows{k};
