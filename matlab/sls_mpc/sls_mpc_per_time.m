@@ -22,9 +22,9 @@ if params.mode_ == MPCMode.Centralized
     end
 elseif params.mode_ == MPCMode.Distributed
     if params.accounts_for_disturbance() % robust MPC
-        [x, u, time, iters] = rmpc_algorithm_1(sys, x0, params);
+        [x, u, time, iters] = rmpc_distributed(sys, x0, params);
     else
-        [x, u, time, iters] = mpc_algorithm_2(sys, x0, params);
+        [x, u, time, iters] = mpc_distributed(sys, x0, params);
     end        
 else
     mpc_error('Unrecognized MPC mode specified!');

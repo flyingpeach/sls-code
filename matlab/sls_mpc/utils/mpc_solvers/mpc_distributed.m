@@ -1,4 +1,4 @@
-function [x, u, time, iters] = mpc_algorithm_2(sys, x0, params)
+function [x, u, time, iters] = mpc_distributed(sys, x0, params)
 % Inputs
 %   sys     : LTISystem containing system matrices (A, B2) and Nx, Nu
 %   x0      : Initial system state
