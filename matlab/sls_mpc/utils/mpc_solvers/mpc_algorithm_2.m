@@ -13,7 +13,7 @@ function [x, u, time, iters] = mpc_algorithm_2(sys, x0, params)
 % measurement for runtime calculations
 
 %% Setup
-params.sanity_check_alg_2();
+%params.sanity_check_alg_2();
 
 % For ease of notation
 Nx = sys.Nx; Nu = sys.Nu;
@@ -25,9 +25,8 @@ maxItersCons = params.maxItersCons_;
 
 nVals = Nx*tFIR + Nu*(tFIR-1);
 
-% Track runtime + iterations
+% Track runtime
 time  = 0;
-iters = 0;
 
 % SLS constraints
 Eye = [eye(Nx); zeros(Nx*(tFIR-1),Nx)];
@@ -63,6 +62,11 @@ end
 
 Y_rows = cell(nValsCoup, 1);
 Z_rows = cell(nValsCoup, 1);
+
+coupled_r   = cell(Nx, 1);
+coupled_s_r = cell(Nx, 1);
+uncoupled_r = cell(Nx, 1);
+uncoupled_s_r = cell(Nx, 1);
 
 % Identify rows with coupling 
 for i = 1:Nx
@@ -101,7 +105,7 @@ for i = 1:Nx
 end
 
 %% MPC
-for iter=1:maxIters % ADMM (outer loop)
+for iters=1:maxIters % ADMM (outer loop)
     Psi_prev = Psi;
     
     % Separate Psi, Lambda into rows (with sparsity)
@@ -158,6 +162,7 @@ for iter=1:maxIters % ADMM (outer loop)
     end
     
     % COUPLED ROWS:
+    converged = true; % in case we have no coupled rows
     if ~isempty(coupled_r)
         
         for consIter=1:maxItersCons % ADMM consensus (inner loop)
@@ -260,8 +265,6 @@ for iter=1:maxIters % ADMM (outer loop)
             end
         end
 
-        iters = iters + consIter;
-
         if ~converged
             fprintf('ADMM consensus reached %d iters and did not converge\n', maxItersCons);
         end
@@ -322,5 +325,4 @@ end
 % Compute control + state
 u = Phi(1+Nx*tFIR:Nx*tFIR+Nu,:)*x0;
 x = Phi(1+Nx:2*Nx,:)*x0; % since no noise, x_ref = x
-
 end
