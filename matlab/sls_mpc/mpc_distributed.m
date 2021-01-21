@@ -84,10 +84,11 @@ zabis = cell(Nx, 1); % inverse
 for i = 1:Nx
     zab_     = ZAB(:, s_c{i}{1});
     zeroRows = find(all(zab_ == 0, 2));
-    keepRows = setdiff(1:tFIR*Nx, zeroRows);
+    keepRows = setdiff(1:Nx*tFIR, zeroRows);
+
     zabs{i}  = ZAB(keepRows, s_c{i}{1});
     eyes{i}  = Eye(keepRows, c{i}{1});
-    zabis{i} = zabs{i}'*pinv(zabs{i}*zabs{i}');
+    zabis{i} = pinv(zabs{i});    
 end
 
 %% MPC
