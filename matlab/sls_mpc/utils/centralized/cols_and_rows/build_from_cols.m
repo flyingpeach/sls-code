@@ -5,7 +5,7 @@ M = zeros(M_size);
 for i = 1:length(c)
     for j = 1:length(c{i})
         col = c{i}{j};
-        M(s_c{i}{j}, col) = M_cols{col};
+        M(s_c{col}, col) = M_cols{col};
     end
 end
 

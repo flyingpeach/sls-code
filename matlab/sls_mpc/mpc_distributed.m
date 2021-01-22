@@ -45,23 +45,21 @@ PsiSupp  = get_psi_sparsity(sys, params); % Toeplitz matrix
 PhiSupp  = PsiSupp(:, 1:Nx);              % First block column
 r   = assign_rows_phi(sys, tFIR);
 c   = assign_cols_phi(sys);
-s_r = get_row_locality(r, PhiSupp);
-s_c = get_col_locality(c, PhiSupp);
+s_r = get_row_locality(PhiSupp);
+s_c = get_col_locality(PhiSupp);
 
-% Constraints, costs, and coupling info
+% Constraints and costs
 C     = build_cost_mtx(params);
 K     = build_constr_mtx(sys, params);
-cpIdx = get_coupling_indices(C, K);
 
 % ADMM variables
 Phi    = zeros(nVals, Nx);
 Psi    = zeros(nVals, Nx);
 Lambda = zeros(nVals, Nx);
 
+% Coupling info and variables
+cpIdx = get_coupling_indices(C, K);
 [rCp, rUcp, nValsCp] = sort_rows_coupled(r, cpIdx);
-s_rCp  = get_row_locality(rCp, PhiSupp);
-s_rUcp = get_row_locality(rUcp, PhiSupp);
-
 Y_rows = cell(nValsCp, 1);
 Z_rows = cell(nValsCp, 1);
 
@@ -82,7 +80,7 @@ eyes  = cell(Nx, 1);
 zabis = cell(Nx, 1); % inverse
 
 for i = 1:Nx
-    zab_     = ZAB(:, s_c{i}{1});
+    zab_     = ZAB(:, s_c{i});
     zeroRows = find(all(zab_ == 0, 2));
     keepRows = setdiff(1:tFIR*Nx, zeroRows);
     zabs{i}  = ZAB(keepRows, s_c{i}{1});
@@ -93,11 +91,7 @@ end
 %% MPC
 for iters=1:maxIters % ADMM (outer loop)
     Psi_prev = Psi;
-    
-    % Separate Psi, Lambda into rows (with sparsity)
-    Psi_rows    = separate_rows(r, s_r, Psi);
-    Lambda_rows = separate_rows(r, s_r, Lambda);
-    
+
     % Step 4: Solve for Phi
     Phi_rows = cell(nVals, 1);
     
@@ -105,7 +99,7 @@ for iters=1:maxIters % ADMM (outer loop)
     for i = 1:Nx
         for j = 1:length(rUcp{i})
             row   = rUcp{i}{j};
-            x_loc = x0(s_rUcp{i}{j}); % observe local state
+            x_loc = x0(s_r{row}); % observe local state
             cost_ = C(row, row);
 
             solverMode = params.solverMode_;
@@ -129,14 +123,14 @@ for iters=1:maxIters % ADMM (outer loop)
 
             if solverMode == MPCSolverMode.ClosedForm
                 tic;
-                Phi_rows{row} = eqn_16a_closed(x_loc, Psi_rows{row}, Lambda_rows{row}, cost_, rho);
+                Phi_rows{row} = eqn_16a_closed(x_loc, Psi(row, s_r{row}), Lambda(row, s_r{row}), cost_, rho);
                 times(i) = times(i) + toc;
             elseif solverMode == MPCSolverMode.Explicit
                 tic;
-                Phi_rows{row} = eqn_16a_explicit(x_loc, Psi_rows{row}, Lambda_rows{row}, b1, b2, cost_, rho);
+                Phi_rows{row} = eqn_16a_explicit(x_loc, Psi(row, s_r{row}), Lambda(row, s_r{row}), b1, b2, cost_, rho);
                 times(i) = times(i) + toc;
             else % use solver
-                [Phi_rows{row}, solverTime] = eqn_16a_solver(x_loc, Psi_rows{row}, Lambda_rows{row}, b1, b2, cost_, rho);
+                [Phi_rows{row}, solverTime] = eqn_16a_solver(x_loc, Psi(row, s_r{row}), Lambda(row, s_r{row}), b1, b2, cost_, rho);
                 times(i) = times(i) + solverTime;                    
             end
         end
@@ -151,7 +145,7 @@ for iters=1:maxIters % ADMM (outer loop)
             for i = 1:Nx
                 for j = 1:length(rCp{i})
                     row     = rCp{i}{j};
-                    x_loc   = x0(s_rCp{i}{j});   % observe local state
+                    x_loc   = x0(s_r{row});     % observe local state
                     cps     = cpIdx{row};       % coupling indices for this row
                     selfIdx = find(cps == row); % index of "self-coupling" term
 
@@ -179,13 +173,13 @@ for iters=1:maxIters % ADMM (outer loop)
 
                     if solverMode == MPCSolverMode.ClosedForm
                         tic;
-                        [Phi_rows{row}, x_row] = eqn_20a_closed(x_loc, Psi_rows{row}, Lambda_rows{row}, ...
+                        [Phi_rows{row}, x_row] = eqn_20a_closed(x_loc, Psi(row, s_r{row}), Lambda(row, s_r{row}), ...
                                                  Y_rows{row}(cps), Z_rows(cps), cost_, selfIdx, params);
                         times(i) = times(i) + toc;                        
                     elseif solverMode == MPCSolverMode.Explicit
                         mpc_error('There is no explicit mode for Algorithm 2!');
                     else % use solver
-                        [Phi_rows{row}, x_row, solverTime] = eqn_20a_solver(x_loc, Psi_rows{row}, Lambda_rows{row}, ...
+                        [Phi_rows{row}, x_row, solverTime] = eqn_20a_solver(x_loc, Psi(row, s_r{row}), Lambda(row, s_r{row}), ...
                                                              Y_rows{row}(cps), Z_rows(cps), cost_, k_, selfIdx, lb, ub, params);
                         times(i) = times(i) + solverTime;
                     end
@@ -249,16 +243,12 @@ for iters=1:maxIters % ADMM (outer loop)
     
     % Step 10: Build entire Phi matrix
     Phi = build_from_rows(r, s_r, Phi_rows, size(Phi));
-    
-    % Separate Phi, Lambda into columns
-    Phi_cols    = separate_cols(c, s_c, Phi);
-    Lambda_cols = separate_cols(c, s_c, Lambda);
-    
+        
     % Step 11: Solve (16b) to get local Psi
     Psi_cols = cell(Nx, 1);
     for i = 1:Nx
         tic;
-        Psi_cols{i} = eqn_16b(Phi_cols{i}, Lambda_cols{i}, zabs{i}, eyes{i}, zabis{i});
+        Psi_cols{i} = eqn_16b(Phi(s_c{i}, c{i}{1}), Lambda(s_c{i}, c{i}{1}), zabs{i}, eyes{i}, zabis{i});
         times(i) = times(i) + toc;        
     end
     
@@ -278,9 +268,10 @@ for iters=1:maxIters % ADMM (outer loop)
             % Due to dimensionality issues, not stacking rows
             % Instead, just make one huge row
             % (since we're checking Frob norm, doesn't matter)
-            phi_      = [phi_, Phi(r{i}{j}, s_r{i}{j})];
-            psi_      = [psi_, Psi(r{i}{j}, s_r{i}{j})];
-            psi_prev_ = [psi_prev_, Psi_prev(r{i}{j}, s_r{i}{j})];
+            row = r{i}{j};
+            phi_      = [phi_, Phi(row, s_r{row})];
+            psi_      = [psi_, Psi(row, s_r{row})];
+            psi_prev_ = [psi_prev_, Psi_prev(row, s_r{row})];
         end
         
         if ~check_convergence(phi_, psi_, psi_, psi_prev_, params)
