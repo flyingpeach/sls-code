@@ -1,51 +1,41 @@
-# System Level Synthesis
-MATLAB implementation of system level synthesis.
+# SLS-MATLAB
 
-For questions, email jsli at caltech dot edu.
+## Dependencies & Setup
+This toolbox uses cvx, which can be downloaded from [here](http://cvxr.com/cvx/download/). I strongly suggest that the user use Gurobi instead of SDPT3, as it is substantially faster.
 
-## Dependencies
-This toolbox uses cvx, which can be downloaded from [here](http://cvxr.com/cvx/download/).
+The MATLAB code does not require installation. Simply add the sls directory to MATLAB's directory by running `code/init.m`.
 
-## Setup
-Add the sls directory to MATLAB's directory by running `code/init.m`.
 
-## Code
-### Reference materials
+## Standard SLS
+Standard SLS is introduced in [System Level Synthesis, Anderson et al.](https://arxiv.org/abs/1904.01634).
 
-For `sls_base`
-[System Level Synthesis, Anderson et al.](https://arxiv.org/pdf/1904.01634v1.pdf) Equation numbers in the in-code documentation refer to equations from this paper unless otherwise specified.
+`sls_base/state_fdbk_sls.m` contains the main algorithm for standard SLS
+`sls_base/simulate_state_fdbk.m` simulates the system using this SLS controller
 
-For `sls_base/refine_controller.m`
-[Separating Controller Design from Closed Loop Design, Li & Ho](https://arxiv.org/pdf/2006.05040.pdf)
+Suggested example file to try: `sls_base/examples/state_fdbk_example.m`
 
-For `sls_mpc`
-[Distributed and Localized MPC via System Level Synthesis, Amo Alonso & Matni](https://arxiv.org/pdf/1909.10074.pdf)
 
-### Key functions
-`sls_base/state_fdbk_sls.m` contains the main SLS algorithm
+## Controller refinement
+Controller refinement is a modification of standard SLS. It is run as a second step, after the standard SLS algorithm is run. It is introduced in [Separating Controller Design from Closed Loop Design, Li & Ho](https://arxiv.org/abs/2006.05040). 
 
-`sls_base/refine_controller.m` implements the 2nd step of two-step SLS
+`sls_base/refine_controller.m` implements the controller refinement algorithm
 
-`sls_base/simulate_state_fdbk.m` simulates the system using the SLS controller
+Suggested example file to try: `sls_base/examples/ctrller_refinement_example.m`
 
-`sls_mpc/sls_mpc.m` contains the main distributed MPC algorithm
 
-### Examples
-All examples should be functional, but some run quicker than others. Suggested examples to start with:
+## Blended SLS
+Saturating states and/or inputs can be accommodated by blending multiple SLS controllers. This is described in [Achieving Performance and Safety in Large Scale Systems with Saturation using a Nonlinear System Level Synthesis Approach, Yu & Ho](https://arxiv.org/abs/2006.12766)
 
-`sls_base/examples/state_fdbk_example.m`
+`sls_blend/two_blend_sls.m` contains an algorithm to blend two SLS controllers to accommodate saturation
 
-`sls_mpc/examples/tests_algorithm_1.m`
+`sls_blend/two_blend_sls.m` simulates the system using the blended controller
 
-### Classes
-`LTISystem` contains all system matrices of the plant
+Suggested example file to try: `sls_blend/two_blend_example.m`
 
-`CLMaps` contains closed loop maps for the system
 
-`Ctrller` contains controller matrices for the system (note that in conventional SLS, the CLMaps are directly used as controller matrices. To convert CLMaps directly to Ctrller, use Ctrller.ctrller_from_cl_maps(clMaps)).
+## Distributed MPC
+Using the SLS parametrization, a distributed MPC algorithm can be developed. To the best of our knowledge, this is the first distributed MPC algorithm that is distributed in both synthesis and implementation, and is able to handle coupled objectives and constraints. The algorithm is introduced in [Distributed and Localized MPC via System Level Synthesis, Amo Alonso & Matni](https://arxiv.org/abs/1909.10074). This algorithm is made more computationally efficient in [Explicit Distributed and Localized Model Predictive Control via System Level Synthesis, Amo Alonso et al.](https://arxiv.org/abs/2005.13807).
 
-`SimParams` contains parameters for simulation, such as disturbance
-
-`SLSParams` contains parameters for the SLS algorithm
-
-`MPCParams` contains parameters for the MPC algorithm
+`sls_mpc/mpc_distributed.m` contains the distributed MPC algorithms (Algorithms 1 and 2 from the paper)
+ 
+Suggested example file to try: `sls_mpc/examples/tests_algorithm_1.m`
