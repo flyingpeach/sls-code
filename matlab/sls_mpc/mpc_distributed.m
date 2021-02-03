@@ -162,7 +162,7 @@ for iters=1:maxIters % ADMM (outer loop)
                                                  Y_rows{row}(cps), Z_rows(cps), cost_, selfIdx, params);
                         times(i) = times(i) + toc;                        
                     elseif solverMode == MPCSolverMode.Explicit
-                        mpc_error('There is no explicit mode for Algorithm 2!');
+                        mpc_error('There is no explicit mode for Alg 2 (coupled systems)!');
                     else % use solver
                         [Phi_rows{row}, x_row, solverTime] = eqn_20a_solver(x_loc, Psi(row, s_r{row}), Lambda(row, s_r{row}), ...
                                                              Y_rows{row}(cps), Z_rows(cps), cost_, k_, selfIdx, lb, ub, params);
