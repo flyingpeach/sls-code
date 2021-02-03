@@ -74,19 +74,8 @@ for i=1:Nx
     end
 end
 
-% Column-wise partition SLS constraints and pre-calculate inverse
-zabs  = cell(Nx, 1);
-eyes  = cell(Nx, 1);
-zabis = cell(Nx, 1); % inverse
-
-for i = 1:Nx % ith column
-    zab_     = ZAB(:, s_c{i});
-    zeroRows = find(all(zab_ == 0, 2));
-    keepRows = setdiff(1:tFIR*Nx, zeroRows);
-    zabs{i}  = ZAB(keepRows, s_c{i});
-    eyes{i}  = Eye(keepRows, c{i}{1});
-    zabis{i} = zabs{i}'*pinv(zabs{i}*zabs{i}');
-end
+% Precalculate items for column-wise-update
+[zabs, eyes, zabis] = precalculate_col(ZAB, Eye, s_c);
 
 %% MPC
 for iters=1:maxIters % ADMM (outer loop)
