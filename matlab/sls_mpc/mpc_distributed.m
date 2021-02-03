@@ -36,10 +36,6 @@ nVals = Nx*tFIR + Nu*(tFIR-1);
 times        = zeros(Nx, 1); % per state
 consIterList = zeros(maxIters,1);
 
-% SLS constraints
-Eye = [eye(Nx); zeros(Nx*(tFIR-1),Nx)];
-ZAB = get_sls_constraint(sys, tFIR);
-
 % Get indices corresponding to rows / columns / localities
 PsiSupp  = get_psi_sparsity(sys, params); % Toeplitz matrix
 PhiSupp  = PsiSupp(:, 1:Nx);              % First block column
@@ -74,8 +70,8 @@ for i=1:Nx
     end
 end
 
-% Precalculate items for column-wise-update
-[zabs, eyes, zabis] = precalculate_col(ZAB, Eye, s_c);
+% Precalculate items for column-wise update
+[zabs, eyes, zabis] = precalculate_col(sys, tFIR, s_c);
 
 %% MPC
 for iters=1:maxIters % ADMM (outer loop)

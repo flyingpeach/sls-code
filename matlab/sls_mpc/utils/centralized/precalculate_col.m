@@ -1,6 +1,9 @@
-function [zabs, eyes, zabis] = precalculate_col(ZAB, Eye, s_c)
+function [zabs, eyes, zabis] = precalculate_col(sys, T, s_c)
 
-Nx = length(s_c);
+Nx = sys.Nx;
+
+Eye = [eye(Nx); zeros(Nx*(T-1),Nx)];
+ZAB = get_sls_constraint(sys, T);
 
 zabs  = cell(Nx, 1);
 eyes  = cell(Nx, 1);
