@@ -179,8 +179,11 @@ classdef MPCParams < matlab.mixin.Copyable
       end
       
       function hasCoupling = has_coupling(obj)
-          % at least one non-diagonal cost / constraint matrix
-          hasCoupling = ~(isdiag(obj.QSqrt_) && isdiag(obj.RSqrt_) && isdiag(obj.stateConsMtx_) && isdiag(obj.inputConsMtx_));
+          hasObjCoupling  = ~(isdiag(obj.QSqrt_) && isdiag(obj.RSqrt_));
+          hasConsCoupling = ~(isdiag(obj.stateConsMtx_) && isdiag(obj.inputConsMtx_));
+          hasDistCoupling = ~isdiag(obj.distConsMtx_);
+          
+          hasCoupling = hasObjCoupling || hasConsCoupling || hasDistCoupling;          
       end
       
     end
