@@ -5,7 +5,7 @@ M = zeros(M_size);
 for i = 1:length(r)
     for j = 1:length(r{i})
         row = r{i}{j};
-        M(row, s_r{i}{j}) = M_rows{row};
+        M(row, s_r{row}) = M_rows{row};
     end
 end
 
