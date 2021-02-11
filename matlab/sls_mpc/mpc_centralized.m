@@ -64,7 +64,7 @@ for k=1:T-1
 end
     
 if params.has_state_cons()
-    for k=1:T
+    for k=2:T % Don't check first step
         stateCons = params.stateConsMtx_*R{k}*x0;
         for i=1:Nx
             if ~isinf(params.stateUB_(i))
