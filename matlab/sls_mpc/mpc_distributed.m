@@ -268,7 +268,7 @@ for iters=1:maxIters % ADMM (outer loop)
             converged   = false;
             
             % Alg2 functions use params instead of rho directly
-            params.rho_ = params.rho_ * scale;
+            params.rho_ = min(params.rho_ * scale, params.rhoMax_);
             rho         = params.rho_;
             break; % if one fails, can stop checking the rest
         end

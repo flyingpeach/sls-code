@@ -42,8 +42,9 @@ classdef MPCParams < matlab.mixin.Copyable
         distLB_; % distConsMtx_ * disturbance >= distLB_
         
         % Advanced options ----------------------------------------
+        % Leave these blank unless you really know what you're doing
+        
         % Which solver to use for main row update
-        % Leave this blank unless you really know what you're doing
         % No sanity checks accompany this option
         solverMode_; 
         
@@ -51,6 +52,7 @@ classdef MPCParams < matlab.mixin.Copyable
         tau_i_;
         tau_d_;
         muAdapt_;
+        rhoMax_;
     end
 
     methods        
@@ -125,8 +127,8 @@ classdef MPCParams < matlab.mixin.Copyable
       end         
       
       function sanity_check_adaptive(obj)
-          hasAdaptive = ~isempty(obj.tau_i_) || ~isempty(obj.tau_d_) || ~isempty(obj.muAdapt_);
-          emptyParams = isempty(obj.tau_i_) || isempty(obj.tau_d_) || isempty(obj.muAdapt_);
+          hasAdaptive = ~isempty(obj.tau_i_) || ~isempty(obj.tau_d_) || ~isempty(obj.muAdapt_) || ~isempty(obj.rhoMax_);
+          emptyParams = isempty(obj.tau_i_) || isempty(obj.tau_d_) || isempty(obj.muAdapt_) || isempty(obj.rhoMax_);
         
           if hasAdaptive
               if emptyParams
