@@ -46,6 +46,11 @@ classdef MPCParams < matlab.mixin.Copyable
         % Leave this blank unless you really know what you're doing
         % No sanity checks accompany this option
         solverMode_; 
+        
+        % Adaptive ADMM parameter (outer loop only)
+        tau_i_;
+        tau_d_;
+        muAdapt_;
     end
 
     methods        
@@ -64,7 +69,7 @@ classdef MPCParams < matlab.mixin.Copyable
           end
           
           if ~isempty(obj.solverMode_)
-              mpc_warning('You have specified solverMode_. \nYou should leave it empty unless you **really** know what you are doing');              
+              mpc_warning('solverMode_ was specified. Only do this if you know what you are doing!');              
           end
       end
       
@@ -119,6 +124,18 @@ classdef MPCParams < matlab.mixin.Copyable
           end          
       end         
       
+      function sanity_check_adaptive(obj)
+          hasAdaptive = ~isempty(obj.tau_i_) || ~isempty(obj.tau_d_) || ~isempty(obj.muAdapt_);
+          emptyParams = isempty(obj.tau_i_) || isempty(obj.tau_d_) || isempty(obj.muAdapt_);
+        
+          if hasAdaptive
+              if emptyParams
+                mpc_error('At least one adaptive ADMM parameter was specified but the others were left empty!');
+              end
+              mpc_warning('Adaptive ADMM params were specified. Only do this if you know what you are doing!');
+          end
+      end
+          
       function sanity_check_dist_cons(obj)
           hasDistMtx = ~isempty(obj.distConsMtx_);
           Nx         = size(obj.QSqrt_, 1);
@@ -143,12 +160,14 @@ classdef MPCParams < matlab.mixin.Copyable
           sanity_check_state_cons(obj);
           sanity_check_input_cons(obj);
           sanity_check_dist_cons(obj);
+          sanity_check_adaptive(obj);
       end
       
       function sanity_check_alg_2(obj)
           sanity_check_params_2(obj);
           sanity_check_state_cons(obj);
           sanity_check_input_cons(obj);
+          sanity_check_adaptive(obj);
       end
       
       function sanity_check_cent(obj)
@@ -165,7 +184,11 @@ classdef MPCParams < matlab.mixin.Copyable
           sanity_check_input_cons(obj);
           sanity_check_dist_cons(obj);
       end          
-          
+      
+      function hasAdaptiveADMM = has_adaptive_admm(obj)
+          hasAdaptiveADMM = ~isempty(obj.muAdapt_);
+      end
+      
       function hasStateCons = has_state_cons(obj)
           hasStateCons = ~isempty(obj.stateConsMtx_);
       end

@@ -25,7 +25,6 @@ end
 % For ease of notation
 Nx = sys.Nx; Nu = sys.Nu;
 tFIR = params.tFIR_;
-rho      = params.rho_;
 
 maxIters     = params.maxIters_;
 maxItersCons = params.maxItersCons_;
@@ -72,6 +71,10 @@ end
 
 % Precalculate items for column-wise update
 [zabs, eyes, zabis] = precalculate_col(sys, tFIR, s_c);
+
+% We will change params.rho_ but we want to set it back afterwards
+rho_original = params.rho_;
+rho          = params.rho_;
 
 %% MPC
 for iters=1:maxIters % ADMM (outer loop)
@@ -259,8 +262,14 @@ for iters=1:maxIters % ADMM (outer loop)
             psi_prev_ = [psi_prev_, Psi_prev(row, s_r{row})];
         end
         
-        if ~check_convergence(phi_, psi_, psi_, psi_prev_, params)
-            converged = false;
+        [conv, scale] = check_convergence(phi_, psi_, psi_, psi_prev_, params);
+        
+        if ~conv
+            converged   = false;
+            
+            % Alg2 functions use params instead of rho directly
+            params.rho_ = params.rho_ * scale;
+            rho         = params.rho_;
             break; % if one fails, can stop checking the rest
         end
     end
@@ -280,5 +289,6 @@ x = Phi(1+Nx:2*Nx,:)*x0; % since no noise, x_ref = x
 
 time      = mean(times);
 consIters = mean(consIterList(1:iters));
+params.rho_ = rho_original; % restore rho
 
 end
