@@ -147,13 +147,13 @@ classdef MPCParams < matlab.mixin.Copyable
           if hasDistMtx && ~isequal(size(obj.distConsMtx_), [Nx Nx])
               mpc_error('Disturbance constraint matrix is wrong size! Expect Nx by Nx');
           end
-          
+                    
           if hasDistMtx && ~isequal(size(obj.distUB_), [Nx 1])
               mpc_error('Disturbance upper bound is wrong size! Expect Nx by 1');
           end
 
           if hasDistMtx && ~isequal(size(obj.distLB_), [Nx 1])
-              mpc_error('Disturbance upper bound is wrong size! Expect Nx by 1');
+              mpc_error('Disturbance lower bound is wrong size! Expect Nx by 1');
           end       
       end
       
