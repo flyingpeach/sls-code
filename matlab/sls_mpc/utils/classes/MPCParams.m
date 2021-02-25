@@ -69,10 +69,6 @@ classdef MPCParams < matlab.mixin.Copyable
           if (e1 || e2 || e3 || e4 || e5 || e6 || e7 || e8)
               mpc_error('One or more required parameters is missing!')
           end
-          
-          if ~isempty(obj.solverMode_)
-              mpc_warning('solverMode_ was specified. Only do this if you know what you are doing!');              
-          end
       end
       
       function sanity_check_params_2(obj)
@@ -134,7 +130,6 @@ classdef MPCParams < matlab.mixin.Copyable
               if emptyParams
                 mpc_error('At least one adaptive ADMM parameter was specified but the others were left empty!');
               end
-              mpc_warning('Adaptive ADMM params were specified. Only do this if you know what you are doing!');
           end
       end
           
