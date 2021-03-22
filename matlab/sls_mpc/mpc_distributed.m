@@ -108,7 +108,15 @@ for iters=1:maxIters % ADMM (outer loop)
             else % no constraint, use closed form
                 solverMode = MPCSolverMode.ClosedForm;
             end
-
+            
+            % Terminal constraint, and row represents state at time T
+            if params.terminalZeroConstr_ && row >= (tFIR-1)*Nx + 1 && row <= tFIR*Nx 
+                b1 = 0; b2 = 0;
+                if isempty(solverMode)
+                    solverMode = MPC.SolverMode.Explicit;
+                end
+            end
+            
             if solverMode == MPCSolverMode.ClosedForm
                 tic;
                 Phi_rows{row} = eqn_16a_closed(x_loc, Psi(row, s_r{row}), Lambda(row, s_r{row}), cost_, rho);

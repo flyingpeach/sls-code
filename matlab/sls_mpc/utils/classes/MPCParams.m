@@ -46,7 +46,10 @@ classdef MPCParams < matlab.mixin.Copyable
         
         % Which solver to use for main row update
         % No sanity checks accompany this option
-        solverMode_; 
+        solverMode_;
+        
+        % Terminal constraint
+        terminalZeroConstr_ = false; % Not supported for coupled case at the moment
         
         % Adaptive ADMM parameter (outer loop only)
         tau_i_;
