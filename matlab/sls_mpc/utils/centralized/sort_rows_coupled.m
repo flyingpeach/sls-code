@@ -1,15 +1,15 @@
 function [rCp, rUcp, nValsCp] = sort_rows_coupled(r, cpIdx)
 
-Nx = length(r);
+len_r = length(r);
 
-rCp     = cell(Nx, 1);
-rUcp    = cell(Nx, 1);
+rCp     = cell(len_r, 1);
+rUcp    = cell(len_r, 1);
 nValsCp = 0;
 
 % Identify rows with coupling
-for i = 1:Nx
+for i = 1:len_r
     for j = 1:length(r{i})
-        row = r{i}{j};     
+        row = r{i}{j}; 
         if length(cpIdx{row}) <= 1 % there is only "self-coupling" (i.e. no coupling)
             rUcp{i}{end+1} = r{i}{j};
         else % there is coupling
