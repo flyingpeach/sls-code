@@ -53,7 +53,7 @@ Psi    = zeros(nVals, Nx);
 Lambda = zeros(nVals, Nx);
 
 % Coupling info and variables
-cpIdx = get_coupling_indices(C, K);
+cpIdx = get_coupling_indices_phi(C, K);
 [rCp, rUcp, nValsCp] = sort_rows_coupled(r, cpIdx);
 Y_rows = cell(nValsCp, 1);
 Z_rows = cell(nValsCp, 1);

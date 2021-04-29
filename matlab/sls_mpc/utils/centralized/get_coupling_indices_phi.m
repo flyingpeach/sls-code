@@ -1,4 +1,4 @@
-function cpIdx = get_coupling_indices(C, K)
+function cpIdx = get_coupling_indices_phi(C, K)
 % C is cost matrix
 % K is constraint matrix
 % Both were augmented from state/input matrices to be the same size as Phi
