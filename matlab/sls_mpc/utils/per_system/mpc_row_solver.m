@@ -1,4 +1,4 @@
-function [phi_, time] = eqn_16a_solver(x_loc, psi_, lamb_, b1, b2, cost_, rho)
+function [phi_, time] = mpc_row_solver(x_loc, psi_, lamb_, b1, b2, cost_, rho)
 % x_loc  : locally observed state
 % psi_   : row of Psi
 % lamb_  : row of Lambda

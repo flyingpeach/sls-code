@@ -1,4 +1,4 @@
-function [M1, M2, MSum, MbSum] = eqn_20a_common(x_loc, y_, z_, selfIdx)
+function [M1, M2, MSum, MbSum] = coupled_row_setup(x_loc, y_, z_, selfIdx)
 
 n   = length(x_loc);
 nc  = length(z_);    % # of coupled subsystems (including self)

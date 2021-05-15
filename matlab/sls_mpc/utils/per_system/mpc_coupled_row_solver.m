@@ -1,9 +1,9 @@
-function [phi_, x_, time] = eqn_20a_solver(x_loc, psi_, lamb_, y_, z_, ...
+function [phi_, x_, time] = mpc_coupled_row_solver(x_loc, psi_, lamb_, y_, z_, ...
                                      cost_, k_, selfIdx, lb, ub, params)        
 rho = params.rho_;
 mu  = params.mu_;
 
-[M1, M2, MSum, MbSum] = eqn_20a_common(x_loc, y_, z_, selfIdx);
+[M1, M2, MSum, MbSum] = coupled_row_setup(x_loc, y_, z_, selfIdx);
 a = psi_ - lamb_;
 
 % set up QP

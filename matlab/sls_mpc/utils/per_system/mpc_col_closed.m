@@ -1,4 +1,4 @@
-function psi_ = eqn_16b(phi_, lamb_, zab_, eye_, zabi_)
+function psi_ = mpc_col_closed(phi_, lamb_, zab_, eye_, zabi_)
 % phi_  : column of phi
 % lamb_ : column of Lambda
 % zab_  : column of ZAB (part of sls constraints)

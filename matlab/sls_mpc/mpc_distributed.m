@@ -115,14 +115,14 @@ for iters=1:maxIters % ADMM (outer loop)
             
             if solverMode == MPCSolverMode.ClosedForm
                 tic;
-                Phi_rows{row} = eqn_16a_closed(x_loc, Psi(row, s_r{row}), Lambda(row, s_r{row}), cost_, rho);
+                Phi_rows{row} = mpc_row_closed(x_loc, Psi(row, s_r{row}), Lambda(row, s_r{row}), cost_, rho);
                 times(i) = times(i) + toc;
             elseif solverMode == MPCSolverMode.Explicit
                 tic;
-                Phi_rows{row} = eqn_16a_explicit(x_loc, Psi(row, s_r{row}), Lambda(row, s_r{row}), b1, b2, cost_, rho);
+                Phi_rows{row} = mpc_row_explicit(x_loc, Psi(row, s_r{row}), Lambda(row, s_r{row}), b1, b2, cost_, rho);
                 times(i) = times(i) + toc;
             else % use solver
-                [Phi_rows{row}, solverTime] = eqn_16a_solver(x_loc, Psi(row, s_r{row}), Lambda(row, s_r{row}), b1, b2, cost_, rho);
+                [Phi_rows{row}, solverTime] = mpc_row_solver(x_loc, Psi(row, s_r{row}), Lambda(row, s_r{row}), b1, b2, cost_, rho);
                 times(i) = times(i) + solverTime;                    
             end
         end
@@ -159,11 +159,11 @@ for iters=1:maxIters % ADMM (outer loop)
 
                     if solverMode == MPCSolverMode.ClosedForm
                         tic;
-                        [Phi_rows{row}, x_row] = eqn_20a_closed(x_loc, Psi(row, s_r{row}), Lambda(row, s_r{row}), ...
+                        [Phi_rows{row}, x_row] = mpc_coupled_row_closed(x_loc, Psi(row, s_r{row}), Lambda(row, s_r{row}), ...
                                                  Ys{row}(cps), Zs(cps), cost_, selfIdx, params);
                         times(i) = times(i) + toc;
                     else % use solver
-                        [Phi_rows{row}, x_row, solverTime] = eqn_20a_solver(x_loc, Psi(row, s_r{row}), Lambda(row, s_r{row}), ...
+                        [Phi_rows{row}, x_row, solverTime] = mpc_coupled_row_solver(x_loc, Psi(row, s_r{row}), Lambda(row, s_r{row}), ...
                                                              Ys{row}(cps), Zs(cps), cost_, k_, selfIdx, lb, ub, params);
                         times(i) = times(i) + solverTime;
                     end
@@ -227,7 +227,7 @@ for iters=1:maxIters % ADMM (outer loop)
     Psi_cols = cell(Nx, 1);
     for i = 1:Nx
         tic;
-        Psi_cols{i} = eqn_16b(Phi(s_c{i}, c{i}), Lambda(s_c{i}, c{i}), zabs{i}, eyes{i}, zabis{i});
+        Psi_cols{i} = mpc_col_closed(Phi(s_c{i}, c{i}), Lambda(s_c{i}, c{i}), zabs{i}, eyes{i}, zabis{i});
         times(i) = times(i) + toc;        
     end
     

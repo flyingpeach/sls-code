@@ -1,4 +1,4 @@
-function phi_ = eqn_16a_explicit(x_loc, psi_, lamb_, b1, b2, cost_, rho)
+function phi_ = mpc_row_explicit(x_loc, psi_, lamb_, b1, b2, cost_, rho)
 % x_loc  : locally observed state
 % psi_   : row of Psi
 % lamb_  : row of Lambda
