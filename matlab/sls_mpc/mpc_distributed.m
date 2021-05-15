@@ -51,18 +51,7 @@ Lambda = zeros(nPhi, Nx);
 % Coupling info and variables
 cpIdx = get_coupling_indices_phi(Cost, Constr);
 [rCp, rUcp, nValsCp] = sort_rows_coupled(r, cpIdx);
-Ys = cell(nValsCp, 1);
-Zs = cell(nValsCp, 1);
-
-% Initialize Y and Z
-for i=1:Nx
-    for row = rCp{i}
-        Zs{row} = 0;
-        for k = cpIdx{row}
-            Ys{row}{k} = 0;
-        end
-    end
-end
+[Ys, Zs] = initialize_cons(rCp, cpIdx, nValsCp);            
 
 % Precalculate items for column-wise update
 [zabs, eyes, zabis] = precalculate_col(sys, T, s_c);
