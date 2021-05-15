@@ -169,23 +169,14 @@ for iters=1:maxIters % ADMM (outer loop)
 
             % Update Z for consensus
             for i = 1:Nx
-                tic;
-                for row = rCp{i}
-                    Zs{row} = 0;
-                    for k = cpIdx{row} % neighbors                                           
-                        Zs{row} = Zs{row} + (Xs{k}(row)+Ys{k}{row})/length(cpIdx{row});
-                    end
-                end
+                tic; 
+                Zs = cons_z_update(Xs, Ys, Zs, rCp{i}, cpIdx);
                 times(i) = times(i) + toc;
             end
 
             % Update Y for consensus
             for i = 1:Nx
-                for row = rCp{i}
-                    for k = cpIdx{row} % neighbors
-                        Ys{row}{k} = Ys{row}{k} + Xs{row}(k) - Zs{k};
-                    end
-                end
+                Ys = cons_y_update(Xs, Ys, Zs, rCp{i}, cpIdx);
             end
 
             % Check convergence of ADMM consensus
