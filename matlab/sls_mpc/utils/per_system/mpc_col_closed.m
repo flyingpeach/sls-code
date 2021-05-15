@@ -1,10 +1,10 @@
-function psi_ = mpc_col_closed(phi_, lamb_, zab_, eye_, zabi_)
-% phi_  : column of phi
-% lamb_ : column of Lambda
-% zab_  : column of ZAB (part of sls constraints)
-% eye_  : column of shifted identity matrix (part of sls constraints)
-% zabi_ : pseudoinverse of zab
+function psi = mpc_col_closed(phi, lamb, zab, myeye, zabi)
+% phi   : column of phi
+% lamb  : column of Lambda
+% zab   : column of ZAB (part of sls constraints)
+% myeye : column of shifted identity matrix (part of sls constraints)
+% zabi  : pseudoinverse of zab
 
-psi_ = (phi_ + lamb_) + zabi_*(eye_ - zab_*(phi_ + lamb_));
+psi = (phi + lamb) + zabi*(myeye - zab*(phi + lamb));
 
 end

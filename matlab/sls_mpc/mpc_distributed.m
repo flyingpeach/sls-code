@@ -15,14 +15,9 @@ function [x, u, time, iters, consIters] = mpc_distributed(sys, x0, params)
 %                       2 iters, 5 iters, and 6 iters, then consIters = 4.3
 
 %% Setup
-sanity_check_actuation(sys)
-
-if params.has_coupling()
-    params.sanity_check_alg_2();
-    sanity_check_coupling(sys, params);
-else
-    params.sanity_check_alg_1();
-end
+sanity_check_actuation(sys);
+sanity_check_coupling(sys, params);
+params.sanity_check_dist();
 
 % For ease of notation
 Nx = sys.Nx; Nu = sys.Nu; T = params.tFIR_;
@@ -37,16 +32,16 @@ times        = zeros(Nx, 1); % per state
 consIterList = zeros(maxIters,1);
 
 % Get indices corresponding to rows / columns / localities
-PsiSupp  = get_psi_sparsity(sys, params); % Toeplitz matrix
-PhiSupp  = PsiSupp(:, 1:Nx);              % First block column
+PsiSupp  = get_psi_sparsity(sys, params);
+PhiSupp  = PsiSupp(:, 1:Nx); % First block column
 r   = assign_rows_phi(sys, T);
 c   = assign_cols_phi(sys);
 s_r = get_row_locality(PhiSupp);
 s_c = get_col_locality(PhiSupp);
 
 % Constraints and costs
-C     = build_cost_mtx(params);
-K     = build_constr_mtx(sys, params);
+Cost   = build_cost_mtx(params);
+Constr = build_constr_mtx(sys, params);
 
 % ADMM variables
 Phi    = zeros(nPhi, Nx);
@@ -54,7 +49,7 @@ Psi    = zeros(nPhi, Nx);
 Lambda = zeros(nPhi, Nx);
 
 % Coupling info and variables
-cpIdx = get_coupling_indices_phi(C, K);
+cpIdx = get_coupling_indices_phi(Cost, Constr);
 [rCp, rUcp, nValsCp] = sort_rows_coupled(r, cpIdx);
 Ys = cell(nValsCp, 1);
 Zs = cell(nValsCp, 1);
@@ -79,25 +74,24 @@ rho          = params.rho_;
 %% MPC
 for iters=1:maxIters % ADMM (outer loop)
     Psi_prev = Psi;
-
     Phi_rows = cell(nPhi, 1);
     
     % Solve for uncoupled rows in Phi
     for i = 1:Nx
         for row = rUcp{i}
             x_loc = x0(s_r{row}); % observe local state
-            cost_ = C(row, row);
+            cost  = Cost(row, row);
 
-            if K(row, row) % has constraint
+            if Constr(row, row) % has constraint
                 if row <= T*Nx % state constraint
-                    b1_ = params.stateUB_(i) / K(row, row);
-                    b2_ = params.stateLB_(i) / K(row, row);
+                    ub_ = params.stateUB_(i) / Constr(row, row);
+                    lb_ = params.stateLB_(i) / Constr(row, row);
                 else % input constraint
                     inputIdx = find(sys.B2(i,:));
-                    b1_ = params.inputUB_(inputIdx) / K(row, row);
-                    b2_ = params.inputLB_(inputIdx) / K(row, row);
+                    ub_ = params.inputUB_(inputIdx) / Constr(row, row);
+                    lb_ = params.inputLB_(inputIdx) / Constr(row, row);
                 end
-                b1  = max(b1_,b2_); b2 = min(b1_,b2_); % in case of negative signs
+                ub = max(ub_,lb_); lb = min(ub_,lb_); % in case of negative signs
                 solverMode = MPCSolverMode.Explicit;
             else % no constraint, use closed form
                 solverMode = MPCSolverMode.ClosedForm;
@@ -105,24 +99,25 @@ for iters=1:maxIters % ADMM (outer loop)
             
             % Terminal constraint, and row represents state at time T
             if params.terminalZeroConstr_ && row >= (T-1)*Nx + 1 && row <= T*Nx 
-                b1 = 0; b2 = 0;
+                ub = 0; lb = 0;
                 solverMode = MPCSolverMode.Explicit;
             end
             
+            % User can choose to override explicit mode and only use solver
             if params.useSolver_ && solverMode == MPCSolverMode.Explicit
                 solverMode = MPCSolverMode.UseSolver;
             end
             
             if solverMode == MPCSolverMode.ClosedForm
                 tic;
-                Phi_rows{row} = mpc_row_closed(x_loc, Psi(row, s_r{row}), Lambda(row, s_r{row}), cost_, rho);
+                Phi_rows{row} = mpc_row_closed(x_loc, Psi(row, s_r{row}), Lambda(row, s_r{row}), cost, rho);
                 times(i) = times(i) + toc;
             elseif solverMode == MPCSolverMode.Explicit
                 tic;
-                Phi_rows{row} = mpc_row_explicit(x_loc, Psi(row, s_r{row}), Lambda(row, s_r{row}), b1, b2, cost_, rho);
+                Phi_rows{row} = mpc_row_explicit(x_loc, Psi(row, s_r{row}), Lambda(row, s_r{row}), ub, lb, cost, rho);
                 times(i) = times(i) + toc;
             else % use solver
-                [Phi_rows{row}, solverTime] = mpc_row_solver(x_loc, Psi(row, s_r{row}), Lambda(row, s_r{row}), b1, b2, cost_, rho);
+                [Phi_rows{row}, solverTime] = mpc_row_solver(x_loc, Psi(row, s_r{row}), Lambda(row, s_r{row}), ub, lb, cost, rho);
                 times(i) = times(i) + solverTime;                    
             end
         end
@@ -136,14 +131,13 @@ for iters=1:maxIters % ADMM (outer loop)
 
             for i = 1:Nx
                 for row = rCp{i}
-                    x_loc   = x0(s_r{row});     % observe local state
-                    cps     = cpIdx{row};       % coupling indices for this row
-                    selfIdx = find(cps == row); % index of "self-coupling" term
-
-                    cost_ = C(row, cps);
-                    k_    = K(row, cps); % constraint
-
-                    if ~all(k_ == 0) % has constraint
+                    x_loc = x0(s_r{row});     % observe local state
+                    cp    = cpIdx{row};       % coupling indices for this row
+                    sIdx  = find(cp == row);  % index of "self-coupling" term
+                    cost   = Cost(row, cp);
+                    constr = Constr(row, cp);
+                    
+                    if ~all(constr == 0) % has constraint
                         if row <= Nx*T % is state
                             lb  = params.stateLB_(i);
                             ub  = params.stateUB_(i);
@@ -159,17 +153,17 @@ for iters=1:maxIters % ADMM (outer loop)
 
                     if solverMode == MPCSolverMode.ClosedForm
                         tic;
-                        [Phi_rows{row}, x_row] = mpc_coupled_row_closed(x_loc, Psi(row, s_r{row}), Lambda(row, s_r{row}), ...
-                                                 Ys{row}(cps), Zs(cps), cost_, selfIdx, params);
+                        [Phi_rows{row}, x_] = mpc_coupled_row_closed(x_loc, Psi(row, s_r{row}), Lambda(row, s_r{row}), ...
+                                                 Ys{row}(cp), Zs(cp), cost, sIdx, params);
                         times(i) = times(i) + toc;
                     else % use solver
-                        [Phi_rows{row}, x_row, solverTime] = mpc_coupled_row_solver(x_loc, Psi(row, s_r{row}), Lambda(row, s_r{row}), ...
-                                                             Ys{row}(cps), Zs(cps), cost_, k_, selfIdx, lb, ub, params);
+                        [Phi_rows{row}, x_, solverTime] = mpc_coupled_row_solver(x_loc, Psi(row, s_r{row}), Lambda(row, s_r{row}), ...
+                                                             Ys{row}(cp), Zs(cp), cost, constr, sIdx, lb, ub, params);
                         times(i) = times(i) + solverTime;
                     end
 
                     Xs{row}             = zeros(nPhi, 1);
-                    Xs{row}(cpIdx{row}) = x_row;
+                    Xs{row}(cpIdx{row}) = x_;
                 end
             end
 
@@ -178,7 +172,7 @@ for iters=1:maxIters % ADMM (outer loop)
                 tic;
                 for row = rCp{i}
                     Zs{row} = 0;
-                    for k = cpIdx{row}                                           
+                    for k = cpIdx{row} % neighbors                                           
                         Zs{row} = Zs{row} + (Xs{k}(row)+Ys{k}{row})/length(cpIdx{row});
                     end
                 end
@@ -188,7 +182,7 @@ for iters=1:maxIters % ADMM (outer loop)
             % Update Y for consensus
             for i = 1:Nx
                 for row = rCp{i}
-                    for k = cpIdx{row}
+                    for k = cpIdx{row} % neighbors
                         Ys{row}{k} = Ys{row}{k} + Xs{row}(k) - Zs{k};
                     end
                 end
@@ -202,8 +196,7 @@ for iters=1:maxIters % ADMM (outer loop)
                     z_cp(cpIdx{row}) = [Zs{cpIdx{row}}];
                     
                     if ~check_convergence_cons(z_cp, Xs{row}, Zs{row}, Zs_prev{row}, params)
-                        converged = false;
-                        break; % if one fails, can stop checking the rest
+                        converged = false; break; % if one fails, don't need to check the rest
                     end
                 end
             end
@@ -212,10 +205,12 @@ for iters=1:maxIters % ADMM (outer loop)
                 break; % exit ADMM consensus iterations
             end
         end
+        
         if ~converged
             fprintf('ADMM consensus reached %d iters and did not converge\n', maxItersCons);
-        end   
-    consIterList(iters) = consIter;
+        end
+        
+        consIterList(iters) = consIter;
     end 
     
     % Build Phi matrix
@@ -247,17 +242,13 @@ for iters=1:maxIters % ADMM (outer loop)
         end
         
         [conv, scale] = check_convergence(phi_, psi_, psi_, psi_prev_, params);
-        
         if ~conv
-            converged   = false;
-            
             if params.has_adaptive_admm()
-                % Alg2 functions use params instead of rho directly
+                % Coupled functions use params instead of rho directly
                 params.rho_ = min(params.rho_ * scale, params.rhoMax_);
                 rho         = params.rho_;
             end
-            
-            break; % if one fails, can stop checking the rest
+            converged = false; break; % if one fails, don't need to check the rest
         end
     end
     

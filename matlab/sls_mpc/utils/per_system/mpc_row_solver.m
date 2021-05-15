@@ -1,27 +1,27 @@
-function [phi_, time] = mpc_row_solver(x_loc, psi_, lamb_, b1, b2, cost_, rho)
+function [phi_row, time] = mpc_row_solver(x_loc, psi, lamb, ub, lb, cost, rho)
 % x_loc  : locally observed state
 % psi_   : row of Psi
 % lamb_  : row of Lambda
 
-n   = length(x_loc);
+n = length(x_loc);
 
 % set up QP
 % minimize Phi*Q*Phi' + obj*Phi'
 % note: constant terms omitted since we are interested in argmin only
-model.Q   = sparse((cost_*x_loc')'*(cost_*x_loc') + rho/2*eye(n));
-model.obj = rho*(-psi_ + lamb_);
+model.Q   = sparse((cost*x_loc')'*(cost*x_loc') + rho/2*eye(n));
+model.obj = rho*(-psi + lamb);
 
-if isinf(b2)
+if isinf(lb)
     model.A     = sparse(x_loc');
-    model.rhs   = b1;
+    model.rhs   = ub;
     model.sense = '<';
-elseif isinf(b1)
+elseif isinf(ub)
     model.A     = sparse(x_loc');
-    model.rhs   = b2;
+    model.rhs   = lb;
     model.sense = '>';
 else
     model.A     = sparse([x_loc'; x_loc']);
-    model.rhs   = [b1 b2];
+    model.rhs   = [ub lb];
     model.sense = '<>';
 end
 
@@ -33,6 +33,6 @@ model.lb = MPC_LB*ones(length(model.A), 1);
 gParams.outputflag = 0;
 result = gurobi(model, gParams);
 
-phi_ = result.x(:);
-time = result.runtime;
+phi_row = result.x(:);
+time    = result.runtime;
 end

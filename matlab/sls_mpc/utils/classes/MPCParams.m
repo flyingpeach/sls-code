@@ -153,7 +153,7 @@ classdef MPCParams < matlab.mixin.Copyable
               mpc_error('Disturbance lower bound is wrong size! Expect Nx by 1');
           end       
       end
-      
+     
       function sanity_check_alg_1(obj)
           sanity_check_params_1(obj);
           sanity_check_state_cons(obj);
@@ -169,7 +169,15 @@ classdef MPCParams < matlab.mixin.Copyable
           sanity_check_adaptive(obj);
       end
       
-      function sanity_check_cent(obj)
+      function sanity_check_dist(obj) % Main method to be called externally
+          if has_coupling(obj)
+              sanity_check_alg_2(obj);
+          else
+              sanity_check_alg_1(obj);
+          end          
+      end
+            
+      function sanity_check_cent(obj) % Main method to be called externally
           e1  = isempty(obj.locality_);
           e2  = isempty(obj.tFIR_);
           e3  = isempty(obj.QSqrt_);
