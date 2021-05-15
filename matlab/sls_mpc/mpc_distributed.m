@@ -28,7 +28,7 @@ Nx = sys.Nx; Nu = sys.Nu; T = params.tFIR_;
 maxIters     = params.maxIters_;
 maxItersCons = params.maxItersCons_;
 
-nVals = Nx*T + Nu*(T-1);
+nPhi = Nx*T + Nu*(T-1);
 
 % Track runtime and iterations
 times        = zeros(Nx, 1); % per state
@@ -47,9 +47,9 @@ C     = build_cost_mtx(params);
 K     = build_constr_mtx(sys, params);
 
 % ADMM variables
-Phi    = zeros(nVals, Nx);
-Psi    = zeros(nVals, Nx);
-Lambda = zeros(nVals, Nx);
+Phi    = zeros(nPhi, Nx);
+Psi    = zeros(nPhi, Nx);
+Lambda = zeros(nPhi, Nx);
 
 % Coupling info and variables
 cpIdx = get_coupling_indices_phi(C, K);
@@ -80,7 +80,7 @@ for iters=1:maxIters % ADMM (outer loop)
     Psi_prev = Psi;
 
     % Step 4: Solve for Phi
-    Phi_rows = cell(nVals, 1);
+    Phi_rows = cell(nPhi, 1);
     
     % Solve for Phi for uncoupled rows
     for i = 1:Nx
@@ -177,7 +177,7 @@ for iters=1:maxIters % ADMM (outer loop)
                         times(i) = times(i) + solverTime;
                     end
 
-                    Xs{row}             = zeros(nVals, 1);
+                    Xs{row}             = zeros(nPhi, 1);
                     Xs{row}(cpIdx{row}) = x_row;
                 end
             end
@@ -209,7 +209,7 @@ for iters=1:maxIters % ADMM (outer loop)
             converged = true;
             for i = 1:Nx
                 for row = rCp{i}
-                    z_cp = zeros(nVals, 1);
+                    z_cp = zeros(nPhi, 1);
                     z_cp(cpIdx{row}) = [Zs{cpIdx{row}}];
                     
                     if ~check_convergence_cons(z_cp, Xs{row}, Zs{row}, Zs_prev{row}, params)
