@@ -1,6 +1,6 @@
 function ConstrMtx = build_constr_mtx(sys, params)
 
-tFIR = params.tFIR_;
+T = params.tFIR_;
 
 ConstrMtx = [];
 
@@ -14,10 +14,10 @@ if params.has_input_cons()
 end
     
 ConstrMtx = zeros(sys.Nx);
-for t = 2:tFIR
+for t = 2:T
     ConstrMtx = blkdiag(ConstrMtx, K1);
 end
-for t = 1:tFIR-1
+for t = 1:T-1
     ConstrMtx = blkdiag(ConstrMtx, K2);
 end    
 

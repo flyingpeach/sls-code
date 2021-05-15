@@ -2,7 +2,7 @@ function PsiSupp = get_psi_sparsity(sys, params)
 % This is the sparsity of the entire Toeplitz matrix representing system
 % responses. Often only the first block-column (Nx columns) are required.
 
-Nx = sys.Nx; Nu = sys.Nu; T  = params.tFIR_;   
+Nx = sys.Nx; Nu = sys.Nu; T = params.tFIR_;   
 
 % Sparsity / support for each block matrix of Psi
 Comms_Adj = abs(sys.A)>0;

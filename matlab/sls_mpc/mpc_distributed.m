@@ -23,13 +23,12 @@ else
 end
 
 % For ease of notation
-Nx = sys.Nx; Nu = sys.Nu;
-tFIR = params.tFIR_;
+Nx = sys.Nx; Nu = sys.Nu; T = params.tFIR_;
 
 maxIters     = params.maxIters_;
 maxItersCons = params.maxItersCons_;
 
-nVals = Nx*tFIR + Nu*(tFIR-1);
+nVals = Nx*T + Nu*(T-1);
 
 % Track runtime and iterations
 times        = zeros(Nx, 1); % per state
@@ -38,7 +37,7 @@ consIterList = zeros(maxIters,1);
 % Get indices corresponding to rows / columns / localities
 PsiSupp  = get_psi_sparsity(sys, params); % Toeplitz matrix
 PhiSupp  = PsiSupp(:, 1:Nx);              % First block column
-r   = assign_rows_phi(sys, tFIR);
+r   = assign_rows_phi(sys, T);
 c   = assign_cols_phi(sys);
 s_r = get_row_locality(PhiSupp);
 s_c = get_col_locality(PhiSupp);
@@ -70,7 +69,7 @@ for i=1:Nx
 end
 
 % Precalculate items for column-wise update
-[zabs, eyes, zabis] = precalculate_col(sys, tFIR, s_c);
+[zabs, eyes, zabis] = precalculate_col(sys, T, s_c);
 
 % We will change params.rho_ but we want to set it back afterwards
 rho_original = params.rho_;
@@ -91,7 +90,7 @@ for iters=1:maxIters % ADMM (outer loop)
 
             solverMode = params.solverMode_;
             if K(row, row) % has constraint
-                if row <= tFIR*Nx % state constraint
+                if row <= T*Nx % state constraint
                     b1_ = params.stateUB_(i) / K(row, row);
                     b2_ = params.stateLB_(i) / K(row, row);
                 else % input constraint
@@ -109,7 +108,7 @@ for iters=1:maxIters % ADMM (outer loop)
             end
             
             % Terminal constraint, and row represents state at time T
-            if params.terminalZeroConstr_ && row >= (tFIR-1)*Nx + 1 && row <= tFIR*Nx 
+            if params.terminalZeroConstr_ && row >= (T-1)*Nx + 1 && row <= T*Nx 
                 b1 = 0; b2 = 0;
                 if isempty(solverMode)
                     solverMode = MPC.SolverMode.Explicit;
@@ -149,7 +148,7 @@ for iters=1:maxIters % ADMM (outer loop)
                     solverMode = params.solverMode_;
 
                     if ~all(k_ == 0) % has constraint
-                        if row <= Nx*tFIR % is state
+                        if row <= Nx*T % is state
                             lb  = params.stateLB_(i);
                             ub  = params.stateUB_(i);
                         else % is input
@@ -287,7 +286,7 @@ if ~converged
 end
 
 % Compute control + state
-u = Phi(1+Nx*tFIR:Nx*tFIR+Nu,:)*x0;
+u = Phi(1+Nx*T:Nx*T+Nu,:)*x0;
 x = Phi(1+Nx:2*Nx,:)*x0; % since no noise, x_ref = x
 
 time      = mean(times);
