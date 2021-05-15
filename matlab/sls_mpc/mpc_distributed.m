@@ -6,7 +6,9 @@ function [x, u, time, iters, consIters] = mpc_distributed(sys, x0, params)
 % Outputs
 %   x        : Next state if MPC input is used
 %   u        : Current input as calculated by MPC
-%   time     : Runtime (Steps 4+6+8+11) per state
+%   time     : Runtime per subsystem; time taken to calculate
+%              Phi (row update), Psi (col update), and consensus
+%              updates on X and Z if applicable
 %   iters    : ADMM iters per state (outer loop)
 %   consIters: Average ADMM consensus iters per state, per iter (inner loop)
 %              example: if outer loop ran 3 iters and inner loop ran
@@ -78,10 +80,9 @@ rho          = params.rho_;
 for iters=1:maxIters % ADMM (outer loop)
     Psi_prev = Psi;
 
-    % Step 4: Solve for Phi
     Phi_rows = cell(nPhi, 1);
     
-    % Solve for Phi for uncoupled rows
+    % Solve for uncoupled rows in Phi
     for i = 1:Nx
         for row = rUcp{i}
             x_loc = x0(s_r{row}); % observe local state
@@ -127,7 +128,7 @@ for iters=1:maxIters % ADMM (outer loop)
         end
     end
     
-    % Solve for Phi for coupled rows using ADMM consensus    
+    % Solve for coupled rows in Phi using ADMM consensus    
     if params.has_coupling()
         for consIter=1:maxItersCons % ADMM consensus (inner loop)
             Zs_prev = Zs;
@@ -172,7 +173,7 @@ for iters=1:maxIters % ADMM (outer loop)
                 end
             end
 
-            % Step 6: Update Z (Step 5 implicitly done in this step)
+            % Update Z for consensus
             for i = 1:Nx
                 tic;
                 for row = rCp{i}
@@ -184,18 +185,16 @@ for iters=1:maxIters % ADMM (outer loop)
                 times(i) = times(i) + toc;
             end
 
-            % Step 8: Update Y (Step 7 implicitly done in this step)
+            % Update Y for consensus
             for i = 1:Nx
-                tic;
                 for row = rCp{i}
                     for k = cpIdx{row}
                         Ys{row}{k} = Ys{row}{k} + Xs{row}(k) - Zs{k};
                     end
                 end
-                times(i) = times(i) + toc;                
             end
 
-            % Step 9: Check convergence of ADMM consensus
+            % Check convergence of ADMM consensus
             converged = true;
             for i = 1:Nx
                 for row = rCp{i}
@@ -219,10 +218,10 @@ for iters=1:maxIters % ADMM (outer loop)
     consIterList(iters) = consIter;
     end 
     
-    % Step 10: Build entire Phi matrix
+    % Build Phi matrix
     Phi = build_from_rows(r, s_r, Phi_rows, size(Phi));
         
-    % Step 11: Solve (16b) to get local Psi
+    % Solve for columns of Psi
     Psi_cols = cell(Nx, 1);
     for i = 1:Nx
         tic;
@@ -230,22 +229,18 @@ for iters=1:maxIters % ADMM (outer loop)
         times(i) = times(i) + toc;        
     end
     
-    % Step 12: Build entire Psi matrix
+    % Build Psi matrix
     Psi = build_from_cols(c, s_c, Psi_cols, size(Psi));
     
-    % Step 13: Update Lambda
+    % Update Lambda matrix
     Lambda = Lambda + Phi - Psi;
     
-    % Step 14: Check convergence of ADMM (outer loop)
+    % Check convergence of ADMM
     converged = true;
     for i = 1:Nx
-        phi_      = [];
-        psi_      = [];
-        psi_prev_ = [];
+        phi_ = []; psi_ = []; psi_prev_ = [];
         for row = r{i}
-            % Due to dimensionality issues, not stacking rows
-            % Instead, just make one huge row
-            % (since we're checking Frob norm, doesn't matter)
+            % Can't stack into small matrices; just use one big row
             phi_      = [phi_, Phi(row, s_r{row})];
             psi_      = [psi_, Psi(row, s_r{row})];
             psi_prev_ = [psi_prev_, Psi_prev(row, s_r{row})];
