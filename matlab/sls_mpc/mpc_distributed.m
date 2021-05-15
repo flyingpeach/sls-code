@@ -59,8 +59,7 @@ Zs = cell(nValsCp, 1);
 
 % Initialize Y and Z
 for i=1:Nx
-    for j = 1:length(rCp{i})
-        row = rCp{i}{j};
+    for row = rCp{i}
         Zs{row} = 0;
         for k = cpIdx{row}
             Ys{row}{k} = 0;
