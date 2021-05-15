@@ -4,7 +4,7 @@ len_r = length(r);
 
 rCp     = cell(len_r, 1);
 rUcp    = cell(len_r, 1);
-nValsCp = 0;
+nValsCp = 0; % number of rows with coupling
 
 % Identify rows with coupling
 for i = 1:len_r

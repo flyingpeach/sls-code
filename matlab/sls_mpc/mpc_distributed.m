@@ -55,16 +55,16 @@ Lambda = zeros(nVals, Nx);
 % Coupling info and variables
 cpIdx = get_coupling_indices_phi(C, K);
 [rCp, rUcp, nValsCp] = sort_rows_coupled(r, cpIdx);
-Y_rows = cell(nValsCp, 1);
-Z_rows = cell(nValsCp, 1);
+Ys = cell(nValsCp, 1);
+Zs = cell(nValsCp, 1);
 
 % Initialize Y and Z
 for i=1:Nx
     for j = 1:length(rCp{i})
         row = rCp{i}{j};
-        Z_rows{row} = 0;
+        Zs{row} = 0;
         for k = cpIdx{row}
-            Y_rows{row}{k} = 0;
+            Ys{row}{k} = 0;
         end
     end
 end
@@ -135,8 +135,8 @@ for iters=1:maxIters % ADMM (outer loop)
     % Solve for Phi for coupled rows using ADMM consensus    
     if params.has_coupling()
         for consIter=1:maxItersCons % ADMM consensus (inner loop)
-            Z_prev_rows = Z_rows;
-            X_rows      = cell(nValsCp, 1);
+            Zs_prev = Zs;
+            Xs      = cell(nValsCp, 1);
 
             for i = 1:Nx
                 for j = 1:length(rCp{i})
@@ -170,18 +170,18 @@ for iters=1:maxIters % ADMM (outer loop)
                     if solverMode == MPCSolverMode.ClosedForm
                         tic;
                         [Phi_rows{row}, x_row] = eqn_20a_closed(x_loc, Psi(row, s_r{row}), Lambda(row, s_r{row}), ...
-                                                 Y_rows{row}(cps), Z_rows(cps), cost_, selfIdx, params);
+                                                 Ys{row}(cps), Zs(cps), cost_, selfIdx, params);
                         times(i) = times(i) + toc;                        
                     elseif solverMode == MPCSolverMode.Explicit
                         mpc_error('There is no explicit mode for Alg 2 (coupled systems)!');
                     else % use solver
                         [Phi_rows{row}, x_row, solverTime] = eqn_20a_solver(x_loc, Psi(row, s_r{row}), Lambda(row, s_r{row}), ...
-                                                             Y_rows{row}(cps), Z_rows(cps), cost_, k_, selfIdx, lb, ub, params);
+                                                             Ys{row}(cps), Zs(cps), cost_, k_, selfIdx, lb, ub, params);
                         times(i) = times(i) + solverTime;
                     end
 
-                    X_rows{row}             = zeros(nVals, 1);
-                    X_rows{row}(cpIdx{row}) = x_row;
+                    Xs{row}             = zeros(nVals, 1);
+                    Xs{row}(cpIdx{row}) = x_row;
                 end
             end
 
@@ -190,9 +190,9 @@ for iters=1:maxIters % ADMM (outer loop)
                 tic;
                 for j = 1:length(rCp{i})
                     row = rCp{i}{j};
-                    Z_rows{row} = 0;
+                    Zs{row} = 0;
                     for k = cpIdx{row}                                           
-                        Z_rows{row} = Z_rows{row} + (X_rows{k}(row)+Y_rows{k}{row})/length(cpIdx{row});
+                        Zs{row} = Zs{row} + (Xs{k}(row)+Ys{k}{row})/length(cpIdx{row});
                     end
                 end
                 times(i) = times(i) + toc;
@@ -204,7 +204,7 @@ for iters=1:maxIters % ADMM (outer loop)
                 for j = 1:length(rCp{i})
                     row = rCp{i}{j};
                     for k = cpIdx{row}
-                        Y_rows{row}{k} = Y_rows{row}{k} + X_rows{row}(k) - Z_rows{k};
+                        Ys{row}{k} = Ys{row}{k} + Xs{row}(k) - Zs{k};
                     end
                 end
                 times(i) = times(i) + toc;                
@@ -217,10 +217,10 @@ for iters=1:maxIters % ADMM (outer loop)
                     row = rCp{i}{j};
                     z_cp = zeros(nVals, 1);
                     for k = cpIdx{row}
-                        z_cp(k) = Z_rows{k};
+                        z_cp(k) = Zs{k};
                     end
 
-                    if ~check_convergence_cons(z_cp, X_rows{row}, Z_rows{row}, Z_prev_rows{row}, params)
+                    if ~check_convergence_cons(z_cp, Xs{row}, Zs{row}, Zs_prev{row}, params)
                         converged = false;
                         break; % if one fails, can stop checking the rest
                     end
