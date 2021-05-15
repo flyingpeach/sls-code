@@ -88,7 +88,6 @@ for iters=1:maxIters % ADMM (outer loop)
             x_loc = x0(s_r{row}); % observe local state
             cost_ = C(row, row);
 
-            solverMode = params.solverMode_;
             if K(row, row) % has constraint
                 if row <= T*Nx % state constraint
                     b1_ = params.stateUB_(i) / K(row, row);
@@ -99,10 +98,7 @@ for iters=1:maxIters % ADMM (outer loop)
                     b2_ = params.inputLB_(inputIdx) / K(row, row);
                 end
                 b1  = max(b1_,b2_); b2 = min(b1_,b2_); % in case of negative signs
-
-                if isempty(solverMode)
-                    solverMode = MPCSolverMode.Explicit;
-                end
+                solverMode = MPCSolverMode.Explicit;
             else % no constraint, use closed form
                 solverMode = MPCSolverMode.ClosedForm;
             end
@@ -110,9 +106,11 @@ for iters=1:maxIters % ADMM (outer loop)
             % Terminal constraint, and row represents state at time T
             if params.terminalZeroConstr_ && row >= (T-1)*Nx + 1 && row <= T*Nx 
                 b1 = 0; b2 = 0;
-                if isempty(solverMode)
-                    solverMode = MPC.SolverMode.Explicit;
-                end
+                solverMode = MPCSolverMode.Explicit;
+            end
+            
+            if params.useSolver_ && solverMode == MPCSolverMode.Explicit
+                solverMode = MPCSolverMode.UseSolver;
             end
             
             if solverMode == MPCSolverMode.ClosedForm
@@ -145,8 +143,6 @@ for iters=1:maxIters % ADMM (outer loop)
                     cost_ = C(row, cps);
                     k_    = K(row, cps); % constraint
 
-                    solverMode = params.solverMode_;
-
                     if ~all(k_ == 0) % has constraint
                         if row <= Nx*T % is state
                             lb  = params.stateLB_(i);
@@ -156,10 +152,7 @@ for iters=1:maxIters % ADMM (outer loop)
                             lb = params.inputLB_(inputIdx);
                             ub = params.inputUB_(inputIdx);
                         end
-
-                        if isempty(solverMode)
-                            solverMode = MPCSolverMode.UseSolver;
-                        end
+                        solverMode = MPCSolverMode.UseSolver;
                     else % no constraint, use closed form
                         solverMode = MPCSolverMode.ClosedForm;
                     end
@@ -168,9 +161,7 @@ for iters=1:maxIters % ADMM (outer loop)
                         tic;
                         [Phi_rows{row}, x_row] = eqn_20a_closed(x_loc, Psi(row, s_r{row}), Lambda(row, s_r{row}), ...
                                                  Ys{row}(cps), Zs(cps), cost_, selfIdx, params);
-                        times(i) = times(i) + toc;                        
-                    elseif solverMode == MPCSolverMode.Explicit
-                        mpc_error('There is no explicit mode for Alg 2 (coupled systems)!');
+                        times(i) = times(i) + toc;
                     else % use solver
                         [Phi_rows{row}, x_row, solverTime] = eqn_20a_solver(x_loc, Psi(row, s_r{row}), Lambda(row, s_r{row}), ...
                                                              Ys{row}(cps), Zs(cps), cost_, k_, selfIdx, lb, ub, params);

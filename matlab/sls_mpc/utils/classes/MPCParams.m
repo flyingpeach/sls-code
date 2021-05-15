@@ -44,9 +44,8 @@ classdef MPCParams < matlab.mixin.Copyable
         % Advanced options ----------------------------------------
         % Leave these blank unless you really know what you're doing
         
-        % Which solver to use for main row update
-        % No sanity checks accompany this option
-        solverMode_;
+        % Whether to use solver (instead of explicit) for row update
+        useSolver_ = false;
         
         % Terminal constraint
         terminalZeroConstr_ = false; % Not supported for coupled case at the moment
