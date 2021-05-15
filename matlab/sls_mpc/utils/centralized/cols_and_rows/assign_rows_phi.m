@@ -6,21 +6,14 @@ r  = cell(Nx, 1);
 
 for i = 1:Nx
     actuator = find(sys.B2(i,:)); % assumes 1 actuator per system
-    
-    nRows = tFIR;
-    if ~isempty(actuator) % this subsystem has actuation
-        nRows    = nRows + tFIR-1; % include rows from Phi_u
-    end
-    
-    r{i} = cell(nRows, 1);
+    r{i} = [];
     
     for j=1:tFIR 
-        r{i}{j}   = (j-1)*Nx + i; % rows representing state i
+        r{i}(end+1) = (j-1)*Nx + i; % rows representing state i
     end
     if ~isempty(actuator)
         for j=1:tFIR-1
-            j_ = j + tFIR;
-            r{i}{j_}   = tFIR*Nx + (j-1)*Nu + actuator;
+            r{i}(end+1) = tFIR*Nx + (j-1)*Nu + actuator;
         end
     end
 end

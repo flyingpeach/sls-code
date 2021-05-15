@@ -85,8 +85,7 @@ for iters=1:maxIters % ADMM (outer loop)
     
     % Solve for Phi for uncoupled rows
     for i = 1:Nx
-        for j = 1:length(rUcp{i})
-            row   = rUcp{i}{j};
+        for row = rUcp{i}
             x_loc = x0(s_r{row}); % observe local state
             cost_ = C(row, row);
 
@@ -139,8 +138,7 @@ for iters=1:maxIters % ADMM (outer loop)
             Xs      = cell(nValsCp, 1);
 
             for i = 1:Nx
-                for j = 1:length(rCp{i})
-                    row     = rCp{i}{j};
+                for row = rCp{i}
                     x_loc   = x0(s_r{row});     % observe local state
                     cps     = cpIdx{row};       % coupling indices for this row
                     selfIdx = find(cps == row); % index of "self-coupling" term
@@ -188,8 +186,7 @@ for iters=1:maxIters % ADMM (outer loop)
             % Step 6: Update Z (Step 5 implicitly done in this step)
             for i = 1:Nx
                 tic;
-                for j = 1:length(rCp{i})
-                    row = rCp{i}{j};
+                for row = rCp{i}
                     Zs{row} = 0;
                     for k = cpIdx{row}                                           
                         Zs{row} = Zs{row} + (Xs{k}(row)+Ys{k}{row})/length(cpIdx{row});
@@ -201,8 +198,7 @@ for iters=1:maxIters % ADMM (outer loop)
             % Step 8: Update Y (Step 7 implicitly done in this step)
             for i = 1:Nx
                 tic;
-                for j = 1:length(rCp{i})
-                    row = rCp{i}{j};
+                for row = rCp{i}
                     for k = cpIdx{row}
                         Ys{row}{k} = Ys{row}{k} + Xs{row}(k) - Zs{k};
                     end
@@ -213,13 +209,10 @@ for iters=1:maxIters % ADMM (outer loop)
             % Step 9: Check convergence of ADMM consensus
             converged = true;
             for i = 1:Nx
-                for j = 1:length(rCp{i})
-                    row = rCp{i}{j};
+                for row = rCp{i}
                     z_cp = zeros(nVals, 1);
-                    for k = cpIdx{row}
-                        z_cp(k) = Zs{k};
-                    end
-
+                    z_cp(cpIdx{row}) = [Zs{cpIdx{row}}];
+                    
                     if ~check_convergence_cons(z_cp, Xs{row}, Zs{row}, Zs_prev{row}, params)
                         converged = false;
                         break; % if one fails, can stop checking the rest
@@ -244,7 +237,7 @@ for iters=1:maxIters % ADMM (outer loop)
     Psi_cols = cell(Nx, 1);
     for i = 1:Nx
         tic;
-        Psi_cols{i} = eqn_16b(Phi(s_c{i}, c{i}{1}), Lambda(s_c{i}, c{i}{1}), zabs{i}, eyes{i}, zabis{i});
+        Psi_cols{i} = eqn_16b(Phi(s_c{i}, c{i}), Lambda(s_c{i}, c{i}), zabs{i}, eyes{i}, zabis{i});
         times(i) = times(i) + toc;        
     end
     
@@ -260,11 +253,10 @@ for iters=1:maxIters % ADMM (outer loop)
         phi_      = [];
         psi_      = [];
         psi_prev_ = [];
-        for j = 1:length(r{i})
+        for row = r{i}
             % Due to dimensionality issues, not stacking rows
             % Instead, just make one huge row
             % (since we're checking Frob norm, doesn't matter)
-            row = r{i}{j};
             phi_      = [phi_, Phi(row, s_r{row})];
             psi_      = [psi_, Psi(row, s_r{row})];
             psi_prev_ = [psi_prev_, Psi_prev(row, s_r{row})];
