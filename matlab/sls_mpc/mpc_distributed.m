@@ -50,8 +50,8 @@ Lambda = zeros(nPhi, Nx);
 
 % Coupling info and variables
 cpIdx = get_coupling_indices_phi(Cost, Constr);
-[rCp, rUcp, nValsCp] = sort_rows_coupled(r, cpIdx);
-[Ys, Zs] = initialize_cons(rCp, cpIdx, nValsCp);            
+[rCp, rUcp, row2cp, nCp] = sort_rows_coupled(r, cpIdx);
+[Ys, Zs] = initialize_cons(rCp, cpIdx, nCp);            
 
 % Precalculate items for column-wise update
 [zabs, eyes, zabis] = precalculate_col(sys, T, s_c);
@@ -116,7 +116,7 @@ for iters=1:maxIters % ADMM (outer loop)
     if params.has_coupling()
         for consIter=1:maxItersCons % ADMM consensus (inner loop)
             Zs_prev = Zs;
-            Xs      = cell(nValsCp, 1);
+            Xs      = cell(nCp, 1);
 
             for i = 1:Nx
                 for row = rCp{i}

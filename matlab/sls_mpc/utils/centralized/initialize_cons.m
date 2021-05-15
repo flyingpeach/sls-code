@@ -1,7 +1,7 @@
-function [Ys, Zs] = initialize_cons(rCp, cpIdx, nValsCp)                
+function [Ys, Zs] = initialize_cons(rCp, cpIdx, nCp)                
 
-Ys = cell(nValsCp, 1);
-Zs = cell(nValsCp, 1);
+Ys = cell(nCp, 1);
+Zs = cell(nCp, 1);
 
 for i=1:length(rCp)
     for row = rCp{i}
