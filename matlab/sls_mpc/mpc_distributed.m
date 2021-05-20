@@ -51,7 +51,7 @@ Lambda = zeros(nPhi, Nx);
 % Coupling info and variables
 cpIdx = get_coupling_indices_phi(Cost, Constr);
 [rCp, rUcp, row2cp, nCp] = sort_rows_coupled(r, cpIdx);
-[Ys, Zs] = initialize_cons(rCp, cpIdx, nCp);            
+[Ys, Zs] = initialize_cons(rCp, cpIdx, row2cp, nCp);            
 
 % Precalculate items for column-wise update
 [zabs, eyes, zabis] = precalculate_col(sys, T, s_c);
@@ -120,6 +120,7 @@ for iters=1:maxIters % ADMM (outer loop)
 
             for i = 1:Nx
                 for row = rCp{i}
+                    rIdx = row2cp(row); kIdx = row2cp(cpIdx{row});
                     x_loc = x0(s_r{row});     % observe local state
                     cp    = cpIdx{row};       % coupling indices for this row
                     sIdx  = find(cp == row);  % index of "self-coupling" term
@@ -143,39 +144,40 @@ for iters=1:maxIters % ADMM (outer loop)
                     if solverMode == MPCSolverMode.ClosedForm
                         tic;
                         [Phi_rows{row}, x_] = mpc_coupled_row_closed(x_loc, Psi(row, s_r{row}), Lambda(row, s_r{row}), ...
-                                                 Ys{row}(cp), Zs(cp), cost, sIdx, params);
+                                                 Ys{rIdx}(kIdx), Zs(kIdx), cost, sIdx, params);
                         times(i) = times(i) + toc;
                     else % use solver
                         [Phi_rows{row}, x_, solverTime] = mpc_coupled_row_solver(x_loc, Psi(row, s_r{row}), Lambda(row, s_r{row}), ...
-                                                             Ys{row}(cp), Zs(cp), cost, constr, sIdx, lb, ub, params);
+                                                             Ys{rIdx}(kIdx), Zs(kIdx), cost, constr, sIdx, lb, ub, params);
                         times(i) = times(i) + solverTime;
                     end
-
-                    Xs{row}             = zeros(nPhi, 1);
-                    Xs{row}(cpIdx{row}) = x_;
+                    
+                    Xs{rIdx}       = zeros(nCp, 1);
+                    Xs{rIdx}(kIdx) = x_;
                 end
             end
 
             % Update Z for consensus
             for i = 1:Nx
                 tic; 
-                Zs = cons_z_update(Xs, Ys, Zs, rCp{i}, cpIdx);
+                Zs = cons_z_update(Xs, Ys, Zs, rCp{i}, row2cp, cpIdx);
                 times(i) = times(i) + toc;
             end
 
             % Update Y for consensus
             for i = 1:Nx
-                Ys = cons_y_update(Xs, Ys, Zs, rCp{i}, cpIdx);
+                Ys = cons_y_update(Xs, Ys, Zs, rCp{i}, row2cp, cpIdx);
             end
 
             % Check convergence of ADMM consensus
             converged = true;
             for i = 1:Nx
                 for row = rCp{i}
-                    z_cp = zeros(nPhi, 1);
-                    z_cp(cpIdx{row}) = [Zs{cpIdx{row}}];
+                    rIdx = row2cp(row); kIdx = row2cp(cpIdx{row});
+                    z_cp = zeros(nCp, 1);
+                    z_cp(kIdx) = [Zs{kIdx}];
                     
-                    if ~check_convergence_cons(z_cp, Xs{row}, Zs{row}, Zs_prev{row}, params)
+                    if ~check_convergence_cons(z_cp, Xs{rIdx}, Zs{rIdx}, Zs_prev{rIdx}, params)
                         converged = false; break; % if one fails, don't need to check the rest
                     end
                 end
