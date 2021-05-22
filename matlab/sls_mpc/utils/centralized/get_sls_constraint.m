@@ -1,14 +1,14 @@
-function ZAB = get_sls_constraint(sys, tFIR)
+function ZAB = get_sls_constraint(sys, T)
 
 Nx = sys.Nx; Nu = sys.Nu;
 
-I = kron(eye(tFIR),eye(Nx));
+I = kron(eye(T),eye(Nx));
 
-Z = kron(eye(tFIR-1),eye(Nx));
-Z = [zeros(Nx,Nx*(tFIR));Z,zeros(Nx*(tFIR-1),Nx)];
+Z = kron(eye(T-1),eye(Nx));
+Z = [zeros(Nx,Nx*(T));Z,zeros(Nx*(T-1),Nx)];
 
-A_repmat = repmat({sys.A},tFIR,1);
-B_repmat = repmat({sys.B2},tFIR,1);
+A_repmat = repmat({sys.A},T,1);
+B_repmat = repmat({sys.B2},T,1);
 
 A_block  = blkdiag(A_repmat{:});
 B_block  = blkdiag(B_repmat{:});
