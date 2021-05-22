@@ -144,11 +144,11 @@ for iters=1:maxIters % ADMM (outer loop)
                     if solverMode == MPCSolverMode.ClosedForm
                         tic;
                         [Phi_rows{row}, Xs{rIdx}] = mpc_coupled_row_closed(x_loc, Psi(row, s_r{row}), Lambda(row, s_r{row}), ...
-                                                    Ys{rIdx}, Zs(kIdx), cost, sIdx, params);
+                                                    Ys{rIdx}, [Zs{kIdx}]', cost, sIdx, params);
                         times(i) = times(i) + toc;
                     else % use solver
                         [Phi_rows{row}, Xs{rIdx}, solverTime] = mpc_coupled_row_solver(x_loc, Psi(row, s_r{row}), Lambda(row, s_r{row}), ...
-                                                                Ys{rIdx}, Zs(kIdx), cost, constr, sIdx, lb, ub, params);
+                                                                Ys{rIdx}, [Zs{kIdx}]', cost, constr, sIdx, lb, ub, params);
                         times(i) = times(i) + solverTime;
                     end
                 end
@@ -170,10 +170,8 @@ for iters=1:maxIters % ADMM (outer loop)
             converged = true;
             for i = 1:Nx
                 for row = rCp{i}
-                    rIdx = row2cp(row); kIdx = row2cp(cpIdx{row});
-                    z_cp = [Zs{kIdx}]';
-                    
-                    if ~check_convergence_cons(z_cp, Xs{rIdx}, Zs{rIdx}, Zs_prev{rIdx}, params)
+                    rIdx = row2cp(row); kIdx = row2cp(cpIdx{row});                    
+                    if ~check_convergence_cons([Zs{kIdx}]', Xs{rIdx}, Zs{rIdx}, Zs_prev{rIdx}, params)
                         converged = false; break; % if one fails, don't need to check the rest
                     end
                 end

@@ -6,7 +6,7 @@ for row = rows
     for k = cpIdx{row} % neighbors
         j = find(cpIdx{k} == row); % the index where your neighbor stores YOUR value
         kIdx = row2cp(k);
-        Zs{rIdx} = Zs{rIdx} + (Xs{kIdx}(j)+Ys{kIdx}{j})/length(cpIdx{row});
+        Zs{rIdx} = Zs{rIdx} + (Xs{kIdx}(j)+Ys{kIdx}(j))/length(cpIdx{row});
     end
 end
 

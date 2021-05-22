@@ -5,6 +5,7 @@ nc  = length(z); % # of coupled subsystems (including self)
 
 MSum  = 0; % "Quadratic" terms for the mu/2 objective term
 MbSum = 0; % "Linear" terms for the mu/2 objective term
+b     = z - y;
 for j = 1:nc
     if j < sIdx
             Mj      = zeros(1,nc+n-1); 
@@ -17,8 +18,7 @@ for j = 1:nc
     end
 
     MSum  = MSum + (Mj'*Mj);
-    b     = z{j} - y{j};    
-    MbSum = MbSum + Mj'*b;
+    MbSum = MbSum + Mj'*b(j);
 end
 
 % These terms are not related to the mu/2 objective terms
