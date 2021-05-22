@@ -2,8 +2,8 @@ function Ys = cons_y_update(Xs, Ys, Zs, rows, row2cp, cpIdx)
 
 for row = rows
     rIdx = row2cp(row); kIdx = row2cp(cpIdx{row});
-    for k = kIdx % neighbors
-        Ys{rIdx}{k} = Ys{rIdx}{k} + Xs{rIdx}(k) - Zs{k};
+    for j = 1:length(kIdx) % neighbors        
+        Ys{rIdx}{j} = Ys{rIdx}{j} + Xs{rIdx}(j) - Zs{kIdx(j)};
     end
 end
 

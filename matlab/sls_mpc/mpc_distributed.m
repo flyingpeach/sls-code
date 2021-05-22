@@ -143,17 +143,14 @@ for iters=1:maxIters % ADMM (outer loop)
 
                     if solverMode == MPCSolverMode.ClosedForm
                         tic;
-                        [Phi_rows{row}, x_] = mpc_coupled_row_closed(x_loc, Psi(row, s_r{row}), Lambda(row, s_r{row}), ...
-                                                 Ys{rIdx}(kIdx), Zs(kIdx), cost, sIdx, params);
+                        [Phi_rows{row}, Xs{rIdx}] = mpc_coupled_row_closed(x_loc, Psi(row, s_r{row}), Lambda(row, s_r{row}), ...
+                                                    Ys{rIdx}, Zs(kIdx), cost, sIdx, params);
                         times(i) = times(i) + toc;
                     else % use solver
-                        [Phi_rows{row}, x_, solverTime] = mpc_coupled_row_solver(x_loc, Psi(row, s_r{row}), Lambda(row, s_r{row}), ...
-                                                             Ys{rIdx}(kIdx), Zs(kIdx), cost, constr, sIdx, lb, ub, params);
+                        [Phi_rows{row}, Xs{rIdx}, solverTime] = mpc_coupled_row_solver(x_loc, Psi(row, s_r{row}), Lambda(row, s_r{row}), ...
+                                                                Ys{rIdx}, Zs(kIdx), cost, constr, sIdx, lb, ub, params);
                         times(i) = times(i) + solverTime;
                     end
-                    
-                    Xs{rIdx}       = zeros(nCp, 1);
-                    Xs{rIdx}(kIdx) = x_;
                 end
             end
 
@@ -174,12 +171,14 @@ for iters=1:maxIters % ADMM (outer loop)
             for i = 1:Nx
                 for row = rCp{i}
                     rIdx = row2cp(row); kIdx = row2cp(cpIdx{row});
-                    z_cp = zeros(nCp, 1);
-                    z_cp(kIdx) = [Zs{kIdx}];
+                    z_cp = [Zs{kIdx}]';
                     
                     if ~check_convergence_cons(z_cp, Xs{rIdx}, Zs{rIdx}, Zs_prev{rIdx}, params)
                         converged = false; break; % if one fails, don't need to check the rest
                     end
+                end
+                if ~converged
+                    break; % exit the whole check loop
                 end
             end
 
