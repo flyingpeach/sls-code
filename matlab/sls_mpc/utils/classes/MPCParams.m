@@ -42,10 +42,19 @@ classdef MPCParams < matlab.mixin.Copyable
         distLB_; % distConsMtx_ * disturbance >= distLB_
         
         % Advanced options ----------------------------------------
-        % Which solver to use for main row update
-        % Leave this blank unless you really know what you're doing
-        % No sanity checks accompany this option
-        solverMode_; 
+        % Leave these blank unless you really know what you're doing
+        
+        % Whether to use solver (instead of explicit) for row update
+        useSolver_ = false;
+        
+        % Terminal constraint
+        terminalZeroConstr_ = false; % Not supported for coupled case at the moment
+        
+        % Adaptive ADMM parameter (outer loop only)
+        tau_i_;
+        tau_d_;
+        muAdapt_;
+        rhoMax_;
     end
 
     methods        
@@ -61,10 +70,6 @@ classdef MPCParams < matlab.mixin.Copyable
           
           if (e1 || e2 || e3 || e4 || e5 || e6 || e7 || e8)
               mpc_error('One or more required parameters is missing!')
-          end
-          
-          if ~isempty(obj.solverMode_)
-              mpc_warning('You have specified solverMode_. \nYou should leave it empty unless you **really** know what you are doing');              
           end
       end
       
@@ -119,6 +124,17 @@ classdef MPCParams < matlab.mixin.Copyable
           end          
       end         
       
+      function sanity_check_adaptive(obj)
+          hasAdaptive = ~isempty(obj.tau_i_) || ~isempty(obj.tau_d_) || ~isempty(obj.muAdapt_) || ~isempty(obj.rhoMax_);
+          emptyParams = isempty(obj.tau_i_) || isempty(obj.tau_d_) || isempty(obj.muAdapt_) || isempty(obj.rhoMax_);
+        
+          if hasAdaptive
+              if emptyParams
+                mpc_error('At least one adaptive ADMM parameter was specified but the others were left empty!');
+              end
+          end
+      end
+          
       function sanity_check_dist_cons(obj)
           hasDistMtx = ~isempty(obj.distConsMtx_);
           Nx         = size(obj.QSqrt_, 1);
@@ -128,30 +144,40 @@ classdef MPCParams < matlab.mixin.Copyable
           if hasDistMtx && ~isequal(size(obj.distConsMtx_), [Nx Nx])
               mpc_error('Disturbance constraint matrix is wrong size! Expect Nx by Nx');
           end
-          
+                    
           if hasDistMtx && ~isequal(size(obj.distUB_), [Nx 1])
               mpc_error('Disturbance upper bound is wrong size! Expect Nx by 1');
           end
 
           if hasDistMtx && ~isequal(size(obj.distLB_), [Nx 1])
-              mpc_error('Disturbance upper bound is wrong size! Expect Nx by 1');
+              mpc_error('Disturbance lower bound is wrong size! Expect Nx by 1');
           end       
       end
-      
+     
       function sanity_check_alg_1(obj)
           sanity_check_params_1(obj);
           sanity_check_state_cons(obj);
           sanity_check_input_cons(obj);
           sanity_check_dist_cons(obj);
+          sanity_check_adaptive(obj);
       end
       
       function sanity_check_alg_2(obj)
           sanity_check_params_2(obj);
           sanity_check_state_cons(obj);
           sanity_check_input_cons(obj);
+          sanity_check_adaptive(obj);
       end
       
-      function sanity_check_cent(obj)
+      function sanity_check_dist(obj) % Main method to be called externally
+          if has_coupling(obj)
+              sanity_check_alg_2(obj);
+          else
+              sanity_check_alg_1(obj);
+          end          
+      end
+            
+      function sanity_check_cent(obj) % Main method to be called externally
           e1  = isempty(obj.locality_);
           e2  = isempty(obj.tFIR_);
           e3  = isempty(obj.QSqrt_);
@@ -165,7 +191,11 @@ classdef MPCParams < matlab.mixin.Copyable
           sanity_check_input_cons(obj);
           sanity_check_dist_cons(obj);
       end          
-          
+      
+      function hasAdaptiveADMM = has_adaptive_admm(obj)
+          hasAdaptiveADMM = ~isempty(obj.muAdapt_);
+      end
+      
       function hasStateCons = has_state_cons(obj)
           hasStateCons = ~isempty(obj.stateConsMtx_);
       end
@@ -179,8 +209,11 @@ classdef MPCParams < matlab.mixin.Copyable
       end
       
       function hasCoupling = has_coupling(obj)
-          % at least one non-diagonal cost / constraint matrix
-          hasCoupling = ~(isdiag(obj.QSqrt_) && isdiag(obj.RSqrt_) && isdiag(obj.stateConsMtx_) && isdiag(obj.inputConsMtx_));
+          hasObjCoupling  = ~(isdiag(obj.QSqrt_) && isdiag(obj.RSqrt_));
+          hasConsCoupling = ~(isdiag(obj.stateConsMtx_) && isdiag(obj.inputConsMtx_));
+          hasDistCoupling = ~isdiag(obj.distConsMtx_);
+          
+          hasCoupling = hasObjCoupling || hasConsCoupling || hasDistCoupling;          
       end
       
     end

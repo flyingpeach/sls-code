@@ -64,7 +64,7 @@ for k=1:T-1
 end
     
 if params.has_state_cons()
-    for k=1:T
+    for k=2:T % Don't check first step
         stateCons = params.stateConsMtx_*R{k}*x0;
         for i=1:Nx
             if ~isinf(params.stateUB_(i))
@@ -89,6 +89,10 @@ if params.has_input_cons()
             end
         end
     end
+end
+
+if params.terminalZeroConstr_
+    R{T}*x0 == zeros(sys.Nx, 1);
 end
 
 time = time + toc;

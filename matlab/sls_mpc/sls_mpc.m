@@ -25,7 +25,7 @@ for t=1:tHorizon-1
     fprintf('Calculating time %d of %d\n', t+1, tHorizon);
     if params.mode_ == MPCMode.Distributed
         if params.accounts_for_disturbance() % robust MPC
-            [xs(:,t+1), us(:,t), times(t), iters(t)] = rmpc_distributed(sys, xs(:,t), params);
+            [xs(:,t+1), us(:,t), times(t), iters(t), consIters(t)] = rmpc_distributed(sys, xs(:,t), params);
         else % standard MPC
             [xs(:,t+1), us(:,t), times(t), iters(t), consIters(t)] = mpc_distributed(sys, xs(:,t), params);
         end
@@ -49,9 +49,7 @@ avgIters     = [];
 avgConsIters = [];
 if params.mode_ == MPCMode.Distributed
     avgIters = mean(iters(2:end));
-    if ~params.accounts_for_disturbance
-        avgConsIters = mean(consIters(2:end));
-    end
+    avgConsIters = mean(consIters(2:end));
 end
 
 end
