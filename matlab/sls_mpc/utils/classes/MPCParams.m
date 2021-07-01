@@ -36,6 +36,8 @@ classdef MPCParams < matlab.mixin.Copyable
         inputUB_; % inputConsMtx_ * input <= inputUB_
         inputLB_; % inputConsMtx_ * input >= inputLB_
         
+        locNoiseBound_; % ||local disturbance||_2 <= locNoiseBound
+        
         % Robust MPC parameters -----------------------------------
         distConsMtx_;
         distUB_; % distConsMtx_ * disturbance <= distUB_
@@ -194,8 +196,16 @@ classdef MPCParams < matlab.mixin.Copyable
       end
       
       function accForDist = accounts_for_disturbance(obj)
-          accForDist = ~isempty(obj.distConsMtx_);
+          accForDist = has_polytopic_noise(obj) || has_loc_bounded_noise(obj);
       end
+
+      function hasPolyNoise = has_polytopic_noise(obj)
+          hasPolyNoise = ~isempty(obj.distConsMtx_);
+      end
+
+      function hasLocBoundNoise = has_loc_bounded_noise(obj)
+          hasLocBoundNoise = ~isempty(obj.locNoiseBound_);
+      end      
       
       function hasCoupling = has_coupling(obj)
           hasObjCoupling  = ~(isdiag(obj.QSqrt_) && isdiag(obj.RSqrt_));
