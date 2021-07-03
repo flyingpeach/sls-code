@@ -27,7 +27,7 @@ for t=1:tHorizon-1
     fprintf('Calculating time %d of %d\n', t+1, tHorizon);
     
     if params.mode_ == MPCMode.Distributed
-        if params.accounts_for_disturbance() % robust MPC
+        if params.is_robust() % robust MPC
             [~, us(:,t), stats, warmStart] = rmpc_distributed(sys, xs(:,t), params, warmStart);
         else % noiseless MPC
             [~, us(:,t), stats, warmStart] = mpc_distributed(sys, xs(:,t), params, warmStart);
@@ -37,7 +37,7 @@ for t=1:tHorizon-1
         consIters(t) = stats.consIters_;
         
     elseif params.mode_ == MPCMode.Centralized % centralized algorithms return no iteration info
-        if params.accounts_for_disturbance() % robust MPC
+        if params.is_robust() % robust MPC
             [~, us(:,t), times(t)] = rmpc_centralized(sys, xs(:,t), params);
         else % standard MPC
             [~, us(:,t), times(t)] = mpc_centralized(sys, xs(:,t), params);
