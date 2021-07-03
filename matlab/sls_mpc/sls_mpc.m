@@ -1,4 +1,4 @@
-function [xs, us, avgTime, avgIters, avgConsIters] = sls_mpc(sys, x0, params, tHorizon)
+function [xs, us, avgStats] = sls_mpc(sys, x0, params, tHorizon)
 % Call this function once to run mpc on a non-time-varying system
 % Wrapper function for mpc_distributed and mpc_centralized, which are 
 % per-timestep functions
@@ -8,10 +8,8 @@ function [xs, us, avgTime, avgIters, avgConsIters] = sls_mpc(sys, x0, params, tH
 %   params  : MPCParams containing parameters for mpc
 %   tHorizon: total time to run MPC for
 % Outputs
-%   avgTime     : Runtime per state per timestep
-%   avgIters    : ADMM iters per state per timestep (distributed MPC only)
-%   avgConsIters: ADMM consensus iters per state, per inner loop iter, per timestep (distributed MPC only)
-
+%   avgStats: average runtime, iters, consIters (per inner loop iter) per timestep
+%             iters and consIters will be empty for centralized MPC
 
 xs      = zeros(sys.Nx, tHorizon);
 us      = zeros(sys.Nu, tHorizon);
@@ -21,14 +19,21 @@ times     = zeros(tHorizon-1, 1);
 iters     = zeros(tHorizon-1, 1);
 consIters = zeros(tHorizon-1, 1);
 
+% initially no warm start; will be populated for subsequent timesteps
+warmStart = [];
+
 for t=1:tHorizon-1
     fprintf('Calculating time %d of %d\n', t+1, tHorizon);
+    
     if params.mode_ == MPCMode.Distributed
         if params.accounts_for_disturbance() % robust MPC
-            [xs(:,t+1), us(:,t), times(t), iters(t), consIters(t)] = rmpc_distributed(sys, xs(:,t), params);
-        else % standard MPC
-            [xs(:,t+1), us(:,t), times(t), iters(t), consIters(t)] = mpc_distributed(sys, xs(:,t), params);
-        end
+            [xs(:,t+1), us(:,t), stats, warmStart] = rmpc_distributed(sys, xs(:,t), params, warmStart);
+        else % noiseless MPC
+            [xs(:,t+1), us(:,t), stats, warmStart] = mpc_distributed(sys, xs(:,t), params, warmStart);
+        end        
+        times(t)     = stats.time_;
+        iters(t)     = stats.iters_;
+        consIters(t) = stats.consIters_;
         
     elseif params.mode_ == MPCMode.Centralized % centralized algorithms return no iteration info
         if params.accounts_for_disturbance() % robust MPC
@@ -43,13 +48,11 @@ for t=1:tHorizon-1
             
 end
 
-avgTime = mean(times);
-
-avgIters     = [];
-avgConsIters = [];
+avgStats       = MPCStats();
+avgStats.time_ = mean(times);
 if params.mode_ == MPCMode.Distributed
-    avgIters = mean(iters);
-    avgConsIters = mean(consIters);
+    avgStats.iters_     = mean(iters);
+    avgStats.consIters_ = mean(consIters);
 end
 
 end

@@ -1,18 +1,23 @@
-function [x, u, time, iters, consIters] = mpc_distributed(sys, x0, params)
+function [x, u, stats, warmStartOut] = mpc_distributed(sys, x0, params, warmStartIn)
 % Inputs
 %   sys     : LTISystem containing system matrices (A, B2) and Nx, Nu
 %   x0      : Initial system state
 %   params  : MPCParams containing parameters for mpc
+%   (optional): warmStartIn: MPCWarmStart containing Psi, Lambda from
+%               previous timestep
 % Outputs
 %   x        : Next state if MPC input is used
 %   u        : Current input as calculated by MPC
-%   time     : Runtime per subsystem; time taken to calculate
-%              Phi (row update), Psi (col update), and consensus
-%              updates on X and Z if applicable
-%   iters    : ADMM iters per state (outer loop)
-%   consIters: Average ADMM consensus iters per state, per iter (inner loop)
-%              example: if outer loop ran 3 iters and inner loop ran
-%                       2 iters, 5 iters, and 6 iters, then consIters = 4.3
+%   stats    : MPCStats containing runtime/iteration stats
+%              time: Runtime per subsystem; time taken for row update, col
+%                    update, and consensus updates if applicable
+%              iters: ADMM iters per state (outer loop)
+%              consIters: Average ADMM consensus iters per state, per iter
+%                         (inner loop). Example: if outer loop ran 3 iters
+%                         and inner loop ran 2, 5, and 6 iters, consIters
+%                         will be 4.3
+%   warmStartOut: MPCWarmStart containing Psi, Lambda to be used for
+%                 next time iteration, if applicable
 
 %% Setup
 sanity_check_actuation(sys);
@@ -45,8 +50,14 @@ Constr = build_constr_mtx(sys, params);
 
 % ADMM variables
 Phi    = zeros(nPhi, Nx);
-Psi    = zeros(nPhi, Nx);
-Lambda = zeros(nPhi, Nx);
+
+if nargin == 4 && ~isempty(warmStartIn) % warm start
+    Psi    = warmStartIn.Psi_;
+    Lambda = warmStartIn.Lambda_;
+else
+    Psi    = zeros(nPhi, Nx);
+    Lambda = zeros(nPhi, Nx);
+end
 
 % Coupling info and variables
 cpIdx = get_coupling_indices_phi(Cost, Constr);
@@ -244,8 +255,16 @@ end
 u = Phi(1+Nx*T:Nx*T+Nu,:)*x0;
 x = Phi(1+Nx:2*Nx,:)*x0; % since no noise, x_ref = x
 
-time      = mean(times);
-consIters = mean(consIterList(1:iters));
-params.rho_ = rho_original; % restore rho
+% Running stats (runtime, iters)
+stats            = MPCStats();
+stats.time_      = mean(times);
+stats.iters_     = iters;
+stats.consIters_ = mean(consIterList(1:iters));
 
+% Warm start for next iteration
+warmStartOut         = MPCWarmStart();
+warmStartOut.Psi_    = Psi;
+warmStartOut.Lambda_ = Lambda;
+
+params.rho_ = rho_original; % restore rho
 end

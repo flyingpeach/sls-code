@@ -25,28 +25,28 @@ plotStates = 1;
 plotInputs = 2;
 
 %% TEST A: Algorithm 1, no constraints
-params.mode_                  = MPCMode.Distributed;
-[xA, uA, avgTimeA, avgItersA, ~] = sls_mpc(sys, x0, params, tHorizon);
+params.mode_        = MPCMode.Distributed;
+[xA, uA, statsA]    = sls_mpc(sys, x0, params, tHorizon);
 
 params.mode_        = MPCMode.Centralized;
 [xCentA, uCentA, ~] = sls_mpc(sys, x0, params, tHorizon);
 
 print_and_plot(params, xA, uA, xCentA, uCentA, 'Alg1 Test A', plotStates, plotInputs);
-fprintf('avgTime: %.4f, avgIters: %.4f\n\n', avgTimeA, avgItersA);
+fprintf('avgTime: %.4f, avgIters: %.4f\n\n', statsA.time_, statsA.iters_);
 
 %% TEST B: Algorithm 1, with state constraints
 params.stateConsMtx_ = eye(sys.Nx);
 params.stateUB_      =  1.7 * ones(sys.Nx, 1);  % not a tight constraint
 params.stateLB_      = -0.5 * ones(sys.Nx, 1); % tight constraint
 
-params.mode_                  = MPCMode.Distributed;
-[xB, uB, avgTimeB, avgItersB, ~] = sls_mpc(sys, x0, params, tHorizon);
+params.mode_        = MPCMode.Distributed;
+[xB, uB, statsB]    = sls_mpc(sys, x0, params, tHorizon);
 
 params.mode_        = MPCMode.Centralized;
 [xCentB, uCentB, ~] = sls_mpc(sys, x0, params, tHorizon);
 
 print_and_plot(params, xB, uB, xCentB, uCentB, 'Alg1 Test B', plotStates, plotInputs);
-fprintf('avgTime: %.4f, avgIters: %.4f\n\n', avgTimeB, avgItersB);
+fprintf('avgTime: %.4f, avgIters: %.4f\n\n', statsB.time_, statsB.iters_);
 
 %% TEST C: Algorithm 1, with state + input constraints
 % state constraints still apply from TEST B if run sequentially
@@ -54,11 +54,11 @@ params.inputConsMtx_ = eye(sys.Nu);
 params.inputUB_      = inf(sys.Nu, 1);
 params.inputLB_      = -1.5 * ones(sys.Nu, 1); % tight constraint
 
-params.mode_                  = MPCMode.Distributed;
-[xC, uC, avgTimeC, avgItersC, ~] = sls_mpc(sys, x0, params, tHorizon);
+params.mode_        = MPCMode.Distributed;
+[xC, uC, statsC]    = sls_mpc(sys, x0, params, tHorizon);
 
 params.mode_        = MPCMode.Centralized;
 [xCentC, uCentC, ~] = sls_mpc(sys, x0, params, tHorizon);
 
 print_and_plot(params, xC, uC, xCentC, uCentC, 'Alg1 Test C', plotStates, plotInputs);
-fprintf('avgTime: %.4f, avgIters: %.4f\n\n', avgTimeC, avgItersC);
+fprintf('avgTime: %.4f, avgIters: %.4f\n\n', statsC.time_, statsC.iters_);
