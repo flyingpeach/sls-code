@@ -11,7 +11,7 @@ function [xs, us, avgTime, avgIters, avgConsIters] = sls_mpc(sys, x0, params, tH
 %   avgTime     : Runtime per state per timestep
 %   avgIters    : ADMM iters per state per timestep (distributed MPC only)
 %   avgConsIters: ADMM consensus iters per state, per inner loop iter, per timestep (distributed MPC only)
-% For time / iteration calculations, t=1 is omitted to omit warm-up effects
+
 
 xs      = zeros(sys.Nx, tHorizon);
 us      = zeros(sys.Nu, tHorizon);
@@ -43,13 +43,13 @@ for t=1:tHorizon-1
             
 end
 
-avgTime = mean(times(2:end)); % omit t=1
+avgTime = mean(times);
 
 avgIters     = [];
 avgConsIters = [];
 if params.mode_ == MPCMode.Distributed
-    avgIters = mean(iters(2:end));
-    avgConsIters = mean(consIters(2:end));
+    avgIters = mean(iters);
+    avgConsIters = mean(consIters);
 end
 
 end
