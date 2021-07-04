@@ -51,11 +51,12 @@ for t=1:tHorizon-1
     xs(:,t+1) = sys.A*xs(:,t) + sys.B2*us(:,t) + sys.B1*w(:,t);
 end
 
+% Discount first step since that step is not warm-started
 avgStats       = MPCStats();
-avgStats.time_ = mean(times);
+avgStats.time_ = mean(times(2:end));
 if params.mode_ == MPCMode.Distributed
-    avgStats.iters_     = mean(iters);
-    avgStats.consIters_ = mean(consIters);
+    avgStats.iters_     = mean(iters(2:end));
+    avgStats.consIters_ = mean(consIters(2:end));
 end
 
 end
