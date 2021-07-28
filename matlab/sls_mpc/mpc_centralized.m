@@ -1,5 +1,4 @@
 function [x, u, time] = mpc_centralized(sys, x0, params)
-
 params.sanity_check_cent();
 
 Nx = sys.Nx; Nu = sys.Nu; A = sys.A; B = sys.B2;

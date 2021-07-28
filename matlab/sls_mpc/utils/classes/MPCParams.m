@@ -4,13 +4,21 @@ classdef MPCParams < matlab.mixin.Copyable
     properties
         % Centralized or distributed
         mode_;
-        
-        % Algorithm 1 and 2 ---------------------------------------       
+                
+        % Main parameters -----------------------------------------       
         locality_;  % locality (d)
         
         tFIR_;      % order of controller (# spectral components)               
         maxIters_;  % maximum allowed iterations for ADMM 
-        rho_;       % ADMM update step size
+        rho_;       % ADMM update step size (initial rho if using adaptive)
+        
+        % Adaptive ADMM parameter (outer loop only)
+        % If primal residue > muAdapt * dual residue,   multiply rho by tau_i
+        % If   dual residue > muAdapt * primal residue  divide rho by tau_d
+        tau_i_;
+        tau_d_;    
+        muAdapt_;  
+        rhoMax_;   % Maximum value of rho that can be used
         
         % determines exit conditions at Step 9 (Alg1) / Step 14 (Alg2)
         eps_p_; % convergence criterion for ||Phi(k+1) - Psi(k+1)|| 
@@ -19,7 +27,7 @@ classdef MPCParams < matlab.mixin.Copyable
         QSqrt_; % penalty for state (square-root)
         RSqrt_; % penalty for input (square-root)
 
-        % Algorithm 2 only ----------------------------------------
+        % Consensus parameters ------------------------------------
         maxItersCons_; % maximum allowed iterations for ADMM consensus
         mu_;           % ADMM consensus update step size
 
@@ -35,12 +43,14 @@ classdef MPCParams < matlab.mixin.Copyable
         inputConsMtx_;
         inputUB_; % inputConsMtx_ * input <= inputUB_
         inputLB_; % inputConsMtx_ * input >= inputLB_
-        
+                
         % Robust MPC parameters -----------------------------------
         distConsMtx_;
         distUB_; % distConsMtx_ * disturbance <= distUB_
         distLB_; % distConsMtx_ * disturbance >= distLB_
         
+        locNoiseBound_; % ||local disturbance||_2 <= locNoiseBound
+
         % Advanced options ----------------------------------------
         % Leave these blank unless you really know what you're doing
         
@@ -49,16 +59,26 @@ classdef MPCParams < matlab.mixin.Copyable
         
         % Terminal constraint
         terminalZeroConstr_ = false; % Not supported for coupled case at the moment
-        
-        % Adaptive ADMM parameter (outer loop only)
-        tau_i_;
-        tau_d_;
-        muAdapt_;
-        rhoMax_;
     end
-
-    methods        
-      function sanity_check_params_1(obj)
+    
+    methods(Static)
+      function check_constraint(mtx, ub, lb, msize)
+          if ~isequal(size(mtx), [msize msize])
+              mpc_error('State/Input/Dist matrix is wrong size!');
+          end
+          if ~isequal(size(ub), [msize 1])
+              mpc_error('State/Input/Dist upper bound is wrong size!');
+          end
+          if ~isequal(size(lb), [msize 1])
+              mpc_error('State/Input/Dist lower bound is wrong size!');
+          end
+      end
+    end
+    
+    methods
+        
+      %% Main methods to be called externally
+      function sanity_check_dist(obj)
           e1  = isempty(obj.locality_);
           e2  = isempty(obj.tFIR_);
           e3  = isempty(obj.maxIters_);
@@ -71,113 +91,13 @@ classdef MPCParams < matlab.mixin.Copyable
           if (e1 || e2 || e3 || e4 || e5 || e6 || e7 || e8)
               mpc_error('One or more required parameters is missing!')
           end
-      end
-      
-      function sanity_check_params_2(obj)
-          sanity_check_params_1(obj);
           
-          e1 = isempty(obj.maxItersCons_);
-          e2 = isempty(obj.mu_);
-          e3 = isempty(obj.eps_x_);
-          e4 = isempty(obj.eps_z_);          
-          
-          if (e1 || e2 || e3 || e4)
-              mpc_error('One or more required parameters is missing!')
-          end
-      end
-      
-      function sanity_check_state_cons(obj)
-          hasStateMtx = ~isempty(obj.stateConsMtx_);
-          Nx          = size(obj.QSqrt_, 1);
-
-          % This size constraint is enforced for convenient implementation;
-          % in theory we can have constraint matrices of any size
-          if hasStateMtx && ~isequal(size(obj.stateConsMtx_), [Nx Nx])
-              mpc_error('State constraint matrix is wrong size! Expect Nx by Nx');
-          end
-          
-          if hasStateMtx && ~isequal(size(obj.stateUB_), [Nx 1])
-              mpc_error('State upper bound is wrong size! Expect Nx by 1');
-          end
-
-          if hasStateMtx && ~isequal(size(obj.stateLB_), [Nx 1])
-              mpc_error('State upper bound is wrong size! Expect Nx by 1');
-          end
-      end
-
-      function sanity_check_input_cons(obj)
-          hasInputMtx = ~isempty(obj.inputConsMtx_);
-          Nu          = size(obj.RSqrt_, 1);
-          
-          % This size constraint is enforced for convenient implementation;
-          % in theory we can have constraint matrices of any size
-          if hasInputMtx && ~isequal(size(obj.inputConsMtx_), [Nu Nu])
-              mpc_error('Input constraint matrix is wrong size! Expect Nu by Nu');
-          end
-          
-          if hasInputMtx && ~isequal(size(obj.inputUB_), [Nu 1])
-              mpc_error('Input upper bound is wrong size! Expect Nu by 1');
-          end
-
-          if hasInputMtx && ~isequal(size(obj.inputLB_), [Nu 1])
-              mpc_error('Input upper bound is wrong size! Expect Nu by 1');
-          end          
-      end         
-      
-      function sanity_check_adaptive(obj)
-          hasAdaptive = ~isempty(obj.tau_i_) || ~isempty(obj.tau_d_) || ~isempty(obj.muAdapt_) || ~isempty(obj.rhoMax_);
-          emptyParams = isempty(obj.tau_i_) || isempty(obj.tau_d_) || isempty(obj.muAdapt_) || isempty(obj.rhoMax_);
-        
-          if hasAdaptive
-              if emptyParams
-                mpc_error('At least one adaptive ADMM parameter was specified but the others were left empty!');
-              end
-          end
-      end
-          
-      function sanity_check_dist_cons(obj)
-          hasDistMtx = ~isempty(obj.distConsMtx_);
-          Nx         = size(obj.QSqrt_, 1);
-          
-          % This size constraint is enforced for convenient implementation;
-          % in theory we can have constraint matrices of any size
-          if hasDistMtx && ~isequal(size(obj.distConsMtx_), [Nx Nx])
-              mpc_error('Disturbance constraint matrix is wrong size! Expect Nx by Nx');
-          end
-                    
-          if hasDistMtx && ~isequal(size(obj.distUB_), [Nx 1])
-              mpc_error('Disturbance upper bound is wrong size! Expect Nx by 1');
-          end
-
-          if hasDistMtx && ~isequal(size(obj.distLB_), [Nx 1])
-              mpc_error('Disturbance lower bound is wrong size! Expect Nx by 1');
-          end       
-      end
-     
-      function sanity_check_alg_1(obj)
-          sanity_check_params_1(obj);
-          sanity_check_state_cons(obj);
-          sanity_check_input_cons(obj);
-          sanity_check_dist_cons(obj);
-          sanity_check_adaptive(obj);
-      end
-      
-      function sanity_check_alg_2(obj)
-          sanity_check_params_2(obj);
-          sanity_check_state_cons(obj);
-          sanity_check_input_cons(obj);
-          sanity_check_adaptive(obj);
-      end
-      
-      function sanity_check_dist(obj) % Main method to be called externally
-          if has_coupling(obj)
-              sanity_check_alg_2(obj);
-          else
-              sanity_check_alg_1(obj);
-          end          
+          check_constraints(obj);
+          check_adaptive(obj);
+          check_consensus_params(obj);          
       end
             
-      function sanity_check_cent(obj) % Main method to be called externally
+      function sanity_check_cent(obj)
           e1  = isempty(obj.locality_);
           e2  = isempty(obj.tFIR_);
           e3  = isempty(obj.QSqrt_);
@@ -187,25 +107,53 @@ classdef MPCParams < matlab.mixin.Copyable
               mpc_error('One or more required parameters is missing!')
           end 
           
-          sanity_check_state_cons(obj);
-          sanity_check_input_cons(obj);
-          sanity_check_dist_cons(obj);
-      end          
+          check_constraints(obj)       
+      end       
       
-      function hasAdaptiveADMM = has_adaptive_admm(obj)
-          hasAdaptiveADMM = ~isempty(obj.muAdapt_);
+      %% Helpers      
+      function check_consensus_params(obj)
+          if need_consensus(obj)
+              e1 = isempty(obj.maxItersCons_);
+              e2 = isempty(obj.mu_);
+              e3 = isempty(obj.eps_x_);
+              e4 = isempty(obj.eps_z_);          
+
+              if (e1 || e2 || e3 || e4)
+                  mpc_error('One or more required consensus parameters is missing!')
+              end
+          end
       end
       
+      function check_adaptive(obj)
+          if has_adaptive_admm(obj)          
+              emptyParams = isempty(obj.tau_i_) || isempty(obj.tau_d_) || isempty(obj.muAdapt_) || isempty(obj.rhoMax_);
+              if emptyParams
+                mpc_error('At least one adaptive ADMM parameter was specified but the others were left empty!');
+              end
+          end
+      end
+      
+      function check_constraints(obj)
+          Nx = size(obj.QSqrt_, 1);
+          Nu = size(obj.RSqrt_, 1);
+          if has_state_cons(obj)
+              MPCParams.check_constraint(obj.stateConsMtx_, obj.stateUB_, obj.stateLB_, Nx);
+          end
+          if has_input_cons(obj)
+              MPCParams.check_constraint(obj.inputConsMtx_, obj.inputUB_, obj.inputLB_, Nu);
+          end
+          if has_polytopic_noise(obj)
+              MPCParams.check_constraint(obj.distConsMtx_, obj.distUB_, obj.distLB_, Nx);
+          end
+      end
+      
+      %% Boolean functions
       function hasStateCons = has_state_cons(obj)
-          hasStateCons = ~isempty(obj.stateConsMtx_);
+          hasStateCons = ~isempty(obj.stateConsMtx_) || ~isempty(obj.stateUB_) || ~isempty(obj.stateLB_);
       end
       
       function hasInputCons = has_input_cons(obj)
-          hasInputCons = ~isempty(obj.inputConsMtx_);
-      end
-      
-      function accForDist = accounts_for_disturbance(obj)
-          accForDist = ~isempty(obj.distConsMtx_);
+          hasInputCons = ~isempty(obj.inputConsMtx_) || ~isempty(obj.inputUB_) || ~isempty(obj.inputLB_);
       end
       
       function hasCoupling = has_coupling(obj)
@@ -215,6 +163,28 @@ classdef MPCParams < matlab.mixin.Copyable
           
           hasCoupling = hasObjCoupling || hasConsCoupling || hasDistCoupling;          
       end
+
+      function hasAdaptiveADMM = has_adaptive_admm(obj)
+          hasAdaptiveADMM = ~isempty(obj.tau_i_) || ~isempty(obj.tau_d_) || ~isempty(obj.muAdapt_) || ~isempty(obj.rhoMax_);
+      end
+
+      function needConsensus = need_consensus(obj)
+          % Only the coupled, non-robust case needs consensus
+          needConsensus = has_coupling(obj) && ~is_robust(obj);
+      end
+
+      function isRobust = is_robust(obj)
+          isRobust = has_polytopic_noise(obj) || has_loc_bounded_noise(obj);
+      end
+
+      function hasPolyNoise = has_polytopic_noise(obj)
+          hasPolyNoise = ~isempty(obj.distConsMtx_) || ~isempty(obj.distUB_) || ~isempty(obj.distLB_);
+      end
+
+      function hasLocBoundNoise = has_loc_bounded_noise(obj)
+          hasLocBoundNoise = ~isempty(obj.locNoiseBound_);
+      end      
+      
       
     end
 end
