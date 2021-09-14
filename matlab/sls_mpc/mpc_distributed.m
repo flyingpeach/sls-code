@@ -96,13 +96,7 @@ for iters=1:maxIters % ADMM (outer loop)
             else % no constraint, use closed form
                 solverMode = MPCSolverMode.ClosedForm;
             end
-            
-            % Terminal constraint, and row represents state at time T
-            if params.terminalZeroConstr_ && row >= (T-1)*Nx + 1 && row <= T*Nx 
-                ub = 0; lb = 0;
-                solverMode = MPCSolverMode.Explicit;
-            end
-            
+                        
             % User can choose to override explicit mode and only use solver
             if params.useSolver_ && solverMode == MPCSolverMode.Explicit
                 solverMode = MPCSolverMode.UseSolver;

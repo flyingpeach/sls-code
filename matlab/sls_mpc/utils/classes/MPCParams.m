@@ -55,10 +55,7 @@ classdef MPCParams < matlab.mixin.Copyable
         % Leave these blank unless you really know what you're doing
         
         % Whether to use solver (instead of explicit) for row update
-        useSolver_ = false;
-        
-        % Terminal constraint
-        terminalZeroConstr_ = false; % Not supported for coupled case at the moment
+        useSolver_ = false;        
     end
     
     methods(Static)
