@@ -37,11 +37,7 @@ for t=1:tHorizon-1
         consIters(t) = stats.consIters_;
         
     elseif params.mode_ == MPCMode.Centralized % centralized algorithms return no iteration info
-        if params.is_robust() % robust MPC
-            [~, us(:,t), times(t)] = rmpc_centralized(sys, xs(:,t), params);
-        else % standard MPC
-            [~, us(:,t), times(t)] = mpc_centralized(sys, xs(:,t), params);
-        end
+        [~, us(:,t), times(t)] = mpc_centralized(sys, xs(:,t), params);
     else
         mpc_error('Unrecognized MPC mode specified!');
     end
