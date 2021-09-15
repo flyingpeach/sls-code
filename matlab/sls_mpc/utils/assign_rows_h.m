@@ -73,12 +73,4 @@ for i = 1:Nx
     end
 end
 
-% Terminal constraints
-if ~params.has_state_cons() && params.terminalZeroConstr_
-    for i=1:Nx
-        r{i}(end+1) = i;    % Corresponds to upper bound = 0
-        r{i}(end+1) = Nx+i; % Corresponds to lower bound = 0
-    end
-end
-
 end

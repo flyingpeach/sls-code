@@ -11,7 +11,7 @@ ms = cell(Nx*T, 1);
 gs = cell(Nx*T, 1);
 
 M1 = [Cost; H];
-for col = 1:Nx*T        
+for col = 1:length(s_cPsi)        
     zab_     = ZAB(:, s_cPsi{col});
     zeroRows = find(all(zab_ == 0, 2));
     keepRows = setdiff(1:Nx*T, zeroRows);

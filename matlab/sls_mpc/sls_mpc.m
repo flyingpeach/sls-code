@@ -18,7 +18,6 @@ xs(:,1) = x0;
 
 times     = zeros(tHorizon-1, 1);
 iters     = zeros(tHorizon-1, 1);
-consIters = zeros(tHorizon-1, 1);
 
 % initially no warm start; will be populated for subsequent timesteps
 warmStart = [];
@@ -30,11 +29,14 @@ for t=1:tHorizon-1
         if params.is_robust() % robust MPC
             [~, us(:,t), stats, warmStart] = rmpc_distributed(sys, xs(:,t), params, warmStart);
         else % noiseless MPC
-            [~, us(:,t), stats, warmStart] = mpc_distributed(sys, xs(:,t), params, warmStart);
+            if params.has_coupling()
+                [~, us(:,t), stats, warmStart] = mpc_coupled_distributed(sys, xs(:,t), params, warmStart);
+            else
+                [~, us(:,t), stats, warmStart] = mpc_uncoupled_distributed(sys, xs(:,t), params, warmStart);
+            end
         end        
         times(t)     = stats.time_;
         iters(t)     = stats.iters_;
-        consIters(t) = stats.consIters_;
         
     elseif params.mode_ == MPCMode.Centralized % centralized algorithms return no iteration info
         [~, us(:,t), times(t)] = mpc_centralized(sys, xs(:,t), params);
@@ -52,7 +54,6 @@ avgStats       = MPCStats();
 avgStats.time_ = mean(times(2:end));
 if params.mode_ == MPCMode.Distributed
     avgStats.iters_     = mean(iters(2:end));
-    avgStats.consIters_ = mean(consIters(2:end));
 end
 
 end

@@ -24,8 +24,7 @@ if ~params.has_state_cons() && ~params.has_input_cons()
 end
 
 % For ease of notation
-Nx = sys.Nx; Nu = sys.Nu;
-T        = params.tFIR_;
+Nx = sys.Nx; Nu = sys.Nu; T = params.tFIR_;
 
 % Runtime and iterations
 times    = zeros(Nx, 1); % per state
@@ -41,8 +40,7 @@ nH   = size(H, 1); % number of rows
 nPhi = Nx*T + Nu*(T-1);
 
 % ADMM variables
-Phi    = zeros(nPhi, Nx);
-
+Phi = zeros(nPhi, Nx);
 if nargin == 4 && ~isempty(warmStartIn) % warm start
     fprintf('(Warm-started)\n');
     Psi    = warmStartIn.Psi_;
@@ -119,20 +117,17 @@ for iters=1:maxIters % ADMM loop
     end
     Psi_prev = Psi;
 
-    % Solve for Phi
+    % Solve row-wise update for Phi, Omega, Xi
     Phi_rows   = cell(nPhi, 1);
     Omega_rows = cell(nH, 1);
     Xi_rows    = cell(nH, 1);
-    
-    % Solve for Phi, Omega, Xi for uncoupled rows
     for i = 1:Nx     
         for row = rPhi{i}           
             [CPsiRow, s_rFull] = get_cpsi_row(Cost, Psi, s_rPsi1, rPhi{i}, rPsi_neighbors{i}, row);
             x_loc = x0(s_rFull(s_rFull <= Nx)); 
-            cost_ = 1; % this arg is not used since cost is factored into C*Psi
             
             tic;
-            Phi_rows{row} = mpc_row_closed(x_loc, CPsiRow, Lambda(row, s_rLambda{row}), cost_, rho);
+            Phi_rows{row} = mpc_row_closed(x_loc, CPsiRow, Lambda(row, s_rLambda{row}), rho);
             times(i) = times(i) + toc;
         end
         
@@ -175,7 +170,7 @@ for iters=1:maxIters % ADMM loop
          end
     end
     
-    % Build row-wise matrices
+    % Build row-wise matrices Phi, Omega, Xi
     Phi   = build_from_rows(rPhi, s_rPhi, Phi_rows, size(Phi));
     Omega = build_from_rows(rH, s_rOmega, Omega_rows, size(Omega));
     
@@ -183,9 +178,8 @@ for iters=1:maxIters % ADMM loop
         Xi = build_from_rows(rH, s_rXi, Xi_rows, size(Xi));    
     end
     
-    % Solve column-wise update for local values of Psi
+    % Solve column-wise update for Psi
     Psi_cols = cell(Nx*T, 1);
-
     for i = 1:Nx
         for col = cPsi{i}
             if col <= Nx
@@ -205,7 +199,7 @@ for iters=1:maxIters % ADMM loop
         end
     end
 
-    % Build entire Psi matrix
+    % Build column-wise matrix Psi
     Psi = build_from_cols(cPsi, s_cPsi, Psi_cols, size(Psi));    
                      
     % Row-wise update for Lambda (split into two block rows)
@@ -220,9 +214,8 @@ for iters=1:maxIters % ADMM loop
     % Check convergence of ADMM
     converged = true;
     for i = 1:Nx
-        % Due to dimensionality issues, not stacking rows
-        % Instead, just make one huge row
-        % (since we're checking Frob norm, doesn't matter)
+        % Instead of stacking rows (dimension mismatch), make one huge row;
+        % Doesn't matter for Frobenius norm anyway
         psi_      = [];
         psi_prev_ = [];
         prim1_    = []; % The I, H, Psi block
