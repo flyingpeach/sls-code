@@ -11,30 +11,14 @@ if params.has_state_cons()
     for t = 1:T
         tx = get_range(t, Nx);
         
-        % Override state constraint with terminal constraint
-        if params.terminalZeroConstr_ && t == T
-            HStateUB(tx, tx) = eye(sys.Nx);    
-            HStateLB(tx, tx) = eye(sys.Nx);
-            hStateUB = [hStateUB; zeros(sys.Nx, 1)];
-            hStateLB = [hStateLB; zeros(sys.Nx, 1)];            
-        else
-            HStateUB(tx, tx) = params.stateConsMtx_;    
-            HStateLB(tx, tx) = params.stateConsMtx_;
-            hStateUB = [hStateUB; params.stateUB_];
-            hStateLB = [hStateLB; params.stateLB_];
-        end
+        HStateUB(tx, tx) = params.stateConsMtx_;    
+        HStateLB(tx, tx) = params.stateConsMtx_;
+        hStateUB = [hStateUB; params.stateUB_];
+        hStateLB = [hStateLB; params.stateLB_];
     end
     % Make correct number of columns
     HStateUB = [HStateUB zeros(Nx*T, Nu*(T-1))]; 
     HStateLB = [HStateLB zeros(Nx*T, Nu*(T-1))];
-end
-
-if ~params.has_state_cons() && params.terminalZeroConstr_
-    Tx = get_range(T, Nx);
-    HStateUB(1:Nx, Tx) = eye(sys.Nx);    
-    HStateLB(1:Nx, Tx) = eye(sys.Nx);
-    hStateUB = [hStateUB; zeros(sys.Nx, 1)];
-    hStateLB = [hStateLB; zeros(sys.Nx, 1)];            
 end
 
 HInputUB = []; HInputLB = []; hInputUB = []; hInputLB = [];

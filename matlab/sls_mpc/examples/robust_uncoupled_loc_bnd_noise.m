@@ -29,16 +29,12 @@ sigma = 1;
 w = rand(sys.Nx, tHorizon) * 2 - 1; % in [-1, 1]
 w = get_loc_bnd_noise(w, sys, paramsNom, sigma);
 
-plotState = 6;
-plotInput = 5;
-
-%% Case A: Unconstrained (as sanity check)
+%% Case A: Unconstrained nominal (as sanity check)
 paramsNom.mode_        = MPCMode.Centralized;
 [xsCentA, usCentA, ~] = sls_mpc(sys, x0, w, paramsNom, tHorizon);
 
-%% Case B: Constrained (with robust MPC)
+%% Case B(1): Constrained centralized robust
 paramsRob = copy(paramsNom);
-
 
 % Bounded state
 paramsRob.stateConsMtx_ = eye(sys.Nx);
@@ -52,7 +48,7 @@ paramsNom.locNoiseBound_ = sigma;
 paramsRob.mode_       = MPCMode.Centralized;
 [xsCentB, usCentB, ~] = sls_mpc(sys, x0, w, paramsRob, tHorizon);
 
-%% Robust Distributed
+%% Case B(2): Constrained distributed robust
 % Adaptive ADMM
 paramsRob.tau_i_   = 2;
 paramsRob.tau_d_   = 2;
@@ -72,6 +68,9 @@ objB     = get_cost_fn(paramsRob, xsB, usB);
 fprintf('Unconstrained cost (cent): %f\n',    objCentA);
 fprintf('Constrained cost   (cent): %f\n',    objCentB);
 fprintf('Constrained cost   (dist): %f\n',    objB);
+
+plotState = 6;
+plotInput = 5;
 
 time = 1:size(xsCentA, 2);
 figure();

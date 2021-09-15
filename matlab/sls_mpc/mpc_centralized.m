@@ -90,10 +90,6 @@ if params.has_input_cons()
     end
 end
 
-if params.terminalZeroConstr_
-    R{T}*x0 == zeros(sys.Nx, 1);
-end
-
 time = time + toc;
 cvx_end
     

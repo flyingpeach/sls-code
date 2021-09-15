@@ -25,7 +25,7 @@ params.RSqrt_ = diag(randi([1, 3], sys.Nu, 1));
 plotStates = 1;
 plotInputs = 2;
 
-%% TEST A: Algorithm 1, no constraints
+%% TEST A: Nominal, no coupling, no constraints
 params.mode_        = MPCMode.Distributed;
 [xA, uA, statsA]    = sls_mpc(sys, x0, w, params, tHorizon);
 
@@ -35,7 +35,7 @@ params.mode_        = MPCMode.Centralized;
 print_and_plot(params, xA, uA, xCentA, uCentA, 'Alg1 Test A', plotStates, plotInputs);
 fprintf('avgTime: %.4f, avgIters: %.4f\n\n', statsA.time_, statsA.iters_);
 
-%% TEST B: Algorithm 1, with state constraints
+%% TEST B: Nominal, no coupling, state constraints
 params.stateConsMtx_ = eye(sys.Nx);
 params.stateUB_      =  1.7 * ones(sys.Nx, 1);  % not a tight constraint
 params.stateLB_      = -0.5 * ones(sys.Nx, 1); % tight constraint
@@ -49,7 +49,7 @@ params.mode_        = MPCMode.Centralized;
 print_and_plot(params, xB, uB, xCentB, uCentB, 'Alg1 Test B', plotStates, plotInputs);
 fprintf('avgTime: %.4f, avgIters: %.4f\n\n', statsB.time_, statsB.iters_);
 
-%% TEST C: Algorithm 1, with state + input constraints
+%% TEST C: Nominal, no coupling, state + input constraints
 % state constraints still apply from TEST B if run sequentially
 params.inputConsMtx_ = eye(sys.Nu);
 params.inputUB_      = inf(sys.Nu, 1);

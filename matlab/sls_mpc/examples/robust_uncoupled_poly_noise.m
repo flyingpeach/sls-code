@@ -29,11 +29,11 @@ w    = ones(sys.Nx, 1) * dist;
 plotState = 1;
 plotInput = 2;
 
-%% Case A: Unconstrained (as sanity check)
-paramsNom.mode_        = MPCMode.Centralized;
+%% Case A: Unconstrained nominal (as sanity check)
+paramsNom.mode_       = MPCMode.Centralized;
 [xsCentA, usCentA, ~] = sls_mpc(sys, x0, w, paramsNom, tHorizon);
 
-%% Case B: Constrained (with nominal MPC)
+%% Case B(0): Constrained centralized nominal
 paramsNom.stateConsMtx_ = eye(sys.Nx);
 paramsNom.stateUB_      =  inf(sys.Nx, 1);
 paramsNom.stateLB_      = -inf(sys.Nx, 1);
@@ -43,7 +43,7 @@ paramsNom.stateLB_(plotState) = -1;
 paramsNom.mode_     = MPCMode.Centralized;
 [xsNomB, usNomB, ~] = sls_mpc(sys, x0, w, paramsNom, tHorizon);
 
-%% Case B: Constrained (with robust MPC)
+%% Case B(1): Constrained centralized robust
 paramsRob = copy(paramsNom);
 
 % Bounded disturbance
@@ -55,7 +55,7 @@ paramsRob.distLB_      = -1 * ones(sys.Nx, 1);
 paramsRob.mode_       = MPCMode.Centralized;
 [xsCentB, usCentB, ~] = sls_mpc(sys, x0, w, paramsRob, tHorizon);
 
-%% Robust Distributed
+%% Case B(2): Constrained distributed robust
 % Adaptive ADMM
 paramsRob.tau_i_   = 2;
 paramsRob.tau_d_   = 2;
