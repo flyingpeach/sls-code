@@ -19,6 +19,9 @@ params.QSqrt_ = eye(sys.Nx);
 params.RSqrt_ = eye(sys.Nu);
 
 [Hset, hset] = terminal_set(sys, params);
+sanity_check_terminal_coupling(sys, params.locality_+2, Hset);
+
+
 
 % Since this matrix adds coupling, we need to keep track of who couples
 % with who
