@@ -44,4 +44,14 @@ end
 H(delRow, :) = []; % Remove designated rows
 h(delRow, :) = [];
 
+if params.hasTerminalSet()
+    nH_original = size(H, 1);
+    nH_terminal = size(params.terminal_H_, 1);
+    
+    nPhi = Nx*T + Nu*(T-1);
+    H    = [H; zeros(nH_terminal, nPhi)];
+    H(nH_original:end, Nx*(T-1):Nx*T) = params.terminal_H_;    
+    h    = [h; params.terminal_h_];
+end
+
 end

@@ -18,9 +18,11 @@ params.stateLB_          = -params.stateUB_;
 params.QSqrt_ = eye(sys.Nx);
 params.RSqrt_ = eye(sys.Nu);
 
-[Hset, hset] = terminal_set(sys, params);
-sanity_check_terminal_coupling(sys, params.locality_+2, Hset);
+[HTerminal, hTerminal] = terminal_set(sys, params);
+sanity_check_terminal_coupling(sys, params.locality_+2, HTerminal);
 
+params.terminal_H_ = HTerminal;
+params.terminal_h_ = hTerminal;
 
 
 % Since this matrix adds coupling, we need to keep track of who couples
