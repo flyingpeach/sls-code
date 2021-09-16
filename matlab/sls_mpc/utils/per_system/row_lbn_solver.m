@@ -1,4 +1,4 @@
-function [v, time] = calc_lbn_row_solver(C, a, B, d)
+function [v, time] = row_lbn_solver(C, a, B, d)
 % Solves general equation 
 % min ||v - a||_F^2
 %     s.t. B*v + ||C*v||_2 < d

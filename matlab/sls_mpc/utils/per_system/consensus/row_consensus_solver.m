@@ -1,9 +1,9 @@
-function [phi_row, x_, time] = mpc_coupled_row_solver(x_loc, psi, lamb, y, z, ...
+function [phi_row, x_, time] = row_consensus_solver(x_loc, psi, lamb, y, z, ...
                                    cost, constr, sIdx, ub, lb, params)        
 rho = params.rho_;
 mu  = params.mu_;
 
-[M1, M2, MSum, MbSum] = coupled_row_setup(x_loc, y, z, sIdx);
+[M1, M2, MSum, MbSum] = row_consensus_setup(x_loc, y, z, sIdx);
 a = psi - lamb;
 
 % set up QP

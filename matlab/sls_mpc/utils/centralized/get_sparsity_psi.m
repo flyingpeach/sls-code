@@ -1,4 +1,4 @@
-function PsiSupp = get_psi_sparsity(sys, params)
+function PsiSupp = get_sparsity_psi(sys, params)
 % This is the sparsity of the entire Toeplitz matrix representing system
 % responses. Often only the first block-column (Nx columns) are required.
 

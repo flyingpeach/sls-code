@@ -1,9 +1,9 @@
-function [cs, ms, gs] = precalculate_robust_col(sys, T, Cost, H, s_cPsi, s_cLambda)
+function [cs, ms, gs] = precalculate_col_robust(sys, T, Cost, H, s_cPsi, s_cLambda)
 
 Nx   = sys.Nx;
 nPhi = Nx*T + sys.Nu*(T-1);
 
-ZAB = get_sls_constraint(sys, T);
+ZAB = get_constraint_zab(sys, T);
 Eye = eye(Nx*T);
 
 cs = cell(Nx*T, 1);

@@ -1,4 +1,4 @@
-function phi_row = mpc_row_closed(x_loc, psi, lamb, cost, rho)
+function phi_row = row_nominal_closed(x_loc, psi, lamb, cost, rho)
 % x_loc  : locally observed state
 % psi_   : row of Psi
 % lamb_  : row of Lambda

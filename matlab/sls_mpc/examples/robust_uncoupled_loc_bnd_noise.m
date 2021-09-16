@@ -29,6 +29,9 @@ sigma = 1;
 w = rand(sys.Nx, tHorizon) * 2 - 1; % in [-1, 1]
 w = get_loc_bnd_noise(w, sys, paramsNom, sigma);
 
+plotState = 6;
+plotInput = 5;
+
 %% Case A: Unconstrained nominal (as sanity check)
 paramsNom.mode_        = MPCMode.Centralized;
 [xsCentA, usCentA, ~] = sls_mpc(sys, x0, w, paramsNom, tHorizon);
@@ -68,9 +71,6 @@ objB     = get_cost_fn(paramsRob, xsB, usB);
 fprintf('Unconstrained cost (cent): %f\n',    objCentA);
 fprintf('Constrained cost   (cent): %f\n',    objCentB);
 fprintf('Constrained cost   (dist): %f\n',    objB);
-
-plotState = 6;
-plotInput = 5;
 
 time = 1:size(xsCentA, 2);
 figure();

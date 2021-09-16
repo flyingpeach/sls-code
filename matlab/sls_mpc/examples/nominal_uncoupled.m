@@ -32,7 +32,7 @@ params.mode_        = MPCMode.Distributed;
 params.mode_        = MPCMode.Centralized;
 [xCentA, uCentA, ~] = sls_mpc(sys, x0, w, params, tHorizon);
 
-print_and_plot(params, xA, uA, xCentA, uCentA, 'Alg1 Test A', plotStates, plotInputs);
+print_and_plot(params, xA, uA, xCentA, uCentA, 'Uncoupled Test A', plotStates, plotInputs);
 fprintf('avgTime: %.4f, avgIters: %.4f\n\n', statsA.time_, statsA.iters_);
 
 %% TEST B: Nominal, no coupling, state constraints
@@ -46,7 +46,7 @@ params.mode_        = MPCMode.Distributed;
 params.mode_        = MPCMode.Centralized;
 [xCentB, uCentB, ~] = sls_mpc(sys, x0, w, params, tHorizon);
 
-print_and_plot(params, xB, uB, xCentB, uCentB, 'Alg1 Test B', plotStates, plotInputs);
+print_and_plot(params, xB, uB, xCentB, uCentB, 'Uncoupled Test B', plotStates, plotInputs);
 fprintf('avgTime: %.4f, avgIters: %.4f\n\n', statsB.time_, statsB.iters_);
 
 %% TEST C: Nominal, no coupling, state + input constraints
@@ -61,5 +61,5 @@ params.mode_        = MPCMode.Distributed;
 params.mode_        = MPCMode.Centralized;
 [xCentC, uCentC, ~] = sls_mpc(sys, x0, w, params, tHorizon);
 
-print_and_plot(params, xC, uC, xCentC, uCentC, 'Alg1 Test C', plotStates, plotInputs);
+print_and_plot(params, xC, uC, xCentC, uCentC, 'Uncoupled Test C', plotStates, plotInputs);
 fprintf('avgTime: %.4f, avgIters: %.4f\n\n', statsC.time_, statsC.iters_);

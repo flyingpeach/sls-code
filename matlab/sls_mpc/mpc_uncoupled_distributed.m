@@ -32,8 +32,8 @@ times    = zeros(Nx, 1); % per state
 maxIters = params.maxIters_;
 
 % Cost matrix + constraint matrix
-Cost   = build_cost_mtx(params);
-Constr = build_constr_mtx(sys, params);
+Cost   = build_mtx_cost(params);
+Constr = build_mtx_constraint(sys, params);
 
 nPhi = Nx*T + Nu*(T-1);
 
@@ -49,15 +49,15 @@ else
 end
 
 % Get sparsity of ADMM variables
-PsiSupp  = get_psi_sparsity(sys, params);
+PsiSupp  = get_sparsity_psi(sys, params);
 PhiSupp  = PsiSupp(:, 1:Nx); % First block column
 r   = assign_rows_phi(sys, T);
 c   = assign_cols_phi(sys);
-s_r = get_row_locality(PhiSupp);
-s_c = get_col_locality(PhiSupp);
+s_r = get_locality_row(PhiSupp);
+s_c = get_locality_col(PhiSupp);
 
 % Precalculate values for column update
-[zabs, eyes, zabis] = precalculate_col(sys, T, s_c);
+[zabs, eyes, zabis] = precalculate_col_nominal(sys, T, s_c);
 
 % Will be updated if adaptive ADMM is used
 rho = params.rho_;
@@ -95,14 +95,14 @@ for iters=1:maxIters % ADMM loop
             
             if solverMode == MPCSolverMode.ClosedForm
                 tic;
-                Phi_rows{row} = mpc_row_closed(x_loc, Psi(row, s_r{row}), Lambda(row, s_r{row}), cost, rho);
+                Phi_rows{row} = row_nominal_closed(x_loc, Psi(row, s_r{row}), Lambda(row, s_r{row}), cost, rho);
                 times(i) = times(i) + toc;
             elseif solverMode == MPCSolverMode.Explicit
                 tic;
-                Phi_rows{row} = mpc_row_explicit(x_loc, Psi(row, s_r{row}), Lambda(row, s_r{row}), ub, lb, cost, rho);
+                Phi_rows{row} = row_nominal_explicit(x_loc, Psi(row, s_r{row}), Lambda(row, s_r{row}), ub, lb, cost, rho);
                 times(i) = times(i) + toc;
             else
-                [Phi_rows{row}, solverTime] = mpc_row_solver(x_loc, Psi(row, s_r{row}), Lambda(row, s_r{row}), ub, lb, cost, rho);
+                [Phi_rows{row}, solverTime] = row_nominal_solver(x_loc, Psi(row, s_r{row}), Lambda(row, s_r{row}), ub, lb, cost, rho);
                 times(i) = times(i) + solverTime;                    
             end
         end
@@ -115,7 +115,7 @@ for iters=1:maxIters % ADMM loop
     Psi_cols = cell(Nx, 1);
     for i = 1:Nx
         tic;
-        Psi_cols{i} = mpc_col_closed(Phi(s_c{i}, c{i}), Lambda(s_c{i}, c{i}), zabs{i}, eyes{i}, zabis{i});
+        Psi_cols{i} = col_nominal_closed(Phi(s_c{i}, c{i}), Lambda(s_c{i}, c{i}), zabs{i}, eyes{i}, zabis{i});
         times(i) = times(i) + toc;        
     end
     

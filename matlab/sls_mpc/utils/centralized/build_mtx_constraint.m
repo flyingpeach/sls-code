@@ -1,4 +1,4 @@
-function ConstrMtx = build_constr_mtx(sys, params)
+function ConstrMtx = build_mtx_constraint(sys, params)
 
 T = params.tFIR_;
 

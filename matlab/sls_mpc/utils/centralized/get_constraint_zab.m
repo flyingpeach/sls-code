@@ -1,4 +1,4 @@
-function ZAB = get_sls_constraint(sys, T)
+function ZAB = get_constraint_zab(sys, T)
 
 Nx = sys.Nx; Nu = sys.Nu;
 

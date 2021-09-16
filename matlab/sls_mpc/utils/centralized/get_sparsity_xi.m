@@ -1,4 +1,4 @@
-function XiSupp = get_xi_sparsity(PsiSupp, H, G, Nx)
+function XiSupp = get_sparsity_xi(PsiSupp, H, G, Nx)
 
 numRowsH = size(H, 1);
 numRowsG = size(G, 1);

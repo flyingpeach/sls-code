@@ -10,16 +10,16 @@ RSqrt = params.RSqrt_; % note this is not related to SLS R
 time = 0;
 
 % Constraint matrices
-ZAB     = get_sls_constraint(sys, T);
-[H, h]  = get_sys_constraints(sys, params);
-PsiSupp = get_psi_sparsity(sys, params);
+ZAB     = get_constraint_zab(sys, T);
+[H, h]  = get_constraint_h(sys, params);
+PsiSupp = get_sparsity_psi(sys, params);
 nH      = size(H, 1);
 
 suppSizePsi = sum(sum(PsiSupp));
 
 if params.has_polytopic_noise()
-    [G, g] = get_dist_constraints(params);
-    XiSupp  = get_xi_sparsity(PsiSupp, H, G, Nx);
+    [G, g] = get_constraint_g(params);
+    XiSupp  = get_sparsity_xi(PsiSupp, H, G, Nx);
     suppSizeXi  = sum(sum(XiSupp));
 end
 

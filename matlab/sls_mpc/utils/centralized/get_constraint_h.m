@@ -1,4 +1,4 @@
-function [H, h] = get_sys_constraints(sys, params)
+function [H, h] = get_constraint_h(sys, params)
 % This function works with time-invariant constraints of the form
 %    stateLB <= stateConsMtx*state <= stateUB
 %    inputLB <= inputConsMtx*input <= inputUB

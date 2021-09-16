@@ -1,4 +1,4 @@
-function CostMtx = build_cost_mtx(params)
+function CostMtx = build_mtx_cost(params)
 
 tFIR = params.tFIR_;
 

@@ -1,4 +1,4 @@
-function XiGCol = get_xig_col(G, Xi, s_cXi, cols, colG)
+function XiGCol = get_col_xig(G, Xi, s_cXi, cols, colG)
 % cols are cols of Xi that the current processor is in charge of
 
 gIdxs  = find(G(:, colG));

@@ -1,4 +1,4 @@
-function phi_row = mpc_row_explicit(x_loc, psi, lamb, ub, lb, cost, rho)
+function phi_row = row_nominal_explicit(x_loc, psi, lamb, ub, lb, cost, rho)
 % x_loc  : locally observed state
 % psi_   : row of Psi
 % lamb_  : row of Lambda

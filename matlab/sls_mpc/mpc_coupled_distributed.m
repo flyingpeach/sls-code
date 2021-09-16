@@ -32,10 +32,10 @@ times    = zeros(Nx, 1); % per state
 maxIters = params.maxIters_;
 
 % Cost matrix
-Cost   = build_cost_mtx(params);
+Cost   = build_mtx_cost(params);
 
 % State/input/disturbance constraints
-[H, h] = get_sys_constraints(sys, params);
+[H, h] = get_constraint_h(sys, params);
 
 nH   = size(H, 1); % number of rows
 nPhi = Nx*T + Nu*(T-1);
@@ -56,7 +56,7 @@ end
 % Get sparsity of ADMM variables
 HSupp = abs(H) > 0;
 CSupp = abs(Cost) > 0;
-PsiSupp = get_psi_sparsity(sys, params);
+PsiSupp = get_sparsity_psi(sys, params);
 PsiSupp    = PsiSupp(:, 1:Nx); % first block column
 PhiSupp    = CSupp * PsiSupp;
 
@@ -75,18 +75,18 @@ rH   = assign_rows_h(sys, params);   % for Omega
 % since we are not optimizing over Psi
 rPsi_neighbors = get_local_neighbor_rows_phi(sys, params, rPhi);
 
-s_rPsi    = get_row_locality(PsiSupp);
-s_rPhi    = get_row_locality(PhiSupp);
-s_rOmega  = get_row_locality(OmegaSupp);
-s_rLambda = get_row_locality(LambdaSupp);
+s_rPsi    = get_locality_row(PsiSupp);
+s_rPhi    = get_locality_row(PhiSupp);
+s_rOmega  = get_locality_row(OmegaSupp);
+s_rLambda = get_locality_row(LambdaSupp);
 
-s_cPsi    = get_col_locality(PsiSupp);
-s_cPhi    = get_col_locality(PhiSupp);
-s_cOmega  = get_col_locality(OmegaSupp);
-s_cLambda = get_col_locality(LambdaSupp);
+s_cPsi    = get_locality_col(PsiSupp);
+s_cPhi    = get_locality_col(PhiSupp);
+s_cOmega  = get_locality_col(OmegaSupp);
+s_cLambda = get_locality_col(LambdaSupp);
 
 % Precalculate values for column update
-[cs, ms, gs] = precalculate_robust_col(sys, T, Cost, H, s_cPsi, s_cLambda);
+[cs, ms, gs] = precalculate_col_robust(sys, T, Cost, H, s_cPsi, s_cLambda);
 
 % Will be updated if adaptive ADMM is used
 rho = params.rho_;
@@ -100,17 +100,17 @@ for iters=1:maxIters % ADMM loop
     Omega_rows = cell(nH, 1);    
     for i = 1:Nx     
         for row = rPhi{i}           
-            [CPsiRow, s_rFull] = get_cpsi_row(Cost, Psi, s_rPsi, rPhi{i}, rPsi_neighbors{i}, row);
+            [CPsiRow, s_rFull] = get_row_mp(Cost, Psi, s_rPsi, rPhi{i}, rPsi_neighbors{i}, row);
             x_loc = x0(s_rFull(s_rFull <= Nx)); 
             
             tic;
-            Phi_rows{row} = mpc_row_closed(x_loc, CPsiRow, Lambda(row, s_rLambda{row}), 1, rho);
+            Phi_rows{row} = row_nominal_closed(x_loc, CPsiRow, Lambda(row, s_rLambda{row}), 1, rho);
             times(i) = times(i) + toc;
         end
         
         for rowH = rH{i}
             rowLamb            = nPhi + rowH;
-            [HPsiRow, s_rFull] = get_hp_row(H, Psi, s_rPsi, rPhi{i}, rPsi_neighbors{i}, rowH);
+            [HPsiRow, s_rFull] = get_row_mp(H, Psi, s_rPsi, rPhi{i}, rPsi_neighbors{i}, rowH);
             x_loc = x0(s_rFull(s_rFull <= Nx)); 
 
             % User can override explicit solution and only use solver
@@ -123,11 +123,11 @@ for iters=1:maxIters % ADMM loop
 		        B = x_loc';
 		        d = h(rowH);
 		              
-		        [Omega_rows{rowH}, solverTime] = calc_lbn_row_solver(C, a, B, d);
+		        [Omega_rows{rowH}, solverTime] = row_lbn_solver(C, a, B, d);
                 times(i) = times(i) + solverTime;
             else
                 tic;
-                Omega_rows{rowH} = mpc_row_explicit(x_loc, HPsiRow, Lambda(rowLamb, s_rLambda{rowLamb}), h(rowH), -inf, 0, rho);
+                Omega_rows{rowH} = row_nominal_explicit(x_loc, HPsiRow, Lambda(rowLamb, s_rLambda{rowLamb}), h(rowH), -inf, 0, rho);
                 times(i) = times(i) + toc;
             end
         end
@@ -142,7 +142,7 @@ for iters=1:maxIters % ADMM loop
     for i = 1:Nx
        v = [Phi(s_cPhi{i}, i); Omega(s_cOmega{i}, i)] + Lambda(s_cLambda{i}, i);
        tic;
-       Psi_cols{i} = calc_robust_col_closed(cs{i}, ms{i}, gs{i}, v);
+       Psi_cols{i} = col_robust_closed(cs{i}, ms{i}, gs{i}, v);
        times(i) = times(i) + toc;
     end
     
@@ -166,7 +166,7 @@ for iters=1:maxIters % ADMM loop
         prim2_    = []; % The Phi, Omega block
  
         for row = rPhi{i}        
-            [CPsiRow, ~] = get_cpsi_row(Cost, Psi, s_rPsi, rPhi{i}, rPsi_neighbors{i}, row);
+            [CPsiRow, ~] = get_row_mp(Cost, Psi, s_rPsi, rPhi{i}, rPsi_neighbors{i}, row);
             psi_      = [psi_, Psi(row, s_rPsi{row})];
             psi_prev_ = [psi_prev_, Psi_prev(row, s_rPsi{row})];
              
@@ -174,7 +174,7 @@ for iters=1:maxIters % ADMM loop
             prim2_    = [prim2_, Phi(row, s_rPhi{row})];                
         end
         for rowH = rH{i}
-            [HPsiRow, ~] = get_hp_row(H, Psi, s_rPsi, rPhi{i}, rPsi_neighbors{i}, rowH);    
+            [HPsiRow, ~] = get_row_mp(H, Psi, s_rPsi, rPhi{i}, rPsi_neighbors{i}, rowH);    
             prim1_ = [prim1_, HPsiRow];
             prim2_ = [prim2_, Omega(rowH, s_rOmega{rowH})];          
         end

@@ -1,4 +1,4 @@
-function [G, g] = get_dist_constraints(params)
+function [G, g] = get_constraint_g(params)
 % This function works with time-invariant constraints of the form
 %    distLB <= distConsMtx*disturbance <= distUB
 % and converts them into the form of G * delta <= g

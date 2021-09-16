@@ -1,4 +1,4 @@
-function [rCp, rUcp, row2cp, nCp] = sort_rows_coupled(r, cpIdx)
+function [rCp, rUcp, row2cp, nCp] = sort_coupled_rows(r, cpIdx)
 % rCp     : per subsystem, rows that are coupled 
 % rUcp    : per subsystem, rows that are not coupled
 % nValsCp : total number of coupled values

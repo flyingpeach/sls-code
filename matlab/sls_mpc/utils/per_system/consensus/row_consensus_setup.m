@@ -1,4 +1,4 @@
-function [M1, M2, MSum, MbSum] = coupled_row_setup(x_loc, y, z, sIdx)
+function [M1, M2, MSum, MbSum] = row_consensus_setup(x_loc, y, z, sIdx)
 
 n   = length(x_loc);
 nc  = length(z); % # of coupled subsystems (including self)

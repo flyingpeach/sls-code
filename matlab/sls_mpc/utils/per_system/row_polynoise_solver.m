@@ -1,4 +1,4 @@
-function [v, time] = calc_robust_row_solver(C, a, B, d)
+function [v, time] = row_polynoise_solver(C, a, B, d)
 % Solves general quadratic equation min ||C*v - a||_F^2 s.t. B*v < d
 
 model.Q     = sparse(C'*C);

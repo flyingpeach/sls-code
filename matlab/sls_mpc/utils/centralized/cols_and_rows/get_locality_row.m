@@ -1,4 +1,4 @@
-function s_r = get_row_locality(SuppMtx)
+function s_r = get_locality_row(SuppMtx)
 % s_r{i} gives the set of nonzero columns associated with ith row
 
 nRows = size(SuppMtx, 1);

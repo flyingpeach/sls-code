@@ -1,4 +1,4 @@
-function Ys = cons_y_update(Xs, Ys, Zs, rows, row2cp, cpIdx)                
+function Ys = cons_update_y(Xs, Ys, Zs, rows, row2cp, cpIdx)                
 
 for row = rows
     rIdx = row2cp(row); kIdx = row2cp(cpIdx{row});

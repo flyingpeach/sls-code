@@ -1,4 +1,4 @@
-function [phi_row, time] = mpc_row_solver(x_loc, psi, lamb, ub, lb, cost, rho)
+function [phi_row, time] = row_nominal_solver(x_loc, psi, lamb, ub, lb, cost, rho)
 % x_loc  : locally observed state
 % psi_   : row of Psi
 % lamb_  : row of Lambda
