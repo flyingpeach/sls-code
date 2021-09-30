@@ -29,37 +29,23 @@ phi_x = cell(Nx, 1);
 phi_u = cell(Nx, 1);
 
 internalList = cell(Nx, 1);
-boundaryList = cell(Nx, 1);
-controlList  = cell(Nx, 1);
 
 %% Local K Computation
-for i = 1:Nx
-    A_nn = []; A_bn = []; A_bb = []; A_nb = [];
-    B_n  = []; B_b = [];
-    R2Q_ = [];
-        
+for i = 1:Nx       
     internal = find(xSparsity(:,i)); % find which states are internal
     boundary = find(boundaryPattern(:,i)); % find which states are on the boundary
     control  = find(uSparsity(:,i));
     
     internalList{i} = internal;
-    boundaryList{i} = boundary;
-    controlList{i}  = control;
     
-    for k = 1:size(internal,1)
-        A_nn = [A_nn; A(internal(k), internal)];
-        A_nb = [A_nb; A(internal(k), boundary)];
-        B_n  = [B_n; B(internal(k), control)];
-        R2Q_ = [R2Q_; R2Q(internal(k), control)];
-    end
+    A_nn = A(internal, internal);
+    A_bn = A(boundary, internal);
     
-    for k = 1:size(boundary,1)
-        A_bb = [A_bb; A(boundary(k), boundary)];
-        A_bn = [A_bn; A(boundary(k), internal)];
-        B_b  = [B_b; B(boundary(k), control)];
-    end
+    B_n  = B(internal, control);
+    B_b  = B(boundary, control);
     
-    
+    R2Q_ = R2Q(internal, control);
+     
     lqr_A = A_nn - B_n*pinv(full(B_b))*A_bn;
     lqr_B = B_n*(eye(size(B_n,2)) - pinv(full(B_b))*B_b);
 

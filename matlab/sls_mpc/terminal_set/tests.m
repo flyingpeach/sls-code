@@ -23,14 +23,3 @@ sanity_check_terminal_coupling(sys, params.locality_+2, HTerminal);
 
 params.terminal_H_ = HTerminal;
 params.terminal_h_ = hTerminal;
-
-
-% Since this matrix adds coupling, we need to keep track of who couples
-% with who
-% for i = 1:Nx
-% rowstokeep{i} = find(H_terminal(:,i));
-% H_ter_local{i} = H_terminal(rowstokeep{i},:); % keep only rows concerning subsystem i
-% h_ter_local{i} = h_terminal(rowstokeep{i});
-% neighbors{i} = find(~any(H_ter_local{i},1)==0); % keep track of neighbors of subsystem i
-% H_ter_local{i} = H_ter_local{i}(:,neighbors{i}); % eliminate the rows with only zeros    
-% end
