@@ -18,8 +18,6 @@ params.stateLB_          = -params.stateUB_;
 params.QSqrt_ = eye(sys.Nx);
 params.RSqrt_ = eye(sys.Nu);
 
-[HTerminal, hTerminal] = terminal_set(sys, params);
-sanity_check_terminal_coupling(sys, params.locality_+2, HTerminal);
+[params.terminal_H_, params.terminal_h_] = terminal_set(sys, params);
+sanity_check_terminal_coupling(sys, params);
 
-params.terminal_H_ = HTerminal;
-params.terminal_h_ = hTerminal;

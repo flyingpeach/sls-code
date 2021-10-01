@@ -25,6 +25,9 @@ uSparsity       = (abs(B') > 0) * abs(A^(d)) > 0;
 K  = cell(Nx, 1);
 S  = cell(Nx, 1);
 
+% These are not the standard closed-loop maps; rather they are
+% the multiplier terms used to recursively calculate the infinite-horizon
+% closed-loop maps as per eq (13) in https://arxiv.org/pdf/2010.02440
 phi_x = cell(Nx, 1);
 phi_u = cell(Nx, 1);
 
