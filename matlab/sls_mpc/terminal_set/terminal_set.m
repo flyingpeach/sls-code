@@ -1,4 +1,4 @@
-function [H_term, h_term] = terminal_set(A, B, Nx, params)
+function [H_term, h_term] = terminal_set(sys, params)
 % Distributed computation of terminal set
 % sys    : LTISystem (we will use sys.A and sys.B2)
 % params : MPCParams object containing locality, constraints, etc.
@@ -8,6 +8,7 @@ function [H_term, h_term] = terminal_set(A, B, Nx, params)
 % 2. No inputs are constrained
 % 3. No coupling induced by state constraints
 
+Nx = sys.Nx; A = sys.A;
 d = params.locality_;
 
 sparsity_x    = abs(A^(d-1)) > 0;    
@@ -27,7 +28,7 @@ H = [params.stateConsMtx_; -params.stateConsMtx_];
 h = [params.stateUB_; -params.stateLB_];
 
 % Compute unconstrained infinite-horizon Phi
-Phi_x_H2 = h2_sls(A, B, Nx, params);
+Phi_x_H2 = h2_sls(sys, params);
 
 % Iterate until the set converges, i.e. all new rows are redundant
 while length(redundant_rows) < size(H, 1) 
