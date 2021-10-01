@@ -1,4 +1,4 @@
-function [phi_x, internalList] = h2_sls(sys, params)
+function phi_x = h2_sls(sys, params)
 % INFINITE HORIZON LOCALIZED LQR
 % Author: Jing Yu (&edited by Lisa Li)
 %
@@ -28,16 +28,12 @@ S  = cell(Nx, 1);
 phi_x = cell(Nx, 1);
 phi_u = cell(Nx, 1);
 
-internalList = cell(Nx, 1);
-
 %% Local K Computation
-for i = 1:Nx       
+for i = 1:Nx
     internal = find(xSparsity(:,i)); % find which states are internal
     boundary = find(boundaryPattern(:,i)); % find which states are on the boundary
     control  = find(uSparsity(:,i));
-    
-    internalList{i} = internal;
-    
+        
     A_nn = A(internal, internal);
     A_bn = A(boundary, internal);
     
