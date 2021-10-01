@@ -1,4 +1,4 @@
-function phi_x = h2_sls(sys, params)
+function phi_x = h2_sls(A, B, Nx, params)
 % INFINITE HORIZON LOCALIZED LQR
 % Author: Jing Yu (&edited by Lisa Li)
 %
@@ -11,7 +11,6 @@ function phi_x = h2_sls(sys, params)
 eps = 1e-8;
 
 %% Setup and allocate variables
-Nx = sys.Nx; A = sys.A; B = sys.B2;
 d  = params.locality_;
 
 % Placeholder to transform R to Q-size
