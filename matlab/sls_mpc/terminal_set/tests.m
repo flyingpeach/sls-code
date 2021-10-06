@@ -18,4 +18,7 @@ params.stateLB_          = -params.stateUB_;
 params.QSqrt_ = eye(sys.Nx);
 params.RSqrt_ = eye(sys.Nu);
 
-[params.terminal_H_, params.terminal_h_] = terminal_set(sys, params);
+[params.terminal_H_, params.terminal_h_, tStats] = terminal_set(sys, params);
+
+tStats.time_
+tStats.iters_
