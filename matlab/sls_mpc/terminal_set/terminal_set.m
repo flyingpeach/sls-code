@@ -9,14 +9,12 @@ function [H_term, h_term, stats] = terminal_set(sys, params)
 % 3. No coupling induced by state constraints
 
 Nx = sys.Nx; A = sys.A;
-d = params.locality_;
+d  = params.locality_;
 
-sparsity_x    = abs(A^(d-1)) > 0;    
-row_neighbors = cell(Nx, 1);
-col_neighbors = cell(Nx, 1);
+sparsity_x = abs(A^(d-1)) > 0;    
+neighbors  = cell(Nx, 1);
 for i = 1:Nx
-    row_neighbors{i} = find(sparsity_x(i, :));
-    col_neighbors{i} = find(sparsity_x(:, i));
+    neighbors{i} = find(sparsity_x(i, :));
 end
 
 Phi_x  = eye(Nx);
@@ -46,8 +44,8 @@ while length(redundant_rows) < size(H, 1)
     for i = 1:Nx
         tic;
         % Two rows corresponding to upper and lower bounds
-        H_new(col_neighbors{i},i)    = H(col_neighbors{i},:)*Phi_x(:,i);
-        H_new(col_neighbors{i}+Nx,i) = H(col_neighbors{i}+Nx,:)*Phi_x(:,i);
+        H_new(neighbors{i},i)    = H(neighbors{i},:)*Phi_x(:,i);
+        H_new(neighbors{i}+Nx,i) = H(neighbors{i}+Nx,:)*Phi_x(:,i);
         
         h_new(i)    = h(i);
         h_new(i+Nx) = h(i+Nx);
@@ -64,11 +62,11 @@ while length(redundant_rows) < size(H, 1)
         for j = [i, i+Nx] % Rows corresponding to upper and lower bounds
             
             % Find worst possible x for this local patch based on H
-            numNeighbors = length(row_neighbors{i});
+            numNeighbors = length(neighbors{i});
             x_worst      = zeros(numNeighbors, 1);
 
             for l = 1:numNeighbors
-                k = row_neighbors{i}(l);
+                k = neighbors{i}(l);
                 if H_new(j,k) > 0
                      x_worst(l) = params.stateUB_(k);
                 elseif H_new(j,k) <= 0
@@ -76,7 +74,7 @@ while length(redundant_rows) < size(H, 1)
                 end
             end
             
-            if H_new(j, row_neighbors{i})*x_worst < h_new(j)
+            if H_new(j, neighbors{i})*x_worst < h_new(j)
                 % If x satisfies H*x <= h, it automatically satisfies
                 % H_new(j,:)*x <= h_new(j); so this row in H_new is redundant                
                 redundant_rows(end+1) = j;
@@ -97,7 +95,7 @@ while length(redundant_rows) < size(H, 1)
     % according to eq (13) in https://arxiv.org/pdf/2010.02440
     for i = 1:Nx % Distributed across columns
         tic;
-        Phi_x(col_neighbors{i},i) = Phi_x_H2{i} * Phi_x(col_neighbors{i},i);
+        Phi_x(neighbors{i},i) = Phi_x_H2{i} * Phi_x(neighbors{i},i);
         times(i) = times(i) + toc;
     end  
 end
