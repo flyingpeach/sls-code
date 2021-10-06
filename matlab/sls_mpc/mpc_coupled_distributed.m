@@ -69,7 +69,12 @@ LambdaSupp = [PhiSupp; OmegaSupp];
 % Which rows/cols of separable matrices are assigned to each subsystem
 cPsi = assign_cols_phi(sys);      % for Psi, Lambda
 rPhi = assign_rows_phi(sys, T);      % for Phi, Psi
-rH   = assign_rows_h(sys, params);   % for Omega
+
+if params.hasTerminalSet()
+    rH = assign_rows_h_terminal(sys, params);
+else
+    rH = assign_rows_h(sys, params); % for Omega
+end
 
 % During row-wise update, can access neighbors' rows of Psi
 % since we are not optimizing over Psi

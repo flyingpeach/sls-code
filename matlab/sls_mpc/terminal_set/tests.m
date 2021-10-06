@@ -19,5 +19,3 @@ params.QSqrt_ = eye(sys.Nx);
 params.RSqrt_ = eye(sys.Nu);
 
 [params.terminal_H_, params.terminal_h_] = terminal_set(sys, params);
-sanity_check_terminal_coupling(sys, params);
-
