@@ -5,6 +5,8 @@ rH = assign_rows_h_terminal_only(sys, params);
 H  = params.terminal_H_;
 h  = params.terminal_h_;
 
+HSizeInit = size(H, 1);
+
 commsAdj      = abs(sys.A) > 0;
 stateSupp     = commsAdj^(params.locality_-1) > 0;
 redundantRows = [];
@@ -31,6 +33,12 @@ end
 
 params.terminal_H_(redundantRows, :) = [];
 params.terminal_h_(redundantRows)    = [];
+
+HSizeNow  = size(params.terminal_H_, 1);
+HSizeInit = size(H, 1);
+
+fprintf('Removed %d locally redundant constraints\n', HSizeInit-HSizeNow);
+
 end
 
  
