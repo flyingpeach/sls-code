@@ -1,6 +1,6 @@
 function r = assign_rows_h(sys, params)
 
-if params.hasTerminalSet()
+if params.has_terminal_set()
     r = assign_rows_h_with_terminal_set(sys, params);
 else
     r = assign_rows_h_no_terminal_set(sys, params);
@@ -90,6 +90,8 @@ end
 function r = assign_rows_h_with_terminal_set(sys, params)
 % r{i} represents the set of rows subsystem i solves for
 
+Nx = sys.Nx; T = params.tFIR_;
+
 r   = cell(Nx, 1);
 rHT = assign_rows_h_terminal_only(sys, params);
 
@@ -97,7 +99,8 @@ rHT = assign_rows_h_terminal_only(sys, params);
 % assuming UB/LB on all states, and no input bounds
 for i=1:Nx
     for t=1:T-1
-        r{i}(end+1) = Nx*(t-1) + i;
+        r{i}(end+1) = Nx*(t-1) + i; % upper bound
+        r{i}(end+1) = Nx*(t-1) + i + Nx*(T-1); % lower bound
     end
     for rowHT=rHT{i}
         r{i}(end+1) = rowHT + 2*Nx*(T-1);

@@ -29,7 +29,7 @@ for t=1:tHorizon-1
         if params.is_robust() % robust MPC
             [~, us(:,t), stats, warmStart] = rmpc_distributed(sys, xs(:,t), params, warmStart);
         else % noiseless MPC
-            if params.has_coupling()
+            if params.has_coupling() || params.has_terminal_set()
                 [~, us(:,t), stats, warmStart] = mpc_coupled_distributed(sys, xs(:,t), params, warmStart);
             else
                 [~, us(:,t), stats, warmStart] = mpc_uncoupled_distributed(sys, xs(:,t), params, warmStart);

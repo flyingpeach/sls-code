@@ -12,7 +12,7 @@ if params.has_state_cons()
         tx = get_range(t, Nx);
         
         % If terminal set, don't include the last stateUB/LB
-        if (t < T || ~params.hasTerminalSet())
+        if (t < T || ~params.has_terminal_set())
             HStateUB(tx, tx) = params.stateConsMtx_;    
             HStateLB(tx, tx) = params.stateConsMtx_;
             hStateUB = [hStateUB; params.stateUB_];
@@ -21,8 +21,12 @@ if params.has_state_cons()
         
     end
     % Make correct number of columns
-    HStateUB = [HStateUB zeros(Nx*T, Nu*(T-1))]; 
-    HStateLB = [HStateLB zeros(Nx*T, Nu*(T-1))];
+    zBlock = zeros(Nx*T, Nu*(T-1));
+    if params.has_terminal_set
+        zBlock = zeros(Nx*(T-1), Nx+Nu*(T-1));
+    end
+    HStateUB = [HStateUB zBlock]; 
+    HStateLB = [HStateLB zBlock];
 end
 
 HInputUB = []; HInputLB = []; hInputUB = []; hInputLB = [];
@@ -48,9 +52,9 @@ end
 H(delRow, :) = []; % Remove designated rows
 h(delRow, :) = [];
 
-if params.hasTerminalSet()
+if params.has_terminal_set()
     HT       = params.terminal_H_;
-    nHT      = size(HTerm, 1);
+    nHT      = size(HT, 1);
     HTPadded = [zeros(nHT, Nx*(T-1)) HT zeros(nHT, Nu*(T-1))];
     
     H = [H; HTPadded];
