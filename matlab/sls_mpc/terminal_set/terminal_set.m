@@ -1,4 +1,4 @@
-function [H_term, h_term, stats] = terminal_set(sys, params)
+function [params, stats] = terminal_set(sys, params)
 % Distributed computation of terminal set
 % sys    : LTISystem (we will use sys.A and sys.B2)
 % params : MPCParams object containing locality, constraints, etc.
@@ -20,7 +20,7 @@ end
 Phi_x  = eye(Nx);
 H_term = []; 
 h_term = [];
-redundant_rows = [];
+redundantRows = [];
 
 H = [params.stateConsMtx_; -params.stateConsMtx_];
 h = [params.stateUB_; -params.stateLB_];
@@ -33,7 +33,7 @@ times = zeros(Nx, 1); % per state
 iters = 0;
 
 % Iterate until the set converges, i.e. all new rows are redundant
-while length(redundant_rows) < size(H, 1) 
+while length(redundantRows) < size(H, 1) 
     iters = iters+1;
     
     % k-step precursor set {x: H_new*x <= h_new} to {x: H*x <= h} under optimal controller
@@ -56,7 +56,7 @@ while length(redundant_rows) < size(H, 1)
 
     % Note: ideally we would check H_new compared to H_term
     % What we do here may take longer to converge and give more redundancy
-    redundant_rows = [];
+    redundantRows = [];
     for i = 1:Nx
         tic;
         for j = [i, i+Nx] % Rows corresponding to upper and lower bounds
@@ -77,15 +77,15 @@ while length(redundant_rows) < size(H, 1)
             if H_new(j, neighbors{i})*x_worst < h_new(j)
                 % If x satisfies H*x <= h, it automatically satisfies
                 % H_new(j,:)*x <= h_new(j); so this row in H_new is redundant                
-                redundant_rows(end+1) = j;
+                redundantRows(end+1) = j;
             end
         end
         times(i) = times(i) + toc;
     end
     
     % Remove desired rows
-    H_new(redundant_rows, :) = []; 
-    h_new(redundant_rows)    = [];
+    H_new(redundantRows, :) = []; 
+    h_new(redundantRows)    = [];
     
     % Set intersection (minus redundant rows)
     H_term = [H_term; H_new];
@@ -104,5 +104,8 @@ end
 stats         = MPCStats();
 stats.time_   = mean(times); % average across all states
 stats.iters_  = iters;
+
+params.terminal_H_ = H_term;
+params.terminal_h_ = h_term;
 
 end

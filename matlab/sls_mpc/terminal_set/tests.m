@@ -18,7 +18,12 @@ params.stateLB_          = -params.stateUB_;
 params.QSqrt_ = eye(sys.Nx);
 params.RSqrt_ = eye(sys.Nu);
 
-[params.terminal_H_, params.terminal_h_, tStats] = terminal_set(sys, params);
+[params, tStats] = terminal_set(sys, params);
+size(params.terminal_H_)
 
 tStats.time_
 tStats.iters_
+
+params = remove_redundancy_terminal(sys, params);
+size(params.terminal_H_)
+
