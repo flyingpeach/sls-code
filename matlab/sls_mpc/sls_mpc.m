@@ -44,6 +44,10 @@ for t=1:tHorizon-1
         mpc_error('Unrecognized MPC mode specified!');
     end
     
+    if any(isnan(us(:,t)))
+        mpc_error('MPC solver failed/infeasible!');
+    end
+    
     % Ignore calculated MPC state since it doesn't take disturbance
     % into account
     xs(:,t+1) = sys.A*xs(:,t) + sys.B2*us(:,t) + sys.B1*w(:,t);
