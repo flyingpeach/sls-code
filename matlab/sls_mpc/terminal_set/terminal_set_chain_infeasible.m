@@ -3,25 +3,26 @@ clear all; close all; clc;
 %% Setup plant + parameters
 rng(420);
 sys    = LTISystem;
-sys.Nx = 10; alpha = 0.8; rho = 2; actDens = 0.6; 
+sys.Nx = 10; alpha = 0.8; rho = 1.5; actDens = 0.5; 
 generate_dbl_stoch_chain(sys, rho, actDens, alpha);
 sys.B1 = eye(sys.Nx);
 
 tHorizon = 10;
-x0       = rand(sys.Nx, 1);
+x0          = zeros(sys.Nx, 1);
+x0(1:2:end) = 0.1; % unactuated
 w        = zeros(sys.Nx, tHorizon); % noiseless
 
 % Params
 params = MPCParams();
 params.locality_ = 3;
-params.tFIR_     = 5;
+params.tFIR_     = 2;
 params.maxIters_ = 5000;
-params.rho_      = 1; 
+params.rho_      = 1.6; 
 params.eps_p_    = 1e-3;
 params.eps_d_    = 1e-3;
-
+    
 params.stateConsMtx_     = eye(sys.Nx);
-params.stateUB_          = 2 * ones(sys.Nx, 1);
+params.stateUB_          = 1 * ones(sys.Nx, 1);
 params.stateLB_          = -params.stateUB_;    
 params.QSqrt_ = eye(sys.Nx);
 params.RSqrt_ = eye(sys.Nu);
@@ -30,6 +31,7 @@ plotStates = [4 5];
 plotInputs = [2 3];
 
 %% Synthesize w/o terminal set
+fprintf('Doing MPC with *no* terminal set...\n')
 params.mode_        = MPCMode.Centralized;
 [xCentA, uCentA, ~] = sls_mpc(sys, x0, w, params, tHorizon);
 
@@ -39,12 +41,13 @@ params.mode_        = MPCMode.Distributed;
 print_and_plot(params, xA, uA, xCentA, uCentA, 'Test A: No Terminal Set', plotStates, plotInputs);
 fprintf('Test A: avgTime: %.4f, avgIters: %.4f\n\n', statsA.time_, statsA.iters_);
 
-%% Add terminal set
+%% Add terminal set + synthesize w/ terminal set
+fprintf('Synthesizing terminal set...\n')
 [params, tStats] = terminal_set(sys, params);
 params = remove_redundancy_terminal(sys, params);
 fprintf('Terminal set: avgTime: %.4f, avgIters: %.4f\n\n', tStats.time_, tStats.iters_);
 
-%% Synthesize w/ terminal set
+fprintf('Doing MPC *with* terminal set...\n')
 params.mode_        = MPCMode.Centralized;
 [xCentB, uCentB, ~] = sls_mpc(sys, x0, w, params, tHorizon);
 
