@@ -11,10 +11,10 @@ function [params, stats] = terminal_set(sys, params)
 Nx = sys.Nx; A = sys.A;
 d  = params.locality_;
 
-sparsity_x = abs(A^(d-1)) > 0;    
-neighbors  = cell(Nx, 1);
+xSparsity = abs(A^(d-1)) > 0;    
+neighbors = cell(Nx, 1);
 for i = 1:Nx
-    neighbors{i} = find(sparsity_x(i, :));
+    neighbors{i} = find(xSparsity(:,i));
 end
 
 Phi_x  = eye(Nx);
