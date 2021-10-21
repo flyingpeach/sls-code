@@ -65,3 +65,5 @@ for i = 1:Nx
     phi_x{i} = lqr_A - lqr_B*K{i};
     
 end
+
+end
