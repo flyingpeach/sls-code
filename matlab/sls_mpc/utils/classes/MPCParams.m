@@ -51,14 +51,16 @@ classdef MPCParams < matlab.mixin.Copyable
         
         locNoiseBound_; % ||local disturbance||_2 <= locNoiseBound
 
+        % Terminal set parameters ---------------------------------
+        % terminal set is specified by terminal_H_ * x <= terminal_h_
+        terminal_H_;
+        terminal_h_;
+        
         % Advanced options ----------------------------------------
         % Leave these blank unless you really know what you're doing
         
         % Whether to use solver (instead of explicit) for row update
-        useSolver_ = false;
-        
-        % Terminal constraint
-        terminalZeroConstr_ = false; % Not supported for coupled case at the moment
+        useSolver_ = false;        
     end
     
     methods(Static)
@@ -94,7 +96,8 @@ classdef MPCParams < matlab.mixin.Copyable
           
           check_constraints(obj);
           check_adaptive(obj);
-          check_consensus_params(obj);          
+          check_consensus_params(obj);   
+          check_terminal_set(obj);
       end
             
       function sanity_check_cent(obj)
@@ -107,7 +110,8 @@ classdef MPCParams < matlab.mixin.Copyable
               mpc_error('One or more required parameters is missing!')
           end 
           
-          check_constraints(obj)       
+          check_constraints(obj);
+          check_terminal_set(obj);          
       end       
       
       %% Helpers      
@@ -147,6 +151,15 @@ classdef MPCParams < matlab.mixin.Copyable
           end
       end
       
+      function check_terminal_set(obj)
+          if has_terminal_set(obj)
+              emptyParams = isempty(obj.terminal_H_) || isempty(obj.terminal_h_);
+              if emptyParams
+                mpc_error('At least one terminal set parameter was specified but the others were left empty!');
+              end              
+          end          
+      end
+      
       %% Boolean functions
       function hasStateCons = has_state_cons(obj)
           hasStateCons = ~isempty(obj.stateConsMtx_) || ~isempty(obj.stateUB_) || ~isempty(obj.stateLB_);
@@ -164,6 +177,10 @@ classdef MPCParams < matlab.mixin.Copyable
           hasCoupling = hasObjCoupling || hasConsCoupling || hasDistCoupling;          
       end
 
+      function hasTerminalSet = has_terminal_set(obj)
+          hasTerminalSet = ~isempty(obj.terminal_H_) || ~isempty(obj.terminal_h_);
+      end
+      
       function hasAdaptiveADMM = has_adaptive_admm(obj)
           hasAdaptiveADMM = ~isempty(obj.tau_i_) || ~isempty(obj.tau_d_) || ~isempty(obj.muAdapt_) || ~isempty(obj.rhoMax_);
       end
