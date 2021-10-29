@@ -21,6 +21,7 @@ model.lb         = -inf*ones(size(H,2),1); % default is 0
 gParams.outputflag = 0;
 result = gurobi(model, gParams);
 
-isRedundant = -result.objval <= h(i);
+EPS = 1e-8;
+isRedundant = -result.objval <= h(i) + EPS;
 
 end

@@ -43,7 +43,6 @@ fprintf('Test A: avgTime: %.4f, avgIters: %.4f\n\n', statsA.time_, statsA.iters_
 %% Add terminal set + synthesize w/ terminal set
 fprintf('Synthesizing terminal set...\n')
 [params, tStats] = terminal_set(sys, params);
-params = remove_redundancy_terminal(sys, params);
 fprintf('Terminal set: avgTime: %.4f, avgIters: %.4f\n\n', tStats.time_, tStats.iters_);
 
 fprintf('Doing MPC *with* terminal set...\n')

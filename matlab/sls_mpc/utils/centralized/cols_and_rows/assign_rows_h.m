@@ -93,7 +93,7 @@ function r = assign_rows_h_with_terminal_set(sys, params)
 Nx = sys.Nx; T = params.tFIR_;
 
 r   = cell(Nx, 1);
-rHT = assign_rows_h_terminal_only(sys, params);
+rHT = assign_rows_h_terminal_only(sys, params, params.terminal_H_);
 
 % Assign rows of original H matrix (minus state constraint at time T)
 % assuming UB/LB on all states, and no input bounds

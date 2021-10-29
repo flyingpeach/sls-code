@@ -17,10 +17,11 @@ d  = params.locality_;
 % Placeholder to transform R to Q-size
 R2Q = eye(Nx);
 
-xSparsity       = abs(A^(d-1)) > 0;
-xSparsityExt    = abs(A^(d)) > 0;
+commsAdj        = abs(sys.A) > 0;
+xSparsity       = commsAdj^(d-1) > 0;
+xSparsityExt    = commsAdj^d > 0;
 boundaryPattern = abs(xSparsityExt - xSparsity) > 0;
-uSparsity       = (abs(B') > 0) * abs(A^(d)) > 0;
+uSparsity       = (abs(B') > 0) * commsAdj^d > 0;
 
 K  = cell(Nx, 1);
 S  = cell(Nx, 1);

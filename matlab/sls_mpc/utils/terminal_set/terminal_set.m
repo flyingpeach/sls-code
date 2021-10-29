@@ -1,5 +1,5 @@
 function [params, stats] = terminal_set(sys, params)
-% Distributed computation of terminal set
+% Distributed computation of terminal set (following Alg 10.1 from Borelli)
 % sys    : LTISystem (we will use sys.A and sys.B2)
 % params : MPCParams object containing locality, constraints, etc.
 % 
@@ -8,96 +8,99 @@ function [params, stats] = terminal_set(sys, params)
 % 2. No inputs are constrained
 % 3. No coupling induced by state constraints
 
-Nx = sys.Nx; A = sys.A;
-d  = params.locality_;
+Nx = sys.Nx;
 
-xSparsity = abs(A^(d-1)) > 0;    
-neighbors = cell(Nx, 1);
-for i = 1:Nx
-    neighbors{i} = find(xSparsity(:,i));
-end
+commsAdj  = abs(sys.A) > 0;
+stateSupp = commsAdj^(params.locality_-1) > 0;
+s_c   = get_locality_col(stateSupp);
+s_r   = get_locality_row(stateSupp);
 
-Phi_x  = eye(Nx);
-H_term = []; 
-h_term = [];
-redundantRows = [];
-
-H = [params.stateConsMtx_; -params.stateConsMtx_];
-h = [params.stateUB_; -params.stateLB_];
-
-% Compute unconstrained infinite-horizon Phi
-Phi_x_H2 = h2_sls(sys, params);
+% Initialize with state constraints
+HTerm = [params.stateConsMtx_; -params.stateConsMtx_]; 
+hTerm = [params.stateUB_; -params.stateLB_];
 
 % Runtime and iterations
 times = zeros(Nx, 1); % per state
 iters = 0;
 
-% Iterate until the set converges, i.e. all new rows are redundant
-while length(redundantRows) < size(H, 1) 
+% Unconstrained infinite-horizon Phi for precursor set calculation
+PhiH2 = h2_sls(sys, params);
+
+Eye  = eye(Nx);
+Phi1 = zeros(Nx);
+
+% TODO: there is probably a way to simplify this
+for i = 1:Nx % Distributed across columns
+    tic;
+    Phi1(s_c{i}, i) = PhiH2{i} * Eye(s_c{i},i);
+    times(i) = times(i) + toc;
+end  
+
+while true
     iters = iters+1;
     
-    % k-step precursor set {x: H_new*x <= h_new} to {x: H*x <= h} under optimal controller
-    % At the first step, H_new = H (because Phi_x = I)
-    H_new = zeros(size(H));
-    h_new = zeros(size(h));
-    
+    % Precursor set of current terminal set defined by HNew*x <= hNew
+    HNew = zeros(size(HTerm));
+    hNew = zeros(size(hTerm));
+
     for i = 1:Nx
         tic;
-        % Two rows corresponding to upper and lower bounds
-        H_new(neighbors{i},i)    = H(neighbors{i},:)*Phi_x(:,i);
-        H_new(neighbors{i}+Nx,i) = H(neighbors{i}+Nx,:)*Phi_x(:,i);
+        % Two columns: corresponding to upper and lower bounds
         
-        h_new(i)    = h(i);
-        h_new(i+Nx) = h(i+Nx);
-        times(i)    = times(i) + toc;
+        % TODO: possibly don't have to do full multiplication
+        % i.e. can use Phi1(s_c{i}, i)??
+        HNew(s_c{i}, i)    = HTerm(s_c{i}, :)*Phi1(:,i);
+        HNew(s_c{i}+Nx, i) = HTerm(s_c{i}+Nx, :)*Phi1(:,i);
+        
+        hNew(i)    = hTerm(i);
+        hNew(i+Nx) = hTerm(i+Nx);
+        times(i)   = times(i) + toc;
     end
-    
-    % Check which rows of H_new are redundant compared to H
-
-    % Note: ideally we would check H_new compared to H_term
-    % What we do here may take longer to converge and give more redundancy
+     
+    % Check which rows of HNew are redundant compared to HTerm
+    rHNew  = assign_rows_h_terminal_only(sys, params, HNew);
+    rHTerm = assign_rows_h_terminal_only(sys, params, HTerm);
+        
     redundantRows = [];
-    for i = 1:Nx
+    for i=1:sys.Nx
         tic;
-        for j = [i, i+Nx] % Rows corresponding to upper and lower bounds
-            
-            % Find worst possible x for this local patch based on H
-            numNeighbors = length(neighbors{i});
-            x_worst      = zeros(numNeighbors, 1);
+        HLocTerm = HTerm(rHTerm{i}, s_r{i});
+        HLocNew  = HNew(rHNew{i}, s_r{i});
+        hLocTerm = hTerm(rHTerm{i});
+        hLocNew  = hNew(rHNew{i});
+        
+        nRowsNew = length(rHNew{i}); % Rows to check for redundancy
+        
+        % Concatenate the two
+        HLoc = [HLocNew; HLocTerm];
+        hLoc = [hLocNew; hLocTerm];
+        
+        redundantRowsLoc = []; % Indexed according to HLoc
 
-            for l = 1:numNeighbors
-                k = neighbors{i}(l);
-                if H_new(j,k) > 0
-                     x_worst(l) = params.stateUB_(k);
-                elseif H_new(j,k) <= 0
-                     x_worst(l) = params.stateLB_(k);
-                end
-            end
-            
-            if H_new(j, neighbors{i})*x_worst < h_new(j)
-                % If x satisfies H*x <= h, it automatically satisfies
-                % H_new(j,:)*x <= h_new(j); so this row in H_new is redundant                
-                redundantRows(end+1) = j;
+        % Always put the row-to-check first; and only check against rows
+        % that are yet to be checked or determined to be not-redundant
+        for j=1:nRowsNew
+            rows = setdiff(1:size(HLoc, 1), [redundantRowsLoc j]);
+
+            if is_redundant(HLoc([j rows], :), hLoc([j rows]), 1)
+                redundantRows(end+1)    = rHNew{i}(j);
+                redundantRowsLoc(end+1) = j;
             end
         end
         times(i) = times(i) + toc;
     end
+        
+    % Remove redundant rows + do intersection
+    HNew(redundantRows, :) = [];
+    hNew(redundantRows)    = [];
+ 
+    HTerm = [HTerm; HNew];
+    hTerm = [hTerm; hNew];
     
-    % Remove desired rows
-    H_new(redundantRows, :) = []; 
-    h_new(redundantRows)    = [];
-    
-    % Set intersection (minus redundant rows)
-    H_term = [H_term; H_new];
-    h_term = [h_term; h_new];
-
-    % Compute the infinite-horizon closed-loop map recursively
-    % according to eq (13) in https://arxiv.org/pdf/2010.02440
-    for i = 1:Nx % Distributed across columns
-        tic;
-        Phi_x(neighbors{i},i) = Phi_x_H2{i} * Phi_x(neighbors{i},i);
-        times(i) = times(i) + toc;
-    end  
+    if isempty(HNew)
+        % Set has converged: all new rows are redundant
+        break; % Stop iterating
+    end
 end
 
 % Running stats (runtime, iters)
@@ -105,7 +108,7 @@ stats         = MPCStats();
 stats.time_   = mean(times); % average across all states
 stats.iters_  = iters;
 
-params.terminal_H_ = H_term;
-params.terminal_h_ = h_term;
+params.terminal_H_ = HTerm;
+params.terminal_h_ = hTerm;
 
 end
