@@ -75,7 +75,7 @@ if params.has_polytopic_noise()
 
     GSupp      = abs(G) > 0;
     OmegaSupp  = abs(HSupp * Psi1Supp) > 0; % since Omega = H * Phi
-    XiSupp     = get_sparsity_xi(PsiSupp, H, G, Nx);
+    XiSupp     = get_sparsity_xi(H, G, Nx, PsiSupp);
     XiGSupp    = abs(XiSupp * GSupp) > 0; % sparsity of Xi * G
     LambdaSupp = [PhiSupp zBlock; OmegaSupp XiGSupp];
     

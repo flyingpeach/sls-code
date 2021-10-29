@@ -19,7 +19,7 @@ suppSizePsi = sum(sum(PsiSupp));
 
 if params.has_polytopic_noise()
     [G, g] = get_constraint_g(params);
-    XiSupp  = get_sparsity_xi(PsiSupp, H, G, Nx);
+    XiSupp  = get_sparsity_xi(H, G, Nx, PsiSupp);
     suppSizeXi  = sum(sum(XiSupp));
 end
 

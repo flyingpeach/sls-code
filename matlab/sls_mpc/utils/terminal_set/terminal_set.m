@@ -6,7 +6,7 @@ function [params, stats] = terminal_set(sys, params)
 % Currently this function makes the following assumptions:
 % 1. Each state is constrained by an upper and lower bound
 % 2. No inputs are constrained
-% 3. No coupling induced by state constraints
+% 3. No coupling induced by state constraints/disturbance constraints
 
 Nx = sys.Nx;
 
@@ -29,6 +29,17 @@ PhiH2 = h2_sls(sys, params);
 Eye  = eye(Nx);
 Phi1 = zeros(Nx);
 
+% Only used in robust case
+if params.has_polytopic_noise()
+    tFIR         = params.tFIR_;
+    params.tFIR_ = 2; % for precursor set calculation
+    
+    [G, g] = get_constraint_g(params);    
+    GSupp  = G ~= 0; 
+    
+    params.tFIR_ = tFIR; % restore parameter
+end
+
 % TODO: there is probably a way to simplify this
 for i = 1:Nx % Distributed across columns
     tic;
@@ -39,28 +50,57 @@ end
 while true
     iters = iters+1;
     
-    % Precursor set of current terminal set defined by HNew*x <= hNew
+    % Precursor set of current terminal set defined by HNew*x <= hNew 
     HNew = zeros(size(HTerm));
-    hNew = zeros(size(hTerm));
-
+    hNew = hTerm;
+    
     for i = 1:Nx
         tic;
+
         % Two columns: corresponding to upper and lower bounds
-        
         % TODO: possibly don't have to do full multiplication
         % i.e. can use Phi1(s_c{i}, i)??
         HNew(s_c{i}, i)    = HTerm(s_c{i}, :)*Phi1(:,i);
         HNew(s_c{i}+Nx, i) = HTerm(s_c{i}+Nx, :)*Phi1(:,i);
-        
-        hNew(i)    = hTerm(i);
-        hNew(i+Nx) = hTerm(i+Nx);
-        times(i)   = times(i) + toc;
+
+        times(i) = times(i) + toc;
     end
-     
-    % Check which rows of HNew are redundant compared to HTerm
+    
     rHNew  = assign_rows_h_terminal_only(sys, params, HNew);
     rHTerm = assign_rows_h_terminal_only(sys, params, HTerm);
-        
+    
+    % Additional precursor set steps for robust set calculation
+    % Only implemented for polytopic noise
+    if params.has_polytopic_noise()
+        HSupp    = HTerm ~= 0;
+        XiSupp   = get_sparsity_xi(HTerm, G, Nx);
+        s_rXi    = get_locality_row(XiSupp);
+        s_rH     = get_locality_row(HSupp);
+
+        for i = 1:Nx % Row-wise distributed calculation
+            tic;
+            for rowH = rHTerm{i}
+
+                excludedCols = setdiff(1:size(G,2), s_rH{rowH});
+                if find(GSupp(s_rXi{rowH}, excludedCols)) % Sanity check
+                    mpc_error('Sparsity of G is incompatible with terminal calculations!');
+                end
+
+                % y = min Xi*g s.t. H = Xi*G, Xi > 0; h = h - y
+                model.obj = g(s_rXi{rowH});
+                model.A   = sparse(G(s_rXi{rowH}, s_rH{rowH})');
+                model.rhs = HTerm(rowH, s_rH{rowH})';
+                % by default, model.lb = 0 so Xi will be nonnegative            
+
+                gParams.outputflag = 0;
+                result     = gurobi(model, gParams);                
+                hNew(rowH) = hNew(rowH) - result.objval;
+            end
+            times(i)   = times(i) + toc;
+        end
+    end
+
+    % Check which rows of HNew are redundant compared to HTerm    
     redundantRows = [];
     for i=1:sys.Nx
         tic;

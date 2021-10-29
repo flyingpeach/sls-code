@@ -1,4 +1,7 @@
-function XiSupp = get_sparsity_xi(PsiSupp, H, G, Nx)
+function XiSupp = get_sparsity_xi(H, G, Nx, PsiSupp)
+% PsiSupp is optional:
+% if unspecified, we will use H = Xi*G to calculate sparsity
+% if specified,   we will use H*Psi{2:T} = Xi*G to calculate sparsity
 
 numRowsH = size(H, 1);
 numRowsG = size(G, 1);
@@ -16,13 +19,14 @@ for k=1:numColsG
     Lks{k} = find(G(:,k));
 end
 
-% Only care about Phi starting from 2nd block column
-% Width of first block column is Nx
-Phi2toT = PsiSupp(:, Nx+1:end);
+mtx = eye(Nx);
+if nargin == 4
+    mtx = PsiSupp(:, Nx+1:end);
+end
 
 for i=1:numRowsH
     for k=1:numColsG       
-        if all(Phi2toT(Jis{i}, k) == 0)
+        if all(mtx(Jis{i}, k) == 0)
             XiSupp(i, Lks{k}) = false;
         end
     end
