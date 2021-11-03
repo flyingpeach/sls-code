@@ -1,6 +1,6 @@
-function phi_x = h2_sls(sys, params)
+function [phi_x, phi_u] = h2_sls(sys, params)
 % INFINITE HORIZON LOCALIZED LQR
-% Author: Jing Yu (&edited by Lisa Li)
+% Author: Jing Yu (&edited by Lisa Li, Carmen Amo Alonso)
 %
 % This code performs the computations in eq.(14) from the article
 % "Localized and Distributed H2 State Feedback Control" by J. Yu, Y.-S. Wang

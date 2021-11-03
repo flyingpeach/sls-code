@@ -24,7 +24,7 @@ times = zeros(Nx, 1); % per state
 iters = 0;
 
 % Unconstrained infinite-horizon Phi for precursor set calculation
-PhiH2 = h2_sls(sys, params);
+[PhiH2, ~] = h2_sls(sys, params);
 
 Eye  = eye(Nx);
 Phi1 = zeros(Nx);
