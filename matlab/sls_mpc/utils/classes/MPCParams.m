@@ -55,6 +55,7 @@ classdef MPCParams < matlab.mixin.Copyable
         % terminal set is specified by terminal_H_ * x <= terminal_h_
         terminal_H_;
         terminal_h_;
+        terminal_cost_ = false; % Whether to add terminal cost as well
         
         % Advanced options ----------------------------------------
         % Leave these blank unless you really know what you're doing
@@ -97,7 +98,7 @@ classdef MPCParams < matlab.mixin.Copyable
           check_constraints(obj);
           check_adaptive(obj);
           check_consensus_params(obj);   
-          check_terminal_set(obj);
+          check_terminal(obj);
       end
             
       function sanity_check_cent(obj)
@@ -111,7 +112,7 @@ classdef MPCParams < matlab.mixin.Copyable
           end 
           
           check_constraints(obj);
-          check_terminal_set(obj);          
+          check_terminal(obj);          
       end       
       
       %% Helpers      
@@ -151,15 +152,15 @@ classdef MPCParams < matlab.mixin.Copyable
           end
       end
       
-      function check_terminal_set(obj)
-          if has_terminal_set(obj)
+      function check_terminal(obj)
+          if has_terminal_set(obj) || obj.terminal_cost_
               emptyParams = isempty(obj.terminal_H_) || isempty(obj.terminal_h_);
               if emptyParams
-                mpc_error('At least one terminal set parameter was specified but the others were left empty!');
+                mpc_error('At least one terminal parameter was specified but the others were left empty!');
               end              
           end          
       end
-      
+            
       %% Boolean functions
       function hasStateCons = has_state_cons(obj)
           hasStateCons = ~isempty(obj.stateConsMtx_) || ~isempty(obj.stateUB_) || ~isempty(obj.stateLB_);

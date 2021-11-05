@@ -50,9 +50,7 @@ for k = 1:T-1
     objective = objective + vect'*vect;
 end
 
-tic;
-minimize(objective)
-subject to
+% Constraints
 ZAB*Psi == eye(Nx*T); % dynamics constraints
 
 if params.is_robust()
@@ -71,6 +69,16 @@ else % no noise expected
     end
 end
 
+% don't need to enforce <= 1 because it's already done by constraints
+variable eta nonnegative 
+if params.terminal_cost_
+    params.terminal_H_*Psi(Nx*(T-1)+1:Nx*T, 1:Nx)*x0 <= eta*params.terminal_h_;
+end
+
+objective = objective + eta; 
+
+tic;
+minimize(objective)
 time = time + toc;
 cvx_end
 
