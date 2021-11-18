@@ -70,12 +70,11 @@ else % no noise expected
 end
 
 % don't need to enforce <= 1 because it's already done by constraints
-variable eta nonnegative 
 if params.terminal_cost_
+    variable eta nonnegative 
     params.terminal_H_*Psi(Nx*(T-1)+1:Nx*T, 1:Nx)*x0 <= eta*params.terminal_h_;
+    objective = objective + eta; 
 end
-
-objective = objective + eta; 
 
 tic;
 minimize(objective)

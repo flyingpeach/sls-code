@@ -32,8 +32,8 @@ classdef MPCParams < matlab.mixin.Copyable
         mu_;           % ADMM consensus update step size
 
         % determines exit conditions at Step 9 (Alg2)
-        eps_x_; % convergence criterion for ||X(n+1) - Z(n+1)||
-        eps_z_; % convergence criterion for ||Z(n+1) - Z(n)||
+        eps_x_; % convergence criterion for primal residue
+        eps_z_; % convergence criterion for dual residue
      
         % Optional params for constraints -------------------------
         stateConsMtx_;        
@@ -117,7 +117,7 @@ classdef MPCParams < matlab.mixin.Copyable
       
       %% Helpers      
       function check_consensus_params(obj)
-          if need_consensus(obj)
+          if obj.terminal_cost_ % this is the only time we need consensus
               e1 = isempty(obj.maxItersCons_);
               e2 = isempty(obj.mu_);
               e3 = isempty(obj.eps_x_);
@@ -184,11 +184,6 @@ classdef MPCParams < matlab.mixin.Copyable
       
       function hasAdaptiveADMM = has_adaptive_admm(obj)
           hasAdaptiveADMM = ~isempty(obj.tau_i_) || ~isempty(obj.tau_d_) || ~isempty(obj.muAdapt_) || ~isempty(obj.rhoMax_);
-      end
-
-      function needConsensus = need_consensus(obj)
-          % Only the coupled, non-robust case needs consensus
-          needConsensus = has_coupling(obj) && ~is_robust(obj);
       end
 
       function isRobust = is_robust(obj)
