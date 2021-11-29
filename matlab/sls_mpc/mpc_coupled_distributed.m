@@ -70,9 +70,9 @@ end
 LambdaSupp = [PhiSupp; OmegaSupp];
 
 % Which rows/cols of separable matrices are assigned to each subsystem
-cPsi = assign_cols_phi(sys);       % for Psi, Lambda
-rPhi = assign_rows_phi(sys, T);    % for Phi, Psi
-rH   = assign_rows_h(sys, params); % for Omega
+cPsi   = assign_cols_phi(sys);       % for Psi, Lambda
+rPhi   = assign_rows_phi(sys, T);    % for Phi, Psi
+rH_all = assign_rows_h(sys, params); % for Omega
 
 % During row-wise update, can access neighbors' rows of Psi
 % since we are not optimizing over Psi
@@ -95,17 +95,18 @@ s_cLambda = get_locality_col(LambdaSupp);
 rho = params.rho_;
 mu  = params.mu_; % ease of notation
 
+rH = rH_all;
 % Terminal cost consensus
 if params.terminal_cost_
     nHTerm    = length(params.terminal_h_);
     termHRows = nH-nHTerm+1:nH;
-
+    
     % used in terminal consensus
+    rHT       = cell(Nx, 1); % terminal rows, with consensus
     commsAdj  = sys.A ~= 0;
     neighbors = commsAdj^(params.locality_-1) ~= 0;
     
     ini = cell(Nx, 1); % neighbors, i.e. in_i   
-    rHT = cell(Nx, 1); % terminal rows, with consensus
     for i=1:Nx
         ini{i} = find(neighbors(i, :));        
         for rowH=rH{i}
@@ -188,7 +189,7 @@ for iters=1:maxIters % ADMM loop
                      zeros(2, size(B1,2)) [1; -1]];
                 a = [a; mu/2 * Z(i)];
                 F        = zeros(1, size(C,2));
-                F(end)   = 1 + Y(i);
+                F(end)   = 1/Nx + Y(i);
                 d        = zeros(size(B,1), 1);
                 d(end-1) = 1;
 
@@ -248,8 +249,8 @@ for iters=1:maxIters % ADMM loop
     end    
     
     % Build row-wise matrices Phi, Omega
-    Phi   = build_from_rows(rPhi, s_rPhi, Phi_rows, size(Phi));
-    Omega = build_from_rows(rH, s_rOmega, Omega_rows, size(Omega));
+    Phi   = build_from_rows(rPhi, s_rPhi, Phi_rows, size(Phi));    
+    Omega = build_from_rows(rH_all, s_rOmega, Omega_rows, size(Omega));
     
     % Solve column-wise update for Psi
     Psi_cols = cell(Nx, 1);
@@ -287,7 +288,7 @@ for iters=1:maxIters % ADMM loop
             prim1_    = [prim1_, CPsiRow];
             prim2_    = [prim2_, Phi(row, s_rPhi{row})];                
         end
-        for rowH = rH{i}
+        for rowH = rH_all{i}
             [HPsiRow, ~] = get_row_mp(H, Psi, s_rPsi, rPhi{i}, rPsi_neighbors{i}, rowH);    
             prim1_ = [prim1_, HPsiRow];
             prim2_ = [prim2_, Omega(rowH, s_rOmega{rowH})];          
