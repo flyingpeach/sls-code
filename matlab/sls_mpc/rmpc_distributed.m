@@ -150,8 +150,9 @@ for iters=1:maxIters % ADMM loop
                     B  = [x_loc' g_'; zeros(lenXi, lenOmega) -eye(lenXi)];
                     d  = [h(rowH); zeros(lenXi, 1)];
                 end
-
-                [omegaxi, solverTime] = row_polynoise_solver(C, a, B, d);
+                F = zeros(1, size(C,2));
+                
+                [omegaxi, solverTime] = row_general_solver(C, a, F, B, d);
                 Omega_rows{rowH} = omegaxi(1:lenOmega);                
                 if lenXi ~= 0
                     Xi_rows{rowH} = omegaxi(lenOmega+1:end);

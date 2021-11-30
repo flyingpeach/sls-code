@@ -1,4 +1,4 @@
-function [v, time] = row_consensus_solver(C, a, F, B, d)
+function [v, time] = row_general_solver(C, a, F, B, d)
 % Solves general quadratic equation min ||C*v - a||^2 + F*v s.t. B*v < d
 % Problem formulation: the last variable corresponds to consensus 
 % variable, so return that as v2 (and the rest as v1)

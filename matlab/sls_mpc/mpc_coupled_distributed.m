@@ -193,7 +193,7 @@ for iters=1:maxIters % ADMM loop
                 d        = zeros(size(B,1), 1);
                 d(end-1) = 1;
 
-                [v, solverTime] = row_consensus_solver(C, a, F, B, d);
+                [v, solverTime] = row_general_solver(C, a, F, B, d);
                 times(i)        = times(i) + solverTime;
                 X(i)            = v(end); % consensus variable
 
