@@ -72,8 +72,14 @@ end
 % don't need to enforce <= 1 because it's already done by constraints
 if params.terminal_cost_
     variable eta nonnegative 
-    params.terminal_H_*Psi(Nx*(T-1)+1:Nx*T, 1:Nx)*x0 <= eta*params.terminal_h_;
-    objective = objective + eta; 
+    if params.has_polytopic_noise()
+        nHTerm  = length(params.terminal_h_);
+        termIdx = nH-nHTerm+1:nH;       
+        params.terminal_H_*Psi(Nx*(T-1)+1:Nx*T, 1:Nx)*x0 + Xi(termIdx,:)*g <= eta*params.terminal_h_;        
+    else % nominal (since local noise not supported)
+        params.terminal_H_*Psi(Nx*(T-1)+1:Nx*T, 1:Nx)*x0 <= eta*params.terminal_h_;
+    end
+    objective = objective + eta;
 end
 
 tic;

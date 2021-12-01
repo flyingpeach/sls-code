@@ -29,8 +29,10 @@ iters = 0;
 Eye  = eye(Nx);
 Phi1 = zeros(Nx);
 
-% Only used in robust case
-if params.has_polytopic_noise()
+% Robust terminal set synthesis (polytopic noise only)
+if params.has_loc_bounded_noise()
+    mpc_error('Terminal set not supported for locally bounded noise!');
+elseif params.has_polytopic_noise()
     tFIR         = params.tFIR_;
     params.tFIR_ = 2; % for precursor set calculation
     

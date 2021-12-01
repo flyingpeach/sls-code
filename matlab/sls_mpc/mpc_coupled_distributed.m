@@ -93,11 +93,11 @@ s_cLambda = get_locality_col(LambdaSupp);
 
 % Will be updated if adaptive ADMM is used
 rho = params.rho_;
-mu  = params.mu_; % ease of notation
 
 rH = rH_all;
 % Terminal cost consensus
 if params.terminal_cost_
+    mu        = params.mu_; % ease of notation
     nHTerm    = length(params.terminal_h_);
     termHRows = nH-nHTerm+1:nH;
     
