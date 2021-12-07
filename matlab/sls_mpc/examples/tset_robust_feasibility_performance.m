@@ -2,35 +2,39 @@ clear all; close all; clc;
 
 %% Setup plant + parameters
 sys    = LTISystem;
-sys.Nx = 10; alpha = 0.8; rho = 1.5; actDens = 0.5; 
+sys.Nx = 10; alpha = 0.8; rho = 1.5; actDens = 0.6; 
 generate_dbl_stoch_chain(sys, rho, actDens, alpha);
 sys.B1 = eye(sys.Nx);
 
-tHorizon    = 10;
-x0          = zeros(sys.Nx, 1);
-x0(1:2:end) = 0.1; % unactuated
-w           = zeros(sys.Nx, tHorizon); % noiseless
+tHorizon = 12;
+x0   = 0.2*ones(sys.Nx, 1);
+dist = [-1 1 1 -1 -1 -1 1 1 1 1 -1 -1 -1 -1 -1];
+w    = 0.1 * ones(sys.Nx, 1) * dist;
 
 % Params
 params = MPCParams();
 params.locality_ = 3;
 params.tFIR_     = 2;
 params.maxIters_ = 5000;
-params.rho_      = 2; 
+params.rho_      = 1; 
 params.eps_p_    = 1e-3;
 params.eps_d_    = 1e-3;
-    
+
+params.distConsMtx_ = eye(sys.Nx);
+params.distUB_      =  1 * ones(sys.Nx, 1);
+params.distLB_      = -1 * ones(sys.Nx, 1);
+
 params.stateConsMtx_     = eye(sys.Nx);
-params.stateUB_          = 1 * ones(sys.Nx, 1);
+params.stateUB_          = 5 * ones(sys.Nx, 1);
 params.stateLB_          = -params.stateUB_;    
 params.QSqrt_ = eye(sys.Nx);
 params.RSqrt_ = eye(sys.Nu);
 
 % Consensus (for terminal cost only)
-params.mu_           = 1.5;
-params.eps_x_        = 2e-3;
-params.eps_z_        = 2e-3;
-params.maxItersCons_ = 500;
+params.mu_           = 1.2;
+params.eps_x_        = 1e-3;
+params.eps_z_        = 1e-3;
+params.maxItersCons_ = 1000;
 
 %% Case A: No terminal set
 fprintf('Doing MPC with NO terminal set...\n')
@@ -79,7 +83,7 @@ params.mode_        = MPCMode.Centralized;
 
 params.mode_        = MPCMode.Distributed;
 [xC, uC, statsC]    = sls_mpc(sys, x0, w, params, tHorizon);
-
+ 
 fprintf('MPC, terminal constraint+cost:\n');
 fprintf('avgTime: %.4f, avgIters: %.4f, avgConsIters: %.4f\n\n', statsC.time_, statsC.iters_, statsC.consIters_);
 
@@ -89,7 +93,7 @@ fprintf('Dist. cost w/terminal constraint + cost: %f\n', objDistC);
 fprintf('Cent. cost w/terminal constraint + cost: %f\n', objCentC);
 
 %% Plotting
-plotState = 2;
+plotState = 1;
 plotInput = 1;
 
 time = 1:tHorizon;
