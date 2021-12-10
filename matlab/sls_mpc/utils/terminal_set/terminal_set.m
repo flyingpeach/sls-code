@@ -131,6 +131,9 @@ while true
         end
         times(i) = times(i) + toc;
     end
+    
+    % Uncomment this to check convergence progress
+    % [iters size(HNew, 1) length(redundantRows)]
         
     % Remove redundant rows + do intersection
     HNew(redundantRows, :) = [];
