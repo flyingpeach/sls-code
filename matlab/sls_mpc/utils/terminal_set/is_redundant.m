@@ -35,7 +35,9 @@ end
 
 isRedundant = 0;
 if strcmp(result.status, 'NUMERIC')
-    mpc_error('Gurobi reports numeric issues; model may be too large')
+    mpc_error('Gurobi reports numeric issues; model may be too large');
+elseif strcmp(result.status, 'INFEASIBLE')
+    mpc_error('Empty terminal set; your constraints are probably too tight');
 else
     isRedundant = (strcmp(result.status, 'UNBOUNDED')) || (-result.objval <= h(i) + EPS);
 end
