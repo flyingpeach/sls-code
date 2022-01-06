@@ -36,6 +36,7 @@ Suggested example file to try: `sls_blend/two_blend_example.m`
 ## Distributed MPC
 Using the SLS parametrization, a distributed MPC algorithm can be developed. To the best of our knowledge, this is the first distributed MPC algorithm that is distributed in both synthesis and implementation, and is able to handle coupled objectives and constraints. The algorithm is introduced in [Distributed and Localized MPC via System Level Synthesis, Amo Alonso & Matni](https://arxiv.org/abs/1909.10074). This algorithm is made more computationally efficient in [Explicit Distributed and Localized Model Predictive Control via System Level Synthesis, Amo Alonso et al.](https://arxiv.org/abs/2005.13807).
 
-`sls_mpc/mpc_distributed.m` contains the distributed MPC algorithms (Algorithms 1 and 2 from the paper)
- 
-Suggested example file to try: `sls_mpc/examples/tests_algorithm_1.m`
+`sls_mpc/mpc_uncoupled_distributed.m` and `sls_mpc/mpc_coupled_distributed.m` contain algorithms for nominal distributed MPC; `sls_mpc/rmpc_distributed.m` contains algorithms for robust distributed MPC.
+
+Suggested example files to try: `sls_mpc/examples/nominal_uncoupled.m` and `sls_mpc/examples/nominal_coupled.m`
+
