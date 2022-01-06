@@ -3,7 +3,7 @@
 ## Dependencies & Setup
 This toolbox uses cvx, which can be downloaded from [here](http://cvxr.com/cvx/download/). I strongly suggest that the user use Gurobi instead of SDPT3, as it is substantially faster.
 
-The MATLAB code does not require installation. Simply add the sls directory to MATLAB's directory by running `code/init.m`.
+The MATLAB code does not require installation. Simply add the sls directory and its subfolders to MATLAB's path by navigating to sls-code/matlab and running `code/init.m`.
 
 
 ## Standard SLS
