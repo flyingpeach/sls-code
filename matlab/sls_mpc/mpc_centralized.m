@@ -7,7 +7,11 @@ Nx = sys.Nx; Nu = sys.Nu; T  = params.tFIR_;
 QSqrt = params.QSqrt_;
 RSqrt = params.RSqrt_; % note this is not related to SLS R
 
-time = 0;
+% Record time of inner solver instead of full cvx solver
+% Note: this code only works if we're using gurobi as a solver
+% For debugging: find cvx_run_solver and check varargout
+FILENAME = 'gData.mat';
+cvx_solver_settings('dumpfile', FILENAME);
 
 % Constraint matrices
 ZAB     = get_constraint_zab(sys, T);
@@ -82,10 +86,12 @@ if params.terminal_cost_
     objective = objective + eta;
 end
 
-tic;
 minimize(objective)
-time = time + toc;
 cvx_end
+
+% Note: this code only works if we're using gurobi as a solver
+gData = load(FILENAME);
+time  = gData.res.runtime;
 
 % Compute control + state
 u = Psi(Nx*T+1:Nx*T+Nu, 1:Nx)*x0; % First block matrix of Psiu * x0
