@@ -8,6 +8,9 @@ classdef LTISystem < matlab.mixin.Copyable
       C1; D11; D12; % reg output  : z_(t) = C1*x(t) + D11*w(t) + D12*u(t)
       C2; D21; D22; % measurement : y(t)  = C2*x(t) + D21*w(t) + D22*u(t)
       
+      AComm; % Alternate boolean communication structure, if comm 
+             % structure is different from (A ~= 0)
+      
       Nx; % # states
       Nw; % # disturbances
       Nu; % # actuators
@@ -20,6 +23,8 @@ classdef LTISystem < matlab.mixin.Copyable
         obj.A  = []; obj.B1  = []; obj.B2  = []; 
         obj.C1 = []; obj.D11 = []; obj.D12 = [];
         obj.C2 = []; obj.D21 = []; obj.D22 = [];
+        
+        obj.AComm = [];
         
         obj.Nx = 0; 
         obj.Nw = 0;

@@ -1,20 +1,17 @@
-function adjSys = adjust_grid_sys_locality(sys)
+function AComm = adjust_grid_sys_locality(A)
 % SLS toolbox functions determine communication structures in the system
 %     by assuming each node corresponds to a single state, and preserving
 %     directionality of state/input influences from system matrices A, B.
 %     This can lead to undercommunication:
 %       1. If state/input influences are uni-directional/asymmetric
 %       2. If each node has more than one state
-% This function provides an adjusted system with an adjusted matrix A,
-%     which, when treated by automatic communication structure detection
-%     functions, will give out the appropriate communication structure
+% This function provides an adjusted communication matrix A to take the
+% place of (A ~= 0). This matrix reflects the communication structure
 %     corresponding to assumptions for the power grid model (2 nodes per
 %     state, symmetric communication)
 
-adjSys   = sys.copy(); % deepcopy
-numNodes = sys.Nx/2;
-
-CONST = -1; % What to populate extra entries with
+AComm    = A ~= 0;
+numNodes = length(A) / 2;
 
 for i=1:numNodes
     for j=1:numNodes
@@ -27,19 +24,19 @@ for i=1:numNodes
         freqj  = 2*j;
         
         % This is specific to swing-equation grid system
-        if sys.A(freqi, phasej) ~= 0
+        if A(freqi, phasej) ~= 0
             % All possible communications between i and j should exist
-            adjSys.A(phasei, phasej) = CONST;
-            adjSys.A(phasei, freqj)  = CONST;
+            AComm(phasei, phasej) = 1;
+            AComm(phasei, freqj)  = 1;
             
-            % adjSys.A(freqi, phasej) = CONST; % This one already exists
-            adjSys.A(freqi, freqj)   = CONST;
+            % adjA(freqi, phasej) = 1; % This one already exists
+            AComm(freqi, freqj)   = 1;
             
-            adjSys.A(phasej, phasei) = CONST;
-            adjSys.A(phasej, freqi)  = CONST;
+            AComm(phasej, phasei) = 1;
+            AComm(phasej, freqi)  = 1;
             
-            adjSys.A(freqj, phasei)  = CONST;
-            adjSys.A(freqj, freqi)   = CONST;
+            AComm(freqj, phasei)  = 1;
+            AComm(freqj, freqi)   = 1;
         end
     end
 end

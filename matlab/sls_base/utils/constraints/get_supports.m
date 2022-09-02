@@ -24,7 +24,12 @@ end
 RSupp = cell(params.T_, 1); 
 MSupp = cell(params.T_, 1);
 
-commsAdj   = abs(sys.A) > 0;
+if ~isempty(sys.AComm)
+    commsAdj = sys.AComm; % Use the specified communication structure
+else
+    commsAdj = sys.A ~= 0; % Use comm structure implied by A
+end
+
 localRSupp = commsAdj^(locality-1) > 0;
 
 count = 0;

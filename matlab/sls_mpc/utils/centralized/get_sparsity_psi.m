@@ -1,23 +1,16 @@
-function PsiSupp = get_sparsity_psi(sys, params, varargin)
+function PsiSupp = get_sparsity_psi(sys, params)
 % This is the sparsity of the entire Toeplitz matrix representing system
 % responses. Often only the first block-column (Nx columns) are required.
-%
-% varargin is to let the user adjust sparsity based on whether the plant
-%     is a swing equation-based power grid. Set varargin to anything.
 
-adjustLocality = false;
-if ~isempty(varargin)
-    adjustLocality = true;
-    adjSys = adjust_grid_sys_locality(sys);
+if ~isempty(sys.AComm)
+    Comms_Adj = sys.AComm; % Use the specified communication structure
+else
+    Comms_Adj = sys.A ~= 0; % Use comm structure implied by A
 end
 
 Nx = sys.Nx; Nu = sys.Nu; T = params.tFIR_;   
 
 % Sparsity / support for each block matrix of Psi
-Comms_Adj = sys.A ~= 0;
-if adjustLocality
-    Comms_Adj = adjSys.A ~= 0;
-end
 RSupp     = Comms_Adj^(params.locality_-1) > 0;
 MSupp     = (abs(sys.B2)' * RSupp) > 0;
 
