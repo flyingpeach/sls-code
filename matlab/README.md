@@ -42,9 +42,7 @@ Suggested example files to try: `sls_mpc/examples/nominal_uncoupled.m` and `sls_
 
 
 ## D-Phi Iteration
-Based on the SLS parametrization, the D-Phi iteration algorithm provides distributed, localized, and scalable robust control of systems with structured uncertainties. The algorithm is introduced in [Distributed Robust Control for Systems with Structured Uncertainties](https://arxiv.org/abs/2204.02493)
-
- This algorithm works for L1, L-infinity, and [nu](https://arxiv.org/abs/2204.05359) robustness.
+Based on the SLS parametrization, the D-Phi iteration algorithm provides distributed, localized, and scalable robust control of systems with structured uncertainties. The algorithm is introduced in [Distributed Robust Control for Systems with Structured Uncertainties](https://arxiv.org/abs/2204.02493), and works with L1, L-infinity, and [nu](https://arxiv.org/abs/2204.05359) robustness.
 
 `d_phi_iteration/d_phi_iteration.m` contains the algorithm that produces a distributed controller that is robust to structured uncertainty.
 
