@@ -1,9 +1,8 @@
 clear all; close all; clc;
 
 %% Setup plant + parameters
-sys    = LTISystem;
-sys.Nx = 10; alpha = 0.8; rho = 1.5; actDens = 0.5; 
-generate_dbl_stoch_chain(sys, rho, actDens, alpha);
+Nx     = 10; alpha = 0.8; rho = 1.5; actDens = 0.5; 
+sys    = generate_dbl_stoch_chain(Nx, rho, actDens, alpha);
 sys.B1 = eye(sys.Nx);
 
 tHorizon    = 10;

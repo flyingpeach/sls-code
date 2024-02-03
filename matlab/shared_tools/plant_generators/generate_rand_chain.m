@@ -1,17 +1,16 @@
-function generate_rand_chain(sys, rho, actDens)
-% Populates (A, B2) of the specified system with a random chain 
+function sys = generate_rand_chain(Nx, rho, actDens)
+% Populates (A, B2, Nx, Nu) of the specified system with a random chain 
 % (tridiagonal A matrix) and a random actuation (B) matrix
-% Also sets Nu of the system accordingly
 % Inputs
-%    sys     : LTISystem containing system matrices
+%    Nx      : number of states in the system
 %    rho     : normalization value; A is generated s.t. max |eig(A)| = rho
 %    actDens : actuation density of B, in (0, 1]
 %              this is approximate; only exact if things divide exactly
+% Outputs
+%    sys     : LTISystem containing system matrices
 
-if not(sys.Nx)
-    sls_error('Nx = 0 in the LTISystem! Please specify it first');
-end
-
+sys    = LTISystem;
+sys.Nx = Nx;
 sys.Nu = ceil(sys.Nx * actDens);
 
 A                = speye(sys.Nx);

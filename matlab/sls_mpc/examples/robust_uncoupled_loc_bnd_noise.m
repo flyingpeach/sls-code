@@ -2,11 +2,9 @@ clear all; close all; clc;
 
 %% Setup plant + parameters
 rng(430);
-sys    = LTISystem;
-sys.Nx = 8;
+Nx     = 8; alpha = 0.8; rho = 2; actDens = 0.6; 
+sys    = generate_dbl_stoch_chain(Nx, rho, actDens, alpha);
 sys.B1 = eye(sys.Nx);
-alpha = 0.8; rho = 2; actDens = 0.6; 
-generate_dbl_stoch_chain(sys, rho, actDens, alpha);
 
 tHorizon = 10;
 x0       = zeros(sys.Nx, 1);
@@ -33,7 +31,7 @@ plotState = 6;
 plotInput = 5;
 
 %% Case A: Unconstrained nominal (as sanity check)
-paramsNom.mode_        = MPCMode.Centralized;
+paramsNom.mode_       = MPCMode.Centralized;
 [xsCentA, usCentA, ~] = sls_mpc(sys, x0, w, paramsNom, tHorizon);
 
 %% Case B(1): Constrained centralized robust

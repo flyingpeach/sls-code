@@ -2,10 +2,10 @@ clear all; close all; clc;
 
 %% Setup plant + parameters
 rng(420);
-sys    = LTISystem;
-sys.Nx = 4; sys.B1 = eye(sys.Nx);
-alpha = 0.8; rho = 2; actDens = 0.7; 
-generate_dbl_stoch_chain(sys, rho, actDens, alpha);
+
+Nx  = 4; alpha = 0.8; rho = 2; actDens = 0.7; 
+sys = generate_dbl_stoch_chain(Nx, rho, actDens, alpha);
+sys.B1 = eye(sys.Nx);
 
 tHorizon = 10;
 x0       = rand(sys.Nx, 1);

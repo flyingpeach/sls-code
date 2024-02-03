@@ -2,14 +2,11 @@
 % params specified in previous sections
 clear; close all; clc;
 
-% specify system matrices
-sys    = LTISystem;
-sys.Nx = 10; sys.Nw = sys.Nx; 
-
 % generate sys.A, sys.B2
-rho = 0.8; actDens = 1; randn('seed', 0);
-generate_rand_chain(sys, rho, actDens);
+Nx = 10; rho = 0.8; actDens = 1; randn('seed', 0);
+sys = generate_rand_chain(Nx, rho, actDens);
 
+sys.Nw  = sys.Nx; 
 sys.Nz  = sys.Nu + sys.Nx;
 sys.B1  = eye(sys.Nx); 
 sys.C1  = [speye(sys.Nx); sparse(sys.Nu, sys.Nx)];

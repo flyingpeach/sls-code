@@ -1,14 +1,13 @@
 function sys = generate_grid_plant(actuatedNodes, adjMtx, susceptMtx, inertiasInv, dampings, Ts)
 % Given topology of power grid, return system matrices
 % Equations taken from Anderson et al's power system model (5.10)
-%
-% actuatedNodes: indices of nodes with actuation
-% adjMtx       : adjacency matrix of grid
-% susceptMtx   : matrix of susceptance (imaginary admittance) values between nodes
-% Ts           : sampling time
-%
-% sys          : LTISystem containing system matrices
-%
+% Inputs:
+%    actuatedNodes: indices of nodes with actuation
+%    adjMtx       : adjacency matrix of grid
+%    susceptMtx   : matrix of susceptance (imaginary admittance) values between nodes
+%    Ts           : sampling time
+% Outputs
+%    sys     : LTISystem containing system matrices
 
 numNodes = size(adjMtx, 1);
 

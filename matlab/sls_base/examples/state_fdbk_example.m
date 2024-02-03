@@ -1,13 +1,10 @@
 clear; close all; clc; 
 
-% specify system matrices
-sys    = LTISystem;
-sys.Nx = 10; sys.Nw = sys.Nx; 
-
 % generate sys.A, sys.B2
-alpha = 0.2; rho = 1; actDens = 1;
-generate_dbl_stoch_chain(sys, rho, actDens, alpha); 
+Nx = 10; alpha = 0.2; rho = 1; actDens = 1;
+sys = generate_dbl_stoch_chain(Nx, rho, actDens, alpha); 
 
+sys.Nw  = sys.Nx;
 sys.Nz  = sys.Nu + sys.Nx;
 sys.B1  = eye(sys.Nx); 
 sys.C1  = [speye(sys.Nx); sparse(sys.Nu, sys.Nx)];

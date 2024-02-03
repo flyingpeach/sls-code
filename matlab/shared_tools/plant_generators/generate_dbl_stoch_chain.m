@@ -1,20 +1,19 @@
-function generate_dbl_stoch_chain(sys, rho, actDens, alpha)
-% Populates (A, B2) of the specified system with these dynamics:
+function sys = generate_dbl_stoch_chain(Nx, rho, actDens, alpha)
+% Populates (A, B2, Nx, Nu) of the specified system with these dynamics:
 % x_1(t+1) = rho*[(1-alpha)*x_1(t) + alpha x_2(t)] + B(1,1)u_1(t)
 % x_i(t+1) = rho*[alpha*x_{i-1}(t) + (1-2*alpha)x_i(t) + alpha*x_{i+1}(t)] + B(i,i)u_i(t)
 % x_N(t+1) = rho*[alpha*x_{N-1}(t) + (1-alpha)x_N(t)] + B(N,N)u_N(t)
-% Also sets Nu of the system accordingly
 % Inputs
-%    sys     : LTISystem containing system matrices
+%    Nx      : number of states in the system
 %    rho     : stability of A; choose rho=1 for dbl stochastic A
 %    actDens : actuation density of B, in (0, 1]
 %              this is approximate; only exact if things divide exactly
 %    alpha   : how much state is spread between neighbours
+% Outputs
+%    sys     : LTISystem containing system matrices
 
-if not(sys.Nx)
-    sls_error('Nx = 0 in the LTISystem! Please specify it first');
-end
-
+sys    = LTISystem;
+sys.Nx = Nx;
 sys.Nu = ceil(sys.Nx * actDens);
 
 A = (1-2*alpha)*speye(sys.Nx);
