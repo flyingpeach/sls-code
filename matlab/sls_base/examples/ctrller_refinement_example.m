@@ -17,7 +17,7 @@ slsParams.T_    = 20;
 slsParams.add_objective(SLSObjective.H2, 1);
 
 % infinite horizon LQR
-[P,L,K]   = dare(full(sys.A), full(sys.B2), eye(sys.Nx), eye(sys.Nu));
+[P,L,K]   = idare(full(sys.A), full(sys.B2), eye(sys.Nx), eye(sys.Nu));
 infLQRCost = 0;
 for i=1:sys.Nx % sum of all costs from init condition
     x0    = zeros(sys.Nx, 1);
