@@ -47,3 +47,9 @@ Based on the SLS parametrization, the D-Phi iteration algorithm provides distrib
 `d_phi_iteration/d_phi_iteration.m` contains the algorithm that produces a distributed controller that is robust to structured uncertainty.
 
 Suggested example files to try: `d_phi_iteration/d_phi_iteration_example.m`, which reproduces the simulation results of the paper
+
+
+## Continuous-Time SLS
+These files provide SLS in the continuous-time setting (in contrast with all other files in this repository which focus on the discrete-time setting). The algorithms are introduced in [Distributed Continuous-Time Control via System Level Synthesis] (https://arxiv.org/abs/2410.08135), and works with H2 and H-infinity control.
+
+Suggested example file to try: `Distributed_Sim.m` reproduces the chain simulation from the paper.
